@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <link rel="stylesheet" href="styles.css"/>
+    <script src="../../dist/blocks-debug.js"></script>
+    <script>
+        var model = {
+            text: blocks.observable("My name is John Doe."),
+            initialTrue: blocks.observable(true),
+            initialFalse: blocks.observable(false),
+            number: blocks.observable("First"),
+            numbers: blocks.observable(["First", "Second"]),
+            items: blocks.observable(["Zero", "First", "Second", "Third", "Fourth"])
+        };
+        blocks.query(model);
+    </script>
+</head>
+<body>
+    <button class="mega-button">Change All Values Programatically</button>
+
+    <div class="section">
+        <h3>input[type="text]</h3>
+        <input data-query="val(text)">
+        <div data-query="each([$this])">
+            <input data-query="val(text)">
+        </div>
+        {{text}}{{text}}
+        <br />
+        <span data-query="html(text)"></span><span data-query="text(text)"></span>
+    </div>
+
+    <div class="section">
+        <h3>textarea</h3>
+        <textarea data-query="val(text)"></textarea>
+        <div data-query="each([$this, $this])">
+            <textarea data-query="val(text)"></textarea>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>input[type="checkbox"]</h3>
+        <input type="checkbox" data-query="checked(initialTrue)">
+        <input type="checkbox" data-query="checked(initialFalse)">
+        <div data-query="each([$this])">
+            <input type="checkbox" data-query="checked(initialTrue)">
+            <input type="checkbox" data-query="checked(initialFalse)">
+        </div>
+        {{initialTrue}}{{initialTrue}}
+        <br>
+        {{initialFalse}}{{initialFalse}}
+    </div>
+
+    <div class="section">
+        <h3>input[type="radio"]</h3>
+        <input type="radio" data-query="checked(initialTrue)">
+        <input type="radio" data-query="checked(initialFalse)">
+        <div data-query="each([$this])">
+            <input type="radio" data-query="checked(initialTrue)">
+            <input type="radio" data-query="checked(initialFalse)">
+        </div>
+        {{initialTrue}} {{initialTrue}}
+        <br>
+        {{initialFalse}} {{initialFalse}}
+    </div>
+
+    <div class="section">
+        <h3>input[type="radio", value="specified"]</h3>
+        <input type="radio" value="First" data-query="checked(number)">
+        <input type="radio" value="Second" data-query="checked(number)">
+        <input type="radio" value="Third" data-query="checked(number)">
+        <div data-query="each([$this]">
+            <input type="radio" value="First" data-query="checked(number)">
+            <input type="radio" value="Second" data-query="checked(number)">
+            <input type="radio" value="Third" data-query="checked(number)">
+        </div>
+        {{number}}
+    </div>
+
+    <div class="section">
+        <h3>select[data-query="options()"]</h3>
+        No update:
+        <select data-query="options(items)">
+
+        </select>
+        <br>
+        Update:
+        <select data-query="options(items).val(number)">
+
+        </select>
+        <br>
+        {{number}}
+    </div>
+
+    <div class="section">
+        <h3>select[data-query="each()"]</h3>
+        No update:
+        <select data-query="each(items)">
+            <option data-query="val($this)">{{$this}}</option>
+        </select>
+        <br>
+        Update:
+        <select data-query="each(items).val(number)">
+            <option data-query="val($this)">{{$this}}</option>
+        </select>
+        <br />
+        Update (data-query=each()):
+        <div data-query="each([$this])">
+            <select data-query="each(items).val(number)">
+                <option data-query="val($this)">{{$this}}</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>select (created manually)</h3>
+        <select data-query="val(number)">
+            <option value="Zero">Zero</option>
+            <option value="First">First</option>
+            <option value="Second">Second</option>
+            <option value="Third">Third</option>
+            <option value="Fourth">Fourth</option>
+        </select>
+    </div>
+
+    <div class="section">
+        <h3>select[multiple]</h3>
+        <select multiple="multiple" data-query="options(items).val(numbers)" style="float: left;height:100px;width:100px;">
+
+        </select>
+        <select multiple="multiple" data-query="each(items).val(numbers)" style="float: left;height:100px;width:100px;">
+            <option data-query="val($this)">{{$this}}</option>
+        </select>
+        <ul data-query="each(numbers)" style="float: left;">
+            <li>{{$this}}</li>
+        </ul>
+        <div style="clear: both;"></div>
+    </div>
+
+    <div class="section">
+        <h3>select (with optgroup)</h3>
+        <select>
+
+        </select>
+    </div>
+</body>
+</html>

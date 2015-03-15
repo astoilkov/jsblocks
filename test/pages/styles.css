@@ -1,0 +1,18 @@
+.section {
+  position: relative;
+  padding: 50px;
+  padding-top: 70px;
+  border: 2px solid gray;
+  margin-bottom: 50px;
+}
+
+.section h3 {
+  position: absolute;
+  top: 0;
+}
+
+.mega-button {
+  margin: 0 auto;
+  padding: 20px;
+  margin: 40px;
+}

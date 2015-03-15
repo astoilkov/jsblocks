@@ -1,0 +1,56 @@
+body, html {
+    padding: 0;
+    margin: 0;
+}
+
+.header {
+    background: gray;
+}
+
+.header .content {
+    display: inline-block;
+    margin: 0 auto;
+    font-size: 24px;
+    font-weight: bold;
+    padding: 5px;
+}
+
+.specs, .specs ul {
+    list-style-type: none;
+    list-style-position: inside;
+}
+
+.specs > li > ul.group {
+    float: left;
+}
+
+.specs > li > ul > .group-title {
+    font-size: 24px;
+}
+
+.specs input {
+    margin-left: 20px;
+}
+
+.specs .line {
+    display: inline-block;
+    padding: 3px;
+}
+
+.specs .selected .line {
+    background: #51b20a;
+}
+
+.specs .group {
+    list-style-type: none;
+}
+
+.specs .group-title {
+    font-weight: bold;
+    font-style: italic;
+    font-size: 18px;
+}
+
+.specs .test {
+    list-style-type: circle;
+}

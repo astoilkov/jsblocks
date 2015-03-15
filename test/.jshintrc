@@ -1,0 +1,46 @@
+{
+  //Do not use {a} as a constructor
+  "-W053": false,
+
+  "eqeqeq": false,
+  "forin": false,
+  "plusplus": false,
+  "strict": false,
+  "newcap": false,
+
+  "es3": true,
+  "bitwise": true,
+  "camelcase": true,
+  "curly": true,
+  "freeze": true,
+  "immed": true,
+  "latedef": true,
+  "noarg": true,
+  "noempty": true,
+  "nonbsp": true,
+  "nonew": true,
+  "undef": true,
+  "unused": true,
+  "trailing": true,
+  "loopfunc": true,
+  "eqnull": true,
+  "quotmark": "single",
+
+  "browser": true,
+
+  "globals": {
+    "blocks": true,
+    "jQuery": true,
+    "$": true,
+
+    "setFixtures": true,
+    "runts": true,
+    "waits": true,
+    "beforeEach": true,
+    "afterEach": true,
+    "describe": true,
+    "expect": true,
+    "it": true,
+    "spyOn": true
+  }
+}

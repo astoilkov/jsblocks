@@ -1,0 +1,44 @@
+<html>
+  <head>
+    <title></title>
+    <link rel="stylesheet" href="styles.css" charset="utf-8">
+    <script src="../../dist/blocks.js"></script>
+    <script>
+    blocks.query({
+      value: blocks.observable('John Doe'),
+      range: blocks.observable(3)
+    });
+    </script>
+  </head>
+  <body>
+    <div class="section">
+      <h3>Input, password, search, textarea and expressions update</h3>
+
+      My name is: {{value}}
+      <div data-query="text(value)">
+      </div>
+      {{value}}
+      <br />
+      {{value}}
+      <br />
+      {{value}}
+      <br />
+      <input data-query="val(value)" />
+      <br />
+      <input type="password" data-query="val(value)" />
+      <br />
+      <input type="search" data-query="val(value)" />
+      <br />
+      <textarea data-query="val(value)">
+      </textarea>
+    </div>
+
+    <div class="section">
+      <h3>Range</h3>
+
+      {{range}}
+      <br />
+      <input data-query="val(range)" type="range" />
+    </div>
+  </body>
+</html>

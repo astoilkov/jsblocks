@@ -1,0 +1,120 @@
+<html>
+
+<head>
+  <title></title>
+  <script src="../../dist/blocks.js"></script>
+  <script>
+    blocks.query({
+      title: blocks.observable('The page have been successfully populated!'),
+      afterContent: blocks.observable('THIS SHOULD NOT BE VISIBLE')
+    });
+  </script>
+</head>
+
+<body>
+  <h1>{{title}}</h1>
+
+  <hr />
+
+  <script>
+    var template = '{{here is a template}}';
+    // <!-- some contents -->
+    // <div data-query="each(don't foreach)">
+    // /* */
+  </script>
+
+  <style>
+    .styled:before {
+      content: "This is before content! (which is \"'<escaped>'\")";
+      display: block;
+    }
+    .styled {
+      background: #00FF00;
+      font-size: 22px;
+    }
+    .styled:after {
+      content: "{{afterContent}}";
+      display: block;
+    }
+  </style>
+  <div class="styled">
+    All this should be green and 22px.
+  </div>
+
+  <br />
+
+  <div>
+    Text &lt;content> should be scaped!
+    <br /> quote - "
+    <br /> single quote - '
+    <br /> escaped quote - &quot;
+    <br /> escaped single quote - &#39;
+    <br /> ampersand - &
+  </div>
+
+  <h4>Parsing iframe with 'src' provided</h4>
+  <iframe src="http://jsblocks.com"></iframe>
+  <h4>Parsing iframe with 'src' provided and contents inside</h4>
+  <iframe src="http://jsblocks.com">
+    {{non existent field}}
+  </iframe>
+  <h4>Parsing iframe only with contents inside</h4>
+  <iframe>
+    {{non existent field}}
+  </iframe>
+
+
+  <br />
+  <br />
+
+  <h4>Parsing empty svg</h4>
+  <svg version="1.1" baseProfile="full" width="300" height="200" xmlns="http://www.w3.org/2000/svg"></svg>
+
+  <h4>Parsing full svg</h4>
+  <svg version="1.1" baseProfile="full" width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+
+    <rect width="100%" height="100%" fill="red" />
+
+    <circle cx="150" cy="100" r="80" fill="green" />
+
+    <text x="150" y="125" font-size="60" text-anchor="middle" fill="white">{{svg}}</text>
+  </svg>
+
+  <br />
+  <br />
+
+  <h4>Parsing canvas element</h4>
+  <canvas></canvas>
+  <canvas id="canvas">
+  </canvas>
+
+  <h4>Parsing non-existant element type</h4>
+  <nonexistent>
+    {{title}}
+  </nonexistent>
+  <non-existent>
+    {{title}}
+  </non-existent>
+
+  <noscript style="background:red;font-size:200px">
+    NB: THIS SHOULDN'T BE VISIBLE!!!
+  </noscript>
+
+  <object data="move.swf" type="application/x-shockwave-flash">
+    <param name="foo" value="bar" />
+  </object>
+
+  <audio>
+  </audio>
+  <video>
+  </video>
+
+
+
+  <br />
+  <br />
+  <br />
+  <br />
+</body>
+
+</html>

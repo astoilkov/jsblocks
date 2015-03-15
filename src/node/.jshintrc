@@ -1,0 +1,8 @@
+{
+  "browser": false,
+
+  "globals": {
+    "require": true,
+    "server": true
+  }
+}

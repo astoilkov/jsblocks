@@ -1,0 +1,32 @@
+{
+  "eqeqeq": false,
+  "forin": false,
+  "plusplus": false,
+  "strict": false,
+  "newcap": false,
+
+  "es3": true,
+  "bitwise": true,
+  "camelcase": true,
+  "curly": true,
+  "freeze": true,
+  "immed": true,
+  "latedef": true,
+  "noarg": true,
+  "noempty": true,
+  "nonbsp": true,
+  "nonew": true,
+  "undef": true,
+  "unused": true,
+  "trailing": true,
+  "loopfunc": true,
+  "eqnull": true,
+  "quotmark": "single",
+
+  "browser": true,
+
+  "globals": {
+    "blocks": true,
+    "define": true
+  }
+}
