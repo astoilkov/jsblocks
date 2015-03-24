@@ -155,13 +155,13 @@
     //};
 
     blocks.domReady = function (callback, thisArg) {
-      if (typeof document == 'undefined' || typeof window == 'undefined') {
+      if (typeof document == 'undefined' || typeof window == 'undefined' ||
+        (window.__mock__ && document.__mock__)) {
         return;
       }
 
       callback = parseCallback(callback, thisArg);
       if (blocks.isDomReady || document.readyState == 'complete' ||
-        (window.__mock__ && document.__mock__) ||
         (window.jQuery && window.jQuery.isReady)) {
         blocks.isDomReady = true;
         callback();
@@ -1363,6 +1363,7 @@
       this.renderBeginTag();
 
       if (this._innerHTML || this._childrenEach) {
+        this.renderEndTag();
         return;
       }
 
@@ -1784,7 +1785,7 @@
       disposeCallback();
       return;
     }
-    setClass('add', element, 'b-' + type); // this is possible to be moved to a preprocess operation
+    setClass('add', element, 'b-' + type);
 
     var computedStyle = window.getComputedStyle(element);
     var prefix = '';
@@ -4550,7 +4551,7 @@
    *
    * @memberof blocks
    * @param {*} model - The model that will be used to query the DOM.
-   * @param {HTMLElement} [queryElement=document.body] - Optional element on which to execute the query.
+   * @param {HTMLElement} [element=document.body] - Optional element on which to execute the query.
    *
    * @example {html}
    * <script>
@@ -4563,9 +4564,9 @@
    * <!-- will result in -->
    * <h1>Hey, Hello World!</h1>
    */
-  blocks.query = function query(model, queryElement) {
+  blocks.query = function query(model, element) {
     blocks.domReady(function () {
-      blocks.$unwrap(queryElement, function (element) {
+      blocks.$unwrap(element, function (element) {
         if (!blocks.isElement(element)) {
           element = document.body;
         }
@@ -4758,14 +4759,16 @@
           this.css('display', 'none');
           //this._innerHTML = '';
           //view._children = this._children;
-          return false;
+          //return false;
         } else {
           //view._tryInitialize(view.isActive());
           this.css('display', '');
           // Quotes are used because of IE8 and below. It failes with 'Expected idenfitier'
-          queries['with'].preprocess.call(this, domQuery, view, '$view');
+          //queries['with'].preprocess.call(this, domQuery, view, '$view');
           //queries.define.preprocess.call(this, domQuery, view._name, view);
         }
+
+        queries['with'].preprocess.call(this, domQuery, view, '$view');
       },
 
       update: function (domQuery, view) {
@@ -7589,7 +7592,11 @@
       if (!this._started) {
         this._started = true;
         this._createViews();
-        blocks.domReady(blocks.bind(this._ready, this, element));
+        if (document.__mock__ && window.__mock__) {
+          this._ready(element);
+        } else {
+          blocks.domReady(blocks.bind(this._ready, this, element));
+        }
       }
     },
 

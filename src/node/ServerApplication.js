@@ -17,7 +17,8 @@ define([
     port: 3000,
     staticFolder: 'public',
     blocksPath: 'auto-include', // 'auto-find'
-    pages: 'auto'
+    pages: 'auto',
+    cache: 'smart'
   };
 
   ServerApplication.prototype = {
@@ -31,7 +32,8 @@ define([
       var pages = [];
       var engine = this._engine = blocks.createEngine({
         staticFolder: options.staticFolder,
-        blocksPath: options.blocksPath
+        blocksPath: options.blocksPath,
+        cache: options.cache
       });
 
       app.listen(options.port);

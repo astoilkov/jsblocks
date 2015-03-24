@@ -1,6 +1,6 @@
 define([
   '../core'
-], function (blocks, createEnv) {
+], function (blocks) {
   var vm = require('vm');
   var fs = require('fs');
 

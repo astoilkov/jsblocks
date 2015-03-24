@@ -8,6 +8,7 @@ define([
 
   function Engine(options) {
     this._options = options;
+    this._cache = {};
     this._callback = null;
     this._locals = null;
   }
@@ -21,10 +22,16 @@ define([
 
   Engine.prototype = {
     render: function (filePath, options, callback) {
+      var cachedPage = this._cache[filePath];
+
       this._renderOptions = options;
       this._callback = callback;
 
-      this._renderFile(filePath);
+      if (this._options.cache && cachedPage) {
+        callback(null, cachedPage);
+      } else {
+        this._renderFile(filePath);
+      }
     },
 
     _renderFile: function (filePath) {
@@ -34,13 +41,17 @@ define([
       });
     },
 
-    _renderContents: function (contents) {
+    _renderContents: function (contents, filePath) {
       var browserEnv = this._createBrowserEnv();
       var callback = this._callback;
+      var cache = this._cache;
 
       findPageScripts(contents, function (scripts) {
         var htmlResult = executePageScripts(browserEnv, contents, scripts);
         callback(null, htmlResult);
+        if (filePath) {
+          cache[filePath] = htmlResult;
+        }
       });
     },
 

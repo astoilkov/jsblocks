@@ -317,7 +317,11 @@ define([
       if (!this._started) {
         this._started = true;
         this._createViews();
-        blocks.domReady(blocks.bind(this._ready, this, element));
+        if (document.__mock__ && window.__mock__) {
+          this._ready(element);
+        } else {
+          blocks.domReady(blocks.bind(this._ready, this, element));
+        }
       }
     },
 

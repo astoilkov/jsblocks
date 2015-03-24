@@ -48,6 +48,7 @@ define([
         element._attributes = attrs;
         element._isSelfClosing = selfClosing;
         element._haveAttributes = true;
+        element._createAttributeExpressions();
 
         if (attrs.style) {
           element._style = generateStyleObject(attrs.style);

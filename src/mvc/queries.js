@@ -50,14 +50,16 @@
           this.css('display', 'none');
           //this._innerHTML = '';
           //view._children = this._children;
-          return false;
+          //return false;
         } else {
           //view._tryInitialize(view.isActive());
           this.css('display', '');
           // Quotes are used because of IE8 and below. It failes with 'Expected idenfitier'
-          queries['with'].preprocess.call(this, domQuery, view, '$view');
+          //queries['with'].preprocess.call(this, domQuery, view, '$view');
           //queries.define.preprocess.call(this, domQuery, view._name, view);
         }
+
+        queries['with'].preprocess.call(this, domQuery, view, '$view');
       },
 
       update: function (domQuery, view) {

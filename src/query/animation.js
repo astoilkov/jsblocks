@@ -160,7 +160,7 @@
       disposeCallback();
       return;
     }
-    setClass('add', element, 'b-' + type); // this is possible to be moved to a preprocess operation
+    setClass('add', element, 'b-' + type);
 
     var computedStyle = window.getComputedStyle(element);
     var prefix = '';

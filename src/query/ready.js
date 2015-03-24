@@ -17,13 +17,13 @@
     //};
 
     blocks.domReady = function (callback, thisArg) {
-      if (typeof document == 'undefined' || typeof window == 'undefined') {
+      if (typeof document == 'undefined' || typeof window == 'undefined' ||
+        (window.__mock__ && document.__mock__)) {
         return;
       }
 
       callback = parseCallback(callback, thisArg);
       if (blocks.isDomReady || document.readyState == 'complete' ||
-        (window.__mock__ && document.__mock__) ||
         (window.jQuery && window.jQuery.isReady)) {
         blocks.isDomReady = true;
         callback();

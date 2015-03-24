@@ -1981,8 +1981,9 @@ inLoop: 'result' + index + '.push(value);'}
 };for (var key in ObjectDescriptors) {ObjectDescriptors[key].identity = key;ObjectDescriptors[key].parent = ObjectDescriptors;}
 
 var LoopDescriptors = {
-chainExpression: function anonymous(context,__blocks_var__) {
-__blocks_var__ = __blocks_var__ || blocks;
+chainExpression: function anonymous(context) {
+var context2;
+var context1;
 var result = '';
 var last2;
 var first2;
@@ -1994,7 +1995,7 @@ var key1;
 var index1;
 result += 'var ' + context.indexOrKey + ' = -1, ' + context.collection + ', ' + context.length + ', ' + context.value + ', ' + (!context.conditions ? ' ' + context.result + context.resultIndex + ',' : '') + ' ' + context.result + (context.conditions ? ' = false' : '') + '; ' + context.conditionsDeclarations + ' ';
 index1 = -1;
-__blocks_var__.each(context.args, function (value, index){
+blocks.each(context.args, function (value, index){
 context1 = value;
 index1 += 1;
 key1 = index;
@@ -2002,7 +2003,7 @@ first1 = index == 0;
 last1 = index == context.args.length - 1;
 result += ' ';
 index2 = -1;
-__blocks_var__.each(context1, function (value, index){
+blocks.each(context1, function (value, index){
 context2 = value;
 index2 += 1;
 key2 = index;
@@ -2013,7 +2014,7 @@ result += ' var ' + context2 + index1 + ' = ' + context.expression + '._' + cont
 result += ' ' + context.expression + ' = ' + context.expression + '._parent; ';
 });
 result += ' ';
-__blocks_var__.eachRight(context.variables, function (value, index){
+blocks.eachRight(context.variables, function (value, index){
 context1 = value;
 index1 = context.variables.length;
 index1 += -1;
@@ -2022,7 +2023,7 @@ first1 = index == 0;
 last1 = index == context.variables.length - 1;
 result += ' ';
 index2 = -1;
-__blocks_var__.each(context1, function (value, index){
+blocks.each(context1, function (value, index){
 context2 = value;
 index2 += 1;
 key2 = index;
@@ -2033,7 +2034,7 @@ result += ' var ' + key2 + index2 + ' = ' + context2 + '; ';
 result += ' ';
 });
 result += ' ' + context.collection + ' = ' + context.expression + '._value; ' + context.indexOrKey + ' += ' + context.skip + '; ' + (context.take ? ' ' + context.length + ' = Math.min(' + context.collection + '.length, ' + context.skip + ' + ' + context.take + '); ' : '') + ' ' + (!context.take ? ' ' + context.length + ' = ' + context.collection + '.length; ' : '') + ' ' + (context.reverse ? ' ' + context.indexOrKey + ' = ' + context.collection + '.length - ' + context.skip + '; ' : '') + ' ';
-__blocks_var__.eachRight(context.arrayBeforeLoops, function (value, index){
+blocks.eachRight(context.arrayBeforeLoops, function (value, index){
 context1 = value;
 index1 = context.arrayBeforeLoops.length;
 index1 += -1;
@@ -2043,7 +2044,7 @@ last1 = index == context.arrayBeforeLoops.length - 1;
 result += ' ' + context1 + ' ';
 });
 result += ' ' + (context.isObject ? ' for (' + context.indexOrKey + ' in ' + context.collection + ') { ' : '') + ' ' + (!context.isObject ? ' ' + (context.reverse ? ' while (--' + context.indexOrKey + ' >= ' + (context.take ? context.take : '') + (!context.take ? '0' : '') + ') { ' : '') + ' ' + (!context.reverse ? ' while (++' + context.indexOrKey + ' < ' + context.length + ') { ' : '') + ' ' : '') + ' ' + context.value + ' = ' + context.collection + '[' + context.indexOrKey + ']; ';
-__blocks_var__.eachRight(context.arrayInLoops, function (value, index){
+blocks.eachRight(context.arrayInLoops, function (value, index){
 context1 = value;
 index1 = context.arrayInLoops.length;
 index1 += -1;
@@ -2053,7 +2054,7 @@ last1 = index == context.arrayInLoops.length - 1;
 result += ' ' + context1 + ' ';
 });
 result += ' ' + (context.inLoopConditions ? ' ' + context.inLoopConditions + ' ' : '') + ' } ';
-__blocks_var__.eachRight(context.arrayAfterLoops, function (value, index){
+blocks.eachRight(context.arrayAfterLoops, function (value, index){
 context1 = value;
 index1 = context.arrayAfterLoops.length;
 index1 += -1;
@@ -2064,8 +2065,8 @@ result += ' ' + context1 + ' ';
 });
 result += ' ' + (context.afterLoopConditions ? ' ' + context.afterLoopConditions + ' ' : '') + ' ' + (!context.conditions ? ' ' + context.result + ' = ' + context.result + context.resultIndex + '; ' : '') + ' return ' + context.result + '; ';
 return result;
-},conditions: function anonymous(context,__blocks_var__) {
-__blocks_var__ = __blocks_var__ || blocks;
+},conditions: function anonymous(context) {
+var context1;
 var result = '';
 var last1;
 var first1;
@@ -2073,7 +2074,7 @@ var key1;
 var index1;
 result += 'if (';
 index1 = -1;
-__blocks_var__.each(context.items, function (value, index){
+blocks.each(context.items, function (value, index){
 context1 = value;
 index1 += 1;
 key1 = index;
@@ -2083,8 +2084,9 @@ result += context1;
 });
 result += ') { ' + context.result + ' = true; ' + (context.inLoop ? ' break; ' : '') + ' } ';
 return result;
-},expressions: function anonymous(context,__blocks_var__) {
-__blocks_var__ = __blocks_var__ || blocks;
+},expressions: function anonymous(context) {
+var context2;
+var context1;
 var result = '';
 var last2;
 var first2;
@@ -2096,7 +2098,7 @@ var key1;
 var index1;
 result += 'function ' + context.name + 'Expression( ';
 index1 = -1;
-__blocks_var__.each(context.args, function (value, index){
+blocks.each(context.args, function (value, index){
 context1 = value;
 index1 += 1;
 key1 = index;
@@ -2106,7 +2108,7 @@ result += ' ' + context1 + ', ';
 });
 result += ' parent ) { this._parent = parent; this._descriptor = descriptors.' + context.descriptorName + '; ';
 index1 = -1;
-__blocks_var__.each(context.args, function (value, index){
+blocks.each(context.args, function (value, index){
 context1 = value;
 index1 += 1;
 key1 = index;
@@ -2116,7 +2118,7 @@ result += ' this._' + context1 + ' = ' + context1 + '; ';
 });
 result += ' } ' + (context.isRoot ? ' function ' + context.name + 'Expression(value) { this._value = value; this._loopDescriptor = LoopDescriptors.chainExpression; } ' : '') + ' blocks.inherit(BaseExpression, ' + context.name + 'Expression, { _type: ' + context.type + ', _name: "' + context.name + '", ';
 index1 = -1;
-__blocks_var__.each(context.methods, function (value, index){
+blocks.each(context.methods, function (value, index){
 context1 = value;
 index1 += 1;
 key1 = index;
@@ -2124,7 +2126,7 @@ first1 = index == 0;
 last1 = index == context.methods.length - 1;
 result += ' ' + context1.name + ': function ( ';
 index2 = -1;
-__blocks_var__.each(context1.args, function (value, index){
+blocks.each(context1.args, function (value, index){
 context2 = value;
 index2 += 1;
 key2 = index;
@@ -2134,7 +2136,7 @@ result += ' ' + context2 + ', ';
 });
 result += ' a ) { var type = expressions.' + context.path + context1.name + '; if (!type) { type = (expressions.' + context.path + context1.name + ' = generateExpression("' + context.name + context1.name + '", "' + context.path + context1.name + '", "' + context1.name + '", ' + context.type + ')); } ' + context1.prepareValues + ' expression = new type(';
 index2 = -1;
-__blocks_var__.each(context1.args, function (value, index){
+blocks.each(context1.args, function (value, index){
 context2 = value;
 index2 += 1;
 key2 = index;
@@ -2146,7 +2148,7 @@ result += ' this); ' + (context1.type ? ' if (this._hasConditions()) { this.resu
 });
 result += ' ';
 index1 = -1;
-__blocks_var__.each(context.staticMethods, function (value, index){
+blocks.each(context.staticMethods, function (value, index){
 context1 = value;
 index1 += 1;
 key1 = index;
@@ -2156,8 +2158,8 @@ result += ' ' + key1 + ' : ' + context1 + ', ';
 });
 result += ' reverse: function () { var type = expressions.' + context.path + 'reverse; if (!type) { type = (expressions.' + context.path + 'reverse = generateExpression("' + context.path + 'reverse", "' + context.path + 'reverse", "reverse", ' + context.type + ')); } var expression = new type(this); return expression; }, each: function (callback, thisArg) { var type = expressions.' + context.path + 'each; if (!type) { type = (expressions.' + context.path + 'each = generateExpression("' + context.path + 'each", "' + context.path + 'each", "each", ' + context.type + ')); } callback = PrepareValues.parseCallback(callback, thisArg); var expression = new type(callback, thisArg, this); expression._loop(); return expression; }, value: function () { if (this._parent && this._computedValue === undefined) { this._execute(true); this._computedValue = blocks.isBoolean(this._result) ? this._parent._value : this._result; } return this._computedValue === undefined ? this._value : this._computedValue; }, result: function () { if (this._result === true || this._result === false) { return this._result; } if (this._parent) { this._execute(); } return this._result; }, _loop: function () { var func = cache.' + context.path + ' || (cache.' + context.path + ' = createExpression(this)); func(this); }, _execute: function (skipConditions) { var func = cache.' + context.path + ' || (cache.' + context.path + ' = createExpression(this, skipConditions)); if (func) { this._setResult(func(this)); } else { this._result = this._findValue(); } }, _hasConditions: function () { var name = this._name; return name.indexOf("and") != -1 || name.indexOf("or") != -1; }, _setLastCondition: function () { var name = this._name; var andIndex = name.lastIndexOf("and"); var orIndex = name.lastIndexOf("or"); this._lastCondition = andIndex > orIndex ? "and" : "or"; }, _findValue: function () { var parent = this._parent; while (parent) { if (parent._value) { return parent._value; } parent = parent._parent; } } }); return ' + context.name + 'Expression; ';
 return result;
-},singleExpression: function anonymous(context,__blocks_var__) {
-__blocks_var__ = __blocks_var__ || blocks;
+},singleExpression: function anonymous(context) {
+var context1;
 var result = '';
 var last1;
 var first1;
@@ -2165,7 +2167,7 @@ var key1;
 var index1;
 result += 'var ' + context.length + ' = ' + context.collection + '.length, ' + context.indexOrKey + ' = ' + (!context.reverse ? '-1' : '') + (context.reverse ? context.length : '') + ', ' + context.isCollectionAnArray + ' = ' + context.isArrayCheck + ', ' + context.result + ', ' + context.value + '; ';
 index1 = -1;
-__blocks_var__.each(context.variables, function (value, index){
+blocks.each(context.variables, function (value, index){
 context1 = value;
 index1 += 1;
 key1 = index;
@@ -2175,7 +2177,7 @@ result += ' ';
 });
 result += ' if (' + context.isCollectionAnArray + ') { ';
 index1 = -1;
-__blocks_var__.each(context.arrayBeforeLoops, function (value, index){
+blocks.each(context.arrayBeforeLoops, function (value, index){
 context1 = value;
 index1 += 1;
 key1 = index;
@@ -2185,7 +2187,7 @@ result += ' ' + context1 + ' ';
 });
 result += ' ' + (context.reverse ? ' while (--' + context.indexOrKey + ' >= 0) { ' : '') + ' ' + (!context.reverse ? ' while (++' + context.indexOrKey + ' < ' + context.length + ') { ' : '') + ' ' + context.value + ' = ' + context.collection + '[' + context.indexOrKey + ']; ';
 index1 = -1;
-__blocks_var__.each(context.arrayInLoops, function (value, index){
+blocks.each(context.arrayInLoops, function (value, index){
 context1 = value;
 index1 += 1;
 key1 = index;
@@ -2195,7 +2197,7 @@ result += ' ' + context1 + ' ';
 });
 result += ' } ';
 index1 = -1;
-__blocks_var__.each(context.arrayAfterLoops, function (value, index){
+blocks.each(context.arrayAfterLoops, function (value, index){
 context1 = value;
 index1 += 1;
 key1 = index;
@@ -2205,7 +2207,7 @@ result += ' ' + context1 + ' ';
 });
 result += ' } else { ';
 index1 = -1;
-__blocks_var__.each(context.objectBeforeLoops, function (value, index){
+blocks.each(context.objectBeforeLoops, function (value, index){
 context1 = value;
 index1 += 1;
 key1 = index;
@@ -2215,7 +2217,7 @@ result += ' ' + context1 + ' ';
 });
 result += ' for (' + context.indexOrKey + ' in collection) { ' + context.value + ' = ' + context.collection + '[' + context.indexOrKey + ']; ';
 index1 = -1;
-__blocks_var__.each(context.objectInLoops, function (value, index){
+blocks.each(context.objectInLoops, function (value, index){
 context1 = value;
 index1 += 1;
 key1 = index;
@@ -2225,7 +2227,7 @@ result += ' ' + context1 + ' ';
 });
 result += ' } ';
 index1 = -1;
-__blocks_var__.each(context.objectAfterLoops, function (value, index){
+blocks.each(context.objectAfterLoops, function (value, index){
 context1 = value;
 index1 += 1;
 key1 = index;
@@ -2235,13 +2237,11 @@ result += ' ' + context1 + ' ';
 });
 result += ' } return ' + context.result + '; ';
 return result;
-},skip: function anonymous(context,__blocks_var__) {
-__blocks_var__ = __blocks_var__ || blocks;
+},skip: function anonymous(context) {
 var result = '';
 result += 'if (skip' + context.index + '-- > 0) { continue; }';
 return result;
-},take: function anonymous(context,__blocks_var__) {
-__blocks_var__ = __blocks_var__ || blocks;
+},take: function anonymous(context) {
 var result = '';
 result += 'if (take' + context.index + '-- <= 0) { break; }';
 return result;
@@ -3643,13 +3643,13 @@ return result;
     //};
 
     blocks.domReady = function (callback, thisArg) {
-      if (typeof document == 'undefined' || typeof window == 'undefined') {
+      if (typeof document == 'undefined' || typeof window == 'undefined' ||
+        (window.__mock__ && document.__mock__)) {
         return;
       }
 
       callback = parseCallback(callback, thisArg);
       if (blocks.isDomReady || document.readyState == 'complete' ||
-        (window.__mock__ && document.__mock__) ||
         (window.jQuery && window.jQuery.isReady)) {
         blocks.isDomReady = true;
         callback();
@@ -4843,6 +4843,7 @@ return result;
       this.renderBeginTag();
 
       if (this._innerHTML || this._childrenEach) {
+        this.renderEndTag();
         return;
       }
 
@@ -5264,7 +5265,7 @@ return result;
       disposeCallback();
       return;
     }
-    setClass('add', element, 'b-' + type); // this is possible to be moved to a preprocess operation
+    setClass('add', element, 'b-' + type);
 
     var computedStyle = window.getComputedStyle(element);
     var prefix = '';
@@ -8010,7 +8011,7 @@ return result;
    *
    * @memberof blocks
    * @param {*} model - The model that will be used to query the DOM.
-   * @param {HTMLElement} [queryElement=document.body] - Optional element on which to execute the query.
+   * @param {HTMLElement} [element=document.body] - Optional element on which to execute the query.
    *
    * @example {html}
    * <script>
@@ -8023,9 +8024,9 @@ return result;
    * <!-- will result in -->
    * <h1>Hey, Hello World!</h1>
    */
-  blocks.query = function query(model, queryElement) {
+  blocks.query = function query(model, element) {
     blocks.domReady(function () {
-      blocks.$unwrap(queryElement, function (element) {
+      blocks.$unwrap(element, function (element) {
         if (!blocks.isElement(element)) {
           element = document.body;
         }
@@ -8218,14 +8219,16 @@ return result;
           this.css('display', 'none');
           //this._innerHTML = '';
           //view._children = this._children;
-          return false;
+          //return false;
         } else {
           //view._tryInitialize(view.isActive());
           this.css('display', '');
           // Quotes are used because of IE8 and below. It failes with 'Expected idenfitier'
-          queries['with'].preprocess.call(this, domQuery, view, '$view');
+          //queries['with'].preprocess.call(this, domQuery, view, '$view');
           //queries.define.preprocess.call(this, domQuery, view._name, view);
         }
+
+        queries['with'].preprocess.call(this, domQuery, view, '$view');
       },
 
       update: function (domQuery, view) {
@@ -11049,7 +11052,11 @@ return result;
       if (!this._started) {
         this._started = true;
         this._createViews();
-        blocks.domReady(blocks.bind(this._ready, this, element));
+        if (document.__mock__ && window.__mock__) {
+          this._ready(element);
+        } else {
+          blocks.domReady(blocks.bind(this._ready, this, element));
+        }
       }
     },
 
@@ -11389,7 +11396,7 @@ return result;
   var express = require('express');
 
   function ServerApplication(options) {
-    this._options = blocks.extend({}, options, ServerApplication.Defaults);
+    this._options = blocks.extend({}, ServerApplication.Defaults, options);
     this._app = express();
 
     this._init();
@@ -11399,7 +11406,8 @@ return result;
     port: 3000,
     staticFolder: 'public',
     blocksPath: 'auto-include', // 'auto-find'
-    pages: 'auto'
+    pages: 'auto',
+    cache: true
   };
 
   ServerApplication.prototype = {
@@ -11413,7 +11421,8 @@ return result;
       var pages = [];
       var engine = this._engine = blocks.createEngine({
         staticFolder: options.staticFolder,
-        blocksPath: options.blocksPath
+        blocksPath: options.blocksPath,
+        cache: options.cache
       });
 
       app.listen(options.port);
@@ -11524,6 +11533,7 @@ return result;
         element._attributes = attrs;
         element._isSelfClosing = selfClosing;
         element._haveAttributes = true;
+        element._createAttributeExpressions();
 
         if (attrs.style) {
           element._style = generateStyleObject(attrs.style);
@@ -11710,6 +11720,7 @@ return result;
 
   function Engine(options) {
     this._options = options;
+    this._cache = {};
     this._callback = null;
     this._locals = null;
   }
@@ -11723,10 +11734,16 @@ return result;
 
   Engine.prototype = {
     render: function (filePath, options, callback) {
+      var cachedPage = this._cache[filePath];
+
       this._renderOptions = options;
       this._callback = callback;
 
-      this._renderFile(filePath);
+      if (this._options.cache && cachedPage) {
+        callback(null, cachedPage);
+      } else {
+        this._renderFile(filePath);
+      }
     },
 
     _renderFile: function (filePath) {
@@ -11736,13 +11753,17 @@ return result;
       });
     },
 
-    _renderContents: function (contents) {
+    _renderContents: function (contents, filePath) {
       var browserEnv = this._createBrowserEnv();
       var callback = this._callback;
+      var cache = this._cache;
 
       findPageScripts(contents, function (scripts) {
         var htmlResult = executePageScripts(browserEnv, contents, scripts);
         callback(null, htmlResult);
+        if (filePath) {
+          cache[filePath] = htmlResult;
+        }
       });
     },
 
