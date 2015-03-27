@@ -629,8 +629,8 @@
     it('queries with different queries on the same element are executed correctly', function () {
       setQuery('setClass(name, selected).with(obj).setClass(name, selected)');
 
-      var outerSelected = blocks.observable();
-      var innerSelected = blocks.observable();
+      var outerSelected = blocks.observable(true);
+      var innerSelected = blocks.observable(true);
       query({
         name: 'outer',
         selected: outerSelected,

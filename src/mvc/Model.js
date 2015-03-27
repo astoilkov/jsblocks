@@ -14,6 +14,11 @@ define([
     this._collection = collection;
     this._initialDataItem = blocks.clone(dataItem, true);
 
+    blocks.each(Model.prototype, function (value, key) {
+      if (blocks.isFunction(value) && key.indexOf('_') != 0) {
+        _this[key] = blocks.bind(value, _this);
+      }
+    });
     clonePrototype(prototype, this);
 
     this.isValid = blocks.observable(true);
@@ -206,7 +211,7 @@ define([
      */
     isNew: function () {
       var idAttr = this.options.idAttr;
-      var value = blocks.unwrapAll(this[idAttr]);
+      var value = blocks.unwrap(this[idAttr]);
       var property = this._properties[idAttr];
 
       if ((!value && value !== 0) || (property && value === property.defaultValue)) {
@@ -237,6 +242,7 @@ define([
 
 
     destroy: function (removeFromCollection) {
+      removeFromCollection = removeFromCollection === false ? false : true;
       if (removeFromCollection && this._collection) {
         this._collection.remove(this);
       }

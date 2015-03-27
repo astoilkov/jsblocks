@@ -8,7 +8,7 @@
  *
  * Date: @DATE
  */
-(function (global, factory) {
+(function(global, factory) {
   if (typeof module === 'object' && typeof module.exports === 'object') {
     module.exports = factory(global, true);
   } else {
@@ -16,7 +16,7 @@
   }
 
   // Pass this if window is not defined yet
-}(typeof window !== 'undefined' ? window : this, function (global, noGlobal) {
+}(typeof window !== 'undefined' ? window : this, function(global, noGlobal) {
   var toString = Object.prototype.toString;
   var slice = Array.prototype.slice;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -24,8 +24,8 @@
   var core = {};
 
   /**
-   * @namespace blocks
-   */
+  * @namespace blocks
+  */
   var blocks = function (value) {
     if (core.expressionsCreated) {
       if (arguments.length === 0) {
@@ -37,17 +37,17 @@
     return value;
   };
 
+  blocks.version = '0.8.0';
   blocks.core = core;
-  blocks.debug = {};
 
   /**
    * Works like [jQuery extend](@link )
    * @memberof blocks
    * @param {Object} obj
-   * @param {Object} ...objects
+   * @param {...Object} objects
    * @returns {Object}
    */
-  blocks.extend = function () {
+  blocks.extend = function() {
     var src, copyIsArray, copy, name, options, clone,
       target = arguments[0] || {},
       i = 1,
@@ -125,7 +125,7 @@
    *   // collection points to the array passed to the function - [3, 1, 4]
    * });
    */
-  blocks.each = function (collection, callback, thisArg) {
+  blocks.each = function(collection, callback, thisArg) {
     if (collection == null) {
       return;
     }
@@ -166,7 +166,7 @@
    *   // collection points to the array passed to the function - [3, 1, 4]
    * });
    */
-  blocks.eachRight = function (collection, callback, thisArg) {
+  blocks.eachRight = function(collection, callback, thisArg) {
     if (collection == null) {
       return;
     }
@@ -188,8 +188,8 @@
     }
   };
 
-  blocks.each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp'], function (type) {
-    blocks['is' + type] = function (obj) {
+  blocks.each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp'], function(type) {
+    blocks['is' + type] = function(obj) {
       return toString.call(obj) == '[object ' + type + ']';
     };
   });
@@ -197,14 +197,14 @@
   // Define a fallback version of the method in browsers (ahem, IE), where
   // there isn't any inspectable 'Arguments' type.
   if (!blocks.isArguments(arguments)) {
-    blocks.isArguments = function (obj) {
+    blocks.isArguments = function(obj) {
       return !!(obj && hasOwn.call(obj, 'callee'));
     };
   }
 
   // Optimize `isFunction` if appropriate.
-  if (typeof (/./) !== 'function') {
-    blocks.isFunction = function (obj) {
+  if (typeof(/./) !== 'function') {
+    blocks.isFunction = function(obj) {
       return !!(obj && typeof obj === 'function');
     };
   }
@@ -226,7 +226,7 @@
    *   // -> false
    * }
    */
-  blocks.isArray = Array.isArray || function (value) {
+  blocks.isArray = Array.isArray || function(value) {
     return toString.call(value) == '[object Array]';
   };
 
@@ -243,7 +243,7 @@
      *   callback = callback || blocks.noop;
      * }
      */
-    noop: function () {},
+    noop: function() {},
 
     /**
      * The method helps create inheritance easily and avoid working with prototypes directly.
@@ -279,7 +279,7 @@
      * monkey.message();
      * // -> 'This mammal is Monkey'
      */
-    inherit: function (BaseClass, Class, prototype) {
+    inherit: function(BaseClass, Class, prototype) {
       if ((arguments.length < 3 && blocks.isPlainObject(Class)) || arguments.length == 1) {
         prototype = Class;
         Class = BaseClass;
@@ -331,7 +331,7 @@
      * blocks.type(null);
      * // -> null
      */
-    type: function (value) {
+    type: function(value) {
       if (value instanceof Array) {
         return 'array';
       }
@@ -380,7 +380,7 @@
      * blocks.is(function () {}, 'object');
      * // -> false
      */
-    is: function (value, type) {
+    is: function(value, type) {
       if (arguments.length > 1 && blocks.isFunction(type)) {
         return type.prototype.isPrototypeOf(value);
       }
@@ -407,7 +407,7 @@
      * }, 'ratio');
      * // -> false
      */
-    has: function (obj, key) {
+    has: function(obj, key) {
       return !!(obj && hasOwn.call(obj, key));
     },
 
@@ -416,11 +416,11 @@
      * @param {*} value
      * @returns {boolean}
      */
-    hasValue: function (value) {
+    hasValue: function(value) {
       return value != null && (!blocks.isNumber(value) || !isNaN(value));
     },
 
-    toString: function (value) {
+    toString: function(value) {
       // TODO: Implement and make tests
       var result = '';
       if (blocks.hasValue(value)) {
@@ -447,28 +447,13 @@
      * blocks.unwrap('a string or any other value will not be changed');
      * // -> 'a string or any other value will not be changed'
      */
-    unwrap: function (value) {
+    unwrap: function(value) {
       if (core.expressionsCreated && core.isExpression(value)) {
         return value.value();
       }
 
       if (blocks.unwrapObservable) {
         return blocks.unwrapObservable(value);
-      }
-      return value;
-    },
-
-    unwrapAll: function (value) {
-      value = blocks.unwrap(value);
-      if (blocks.isFunction(value)) {
-        value = value();
-      }
-      return value;
-    },
-
-    unwrapFunction: function (value) {
-      if (blocks.isFunction(value)) {
-        return value();
       }
       return value;
     },
@@ -483,19 +468,19 @@
      * var articles = $('.article');
      * blocks.$unwrap()
      */
-    $unwrap: function (element, callback, thisArg) {
-      // check if jQuery and get the first element in the colleciton
-      // Note: Consider looping through all elements in the jQuery collection
+    $unwrap: function(element, callback, thisArg) {
+      callback = parseCallback(callback, thisArg);
+
       if (element && element.jquery) {
         if (callback) {
-          blocks.each(element, function (el) {
-            callback.call(thisArg || el, el);
+          element.each(function () {
+            callback(this);
           });
         }
         element = element[0];
       } else {
         if (callback) {
-          callback.call(thisArg || element, element);
+          callback(element);
         }
       }
 
@@ -522,7 +507,7 @@
      * blocks.toArray([3, 1, 4]);
      * // -> [3, 1, 4]
      */
-    toArray: function (value) {
+    toArray: function(value) {
       // TODO: Think if it should be removed permanantely.
       // Run tests after change to observe difference
       //if (value == null) {
@@ -533,6 +518,7 @@
       }
       if (blocks.isElements(value)) {
         // TODO: if not IE8 and below use slice.call
+        /* jshint newcap: false */
         var result = Array(value.length);
         var index = -1;
         var length = value.length;
@@ -567,7 +553,7 @@
      * blocks.toUnit('60px', '%');
      * // -> 60%
      */
-    toUnit: function (value, unit) {
+    toUnit: function(value, unit) {
       var unitIsSpecified = unit;
       unit = unit || 'px';
 
@@ -575,7 +561,7 @@
         return value;
       }
 
-      if (blocks.isString(value) && blocks.isNaN(parseInt(value.charAt(value.length - 1)))) {
+      if (blocks.isString(value) && blocks.isNaN(parseInt(value.charAt(value.length - 1), 10))) {
         if (unitIsSpecified) {
           return value.replace(/[^0-9]+$/, unit);
         }
@@ -599,7 +585,7 @@
      * var areEqual = array == cloned;
      * // -> false
      */
-    clone: function (value, deepClone) {
+    clone: function(value, deepClone) {
       if (value == null) {
         return value;
       }
@@ -652,7 +638,7 @@
      * @param {*} value - The value to check if it is elements collection
      * @returns {boolean} - Returns whether the value is elements collection
      */
-    isElements: function (value) {
+    isElements: function(value) {
       var isElements = false;
       if (value) {
         if (typeof HTMLCollection != 'undefined') {
@@ -685,7 +671,7 @@
      * blocks.isElement({});
      * // -> false
      */
-    isElement: function (value) {
+    isElement: function(value) {
       return !!(value && value.nodeType === 1);
     },
 
@@ -706,7 +692,7 @@
      * blocks.isBoolean(1);
      * // -> false
      */
-    isBoolean: function (value) {
+    isBoolean: function(value) {
       return value === true || value === false || toString.call(value) == '[object Boolean]';
     },
 
@@ -717,7 +703,7 @@
      * @param {[type]} obj - The value to check for if it is an object
      * @returns {boolean} - Returns whether the value is an object
      */
-    isObject: function (obj) {
+    isObject: function(obj) {
       return obj === Object(obj);
     },
 
@@ -742,7 +728,7 @@
      * blocks.isPlainObject(new Car());
      * // -> false
      */
-    isPlainObject: function (obj) {
+    isPlainObject: function(obj) {
       var key;
 
       // Must be an Object.
@@ -779,19 +765,19 @@
       return key === undefined || hasOwn.call(obj, key);
     },
 
-    isFinite: function (value) {
+    isFinite: function(value) {
       return isFinite(value) && !blocks.isNaN(parseFloat(value));
     },
 
-    isNaN: function (value) {
+    isNaN: function(value) {
       return blocks.isNumber(value) && value != +value;
     },
 
-    isNull: function (value) {
+    isNull: function(value) {
       return value === null;
     },
 
-    isUndefined: function (value) {
+    isUndefined: function(value) {
       return value === undefined;
     },
 
@@ -800,12 +786,12 @@
     /**
      *
      *
-     * @param {Object} obj
+     * @param {Object} obj 
      * @param {String} path
      * @param {*} defaultValue
      * @returns {[type]}              [description]
      */
-    access: function (obj, path, defaultValue) {
+    access: function(obj, path, defaultValue) {
       var index = 0;
       var name;
 
@@ -830,10 +816,10 @@
      * @param {Number} indexB -
      * @returns {Array}
      */
-    swap: function (array, indexA, indexB) {
+    swap: function(array, indexA, indexB) {
       var length = array.length;
       if (indexA >= 0 && indexB >= 0 && indexA < length && indexB < length) {
-        array[indexA] = array[indexB] + (array[indexB] = array[indexA], 0)
+        array[indexA] = array[indexB] + (array[indexB] = array[indexA], 0);
       }
       return array;
     },
@@ -845,7 +831,7 @@
      * @param {Number} targetIndex -
      * @returns {Array}
      */
-    move: function (array, sourceIndex, targetIndex) {
+    move: function(array, sourceIndex, targetIndex) {
       if (sourceIndex != targetIndex) {
         if (sourceIndex <= targetIndex) {
           targetIndex++;
@@ -886,12 +872,12 @@
      * alertAll();
      * // -> alerts 'My name is John Doe'
      */
-    bind: function (func, thisArg) {
-      var Class = function () {};
+    bind: function(func, thisArg) {
+      var Class = function() {};
       var args = slice.call(arguments, 2);
       var bound;
 
-      bound = function () {
+      bound = function() {
         if (!(this instanceof bound)) {
           return func.apply(thisArg, args.concat(slice.call(arguments)));
         }
@@ -925,7 +911,7 @@
      * blocks.equals({ value: 7 }, { value: 7, result: 1});
      * // -> false
      */
-    equals: function (a, b, deepEqual) {
+    equals: function(a, b, deepEqual) {
       // TODO: deepEqual could accept a Number which represents the levels it could go in the recursion
       a = blocks.unwrap(a);
       b = blocks.unwrap(b);
@@ -1059,7 +1045,7 @@
     aStack.pop();
     bStack.pop();
     return result;
-  };
+  }
 
   blocks.at = function (index) {
     return {
@@ -1076,21 +1062,6 @@
     return blocks.last;
   };
 
-  var positions = {
-    isPosition: function (position) {
-      return position == blocks.first || position == blocks.last || (position && position.prototypeIndentification == '__blocks.at__');
-    },
-
-    determineIndex: function (value, length) {
-      if (value == blocks.first) {
-        return 0;
-      } else if (value.prototypeIndentification == '__blocks.at__') {
-        return value.index;
-      }
-      return length;
-    }
-  };
-
   function _super(name, args) {
     var func;
     if (blocks.isString(name)) {
@@ -1103,8 +1074,8 @@
     return func.apply(this, args || []);
   }
 
-  var objectCreate = Object.create || function (prototype) {
-    var Class = function () {};
+  var objectCreate = Object.create || function(prototype) {
+    var Class = function() {};
     Class.prototype = prototype;
     return new Class();
   };
@@ -1112,16 +1083,2979 @@
   for (var key in [support]) {
     break;
   }
+  support.ownPropertiesAreLast = key != '0';
 
   function parseCallback(callback, thisArg) {
     if (thisArg != null) {
       var orgCallback = callback;
-      callback = function (value, index, collection) {
+      callback = function(value, index, collection) {
         return orgCallback.call(thisArg, value, index, collection);
       };
     }
     return callback;
   }
+
+  (function () {
+    
+(function () {
+
+var customTypes = {};
+
+blocks.debug = {
+  addType: function (name, checkCallback) {
+    customTypes[name.toLowerCase()] = checkCallback;
+  },
+
+  checkArgs: debugFunc(function (method, args, options) {
+    if (!options) {
+      return;
+    }
+    var errors = checkMethod(method, args);
+
+    if (errors.length === 0) {
+      return;
+    }
+
+    blocks.debug.printErrors(method, args, options, errors);
+  }),
+
+  printErrors: function (method, args, options, errors) {
+    var message = new ConsoleMessage();
+    var one = errors.length === 1;
+    var firstError = errors[0];
+
+    if (one) {
+      message.beginCollapsedGroup();
+    } else {
+      message.beginGroup();
+    }
+
+    message
+      .addSpan('Arguments missmatch:', { background: 'yellow'})
+      .addText(' ');
+
+    if (one) {
+      addError(message, firstError, method, options.paramsNames);
+      tryInsertElement(message, options.element);
+      addMethodReference(message, method);
+    } else {
+      message.addText('Multiple errors:');
+      tryInsertElement(message, options.element);
+      message.newLine();
+      for (var i = 0; i < errors.length; i++) {
+        message.addText((i + 1) + '. ');
+        addError(message, errors[i], method, options.paramsNames);
+        message.newLine();
+      }
+      message.beginCollapsedGroup();
+      message.addText('Method reference');
+      message.newLine();
+      addMethodReference(message, method, true);
+      message.endGroup();
+    }
+
+    message.endGroup();
+    message.print();
+  },
+
+  checkQuery: function (name, args, query, element) {
+    var method = blocks.debug.queries[name];
+    if (method) {
+      blocks.debug.checkArgs(method, args, {
+        paramsNames: query.params,
+        element: element
+      });
+    }
+  },
+
+  queryNotExists: function (query, element) {
+    var message = blocks.debug.Message();
+    message.beginSpan({ 'font-weight': 'bold' });
+    message.addSpan('Warning:', { background: 'orange', padding: '0 3px' });
+
+    message.addText(' ');
+    message.addSpan(query.name, { background: 'red', color: 'white' });
+    message.addSpan('(' + query.params.join(', ') + ')', { background: '#EEE' });
+
+    message.addText(' - data-query ');
+    message.addSpan(query.name, { background: '#EEE', padding: '0 5px' });
+    message.addText(' does not exists');
+    tryInsertElement(message, element);
+    message.endSpan();
+
+    message.print();
+  },
+
+  queryParameterFail: function (query, failedParameter, element) {
+    var method = blocks.debug.queries[query.name];
+    var message = blocks.debug.Message();
+    var params = query.params;
+    var param;
+
+    if (!method) {
+      return;
+    }
+
+    message.beginCollapsedGroup();
+    message.beginSpan({ 'font-weight': 'bold' });
+    message.addSpan('Critical:', { background: 'red', color: 'white' });
+    message.addText(' ');
+    message.beginSpan({ background: '#EEE' });
+    message.addText(query.name + '(');
+    for (var i = 0; i < params.length; i++) {
+      param = params[i];
+      if (param == failedParameter) {
+        message.addSpan(param, { background: 'red', color: 'white' });
+      } else {
+        message.addText(param);
+      }
+      if (i != params.length - 1) {
+        message.addText(', ');
+      }
+    }
+    message.addText(')');
+    message.endSpan();
+    message.addText(' - exception thrown while executing query parameter');
+    tryInsertElement(message, element);
+    addMethodReference(message, method);
+    message.endGroup();
+
+    message.print();
+  },
+
+  expressionFail: function (expressionText, element) {
+    var message = new blocks.debug.Message();
+
+    message.beginSpan({ 'font-weight': 'bold' });
+    message.addSpan('Critical:', { background: 'red', color: 'white' });
+    message.addText(' ');
+    message.addSpan('{{' + expressionText + '}}', { background: 'red', color: 'white' });
+    message.addText(' - exception thrown while executing expression');
+    message.endSpan();
+
+    tryInsertElement(message, element);
+
+    message.print();
+  },
+
+  Message: ConsoleMessage
+};
+
+function tryInsertElement(message, element) {
+  if (element) {
+    //message.addText(' -->');
+    message.addText('   ');
+    if (blocks.VirtualElement.Is(element)) {
+      if (element._el._element) {
+        message.addElement(element._el._element);
+      } else {
+        message.addText(element.renderBeginTag());
+      }
+    } else {
+      message.addElement(element);
+    }
+  }
+}
+
+function addMethodReference(message, method, examplesExpanded) {
+  var examples = method.examples;
+
+  message
+    .newLine()
+    .addSpan(method.description, { color: 'green' });
+
+  addMethodSignature(message, method);
+
+  if (examplesExpanded) {
+    message.beginGroup();
+  } else {
+    message.beginCollapsedGroup();
+  }
+
+  message
+    .addSpan('Usage example' + (examples.length > 1 ? 's' : ''), { color: 'blue' })
+    .newLine();
+
+  for (var i = 0; i < method.examples.length;i++) {
+    addCodeTree(message, method.examples[i].code);
+  }
+
+  message.endGroup();
+}
+
+function addCodeTree(message, codeTree) {
+  var children = codeTree.children;
+  var lines;
+  var child;
+
+  message.beginSpan(highlightjs[codeTree.name]);
+
+  for (var i = 0; i < children.length; i++) {
+    child = children[i];
+
+    if (typeof child == 'string') {
+      message.addText(child.split('\n').join('\n '));
+    } else {
+      addCodeTree(message, child);
+    }
+  }
+
+  message.endSpan();
+}
+
+function addError(message, error, method, paramNames) {
+  var params = method.params;
+  var index;
+
+  if (!paramNames) {
+    paramNames = [];
+    for (index = 0; index < params.length; index++) {
+      paramNames.push(params[index].name);
+    }
+  }
+
+  message.beginSpan({
+    'background-color': '#EEE'
+  });
+
+  message.addText(method.name + '(');
+
+  if (error) {
+    switch (error.type) {
+      case 'less-args':
+        message.addText(paramNames.slice(0, error.actual).join(', '));
+        if (error.actual > 0) {
+          message.addText(', ');
+        }
+        for (index = 0; index < error.expected; index++) {
+          message
+            .beginSpan({
+              'background-color': 'red',
+              padding: '0 5px',
+              color: 'white'
+            })
+            .addText('?')
+            .endSpan();
+          if (index != error.expected - 1) {
+            message.addText(', ');
+          }
+        }
+        message.addText(')');
+        message.endSpan();
+        message.addText(' - less arguments then the required specified');
+        break;
+      case 'more-args':
+        message.addText(paramNames.slice(0, error.expected).join(', '));
+        if (error.expected > 0) {
+          message.addText(', ');
+        }
+        for (index = error.expected; index < error.actual; index++) {
+          message.addSpan(paramNames[index], {
+            'background-color': 'red',
+            'text-decoration': 'line-through',
+            color: 'white'
+          });
+          if (index != error.actual - 1) {
+            message.addText(', ');
+          }
+        }
+        message.addText(')');
+        message.endSpan();
+        message.addText(' - ' + (error.actual - error.expected) + ' unnecessary arguments specified');
+        break;
+      case 'param':
+        for (index = 0; index < paramNames.length; index++) {
+          if (method.params[index] == error.param) {
+            message.addSpan(paramNames[index], {
+              'background-color': 'red',
+              color: 'white'
+            });
+          } else {
+            message.addText(paramNames[index]);
+          }
+          if (index != paramNames.length - 1) {
+            message.addText(', ');
+          }
+        }
+        message.addText(')');
+        message.endSpan();
+        message.addText(' - ' + error.actual + ' specified where ' + error.expected + ' expected');
+        break;
+    }
+  } else {
+    message.addText(')');
+    message.endSpan();
+  }
+}
+
+function debugFunc(callback) {
+  return function () {
+    if (blocks.debug.executing) {
+      return;
+    }
+    blocks.debug.executing = true;
+    callback.apply(blocks.debug, blocks.toArray(arguments));
+    blocks.debug.executing = false;
+  };
+}
+
+function checkMethod(method, args) {
+  var errors = [];
+
+  errors = errors.concat(checkArgsCount(method, args));
+  if (errors.length === 0 || errors[0].type == 'more-args') {
+    errors = errors.concat(checkArgsTypes(method, args));
+  }
+
+  return errors;
+}
+
+function checkArgsCount(method, args) {
+  var errors = [];
+  var requiredCount = 0;
+  var hasArguments = false;
+  var params = method.params;
+  var param;
+
+  for (var i = 0; i < params.length; i++) {
+    param = params[i];
+    if (!param.optional) {
+      requiredCount++;
+    }
+    if (param.isArguments) {
+      hasArguments = true;
+    }
+  }
+
+  if (args.length < requiredCount) {
+    errors.push({
+      type: 'less-args',
+      actual: args.length,
+      expected: requiredCount
+    });
+  }
+  if (!hasArguments && args.length > params.length) {
+    errors.push({
+      type: 'more-args',
+      actual: args.length,
+      expected: params.length
+    });
+  }
+
+  return errors;
+}
+
+function getOptionalParamsCount(params) {
+  var count = 0;
+
+  for (var i = 0; i < params.length; i++) {
+    if (params[i].optional) {
+      count++;
+    }
+  }
+
+  return count;
+}
+
+function checkArgsTypes(method, args) {
+  var errors = [];
+  var params = method.params;
+  var maxOptionals = params.length - (params.length - getOptionalParamsCount(method.params));
+  var paramIndex = 0;
+  var currentErrors;
+  var param;
+  var value;
+
+  for (var i = 0; i < args.length; i++) {
+    param = params[paramIndex];
+    value = args[i];
+
+    if (!param) {
+      break;
+    }
+
+    if (param.optional) {
+      if (maxOptionals > 0) {
+        currentErrors = checkType(param, value);
+        if (currentErrors.length === 0) {
+          maxOptionals -= 1;
+          if (!param.isArguments) {
+            paramIndex += 1;
+          }
+        }
+      }
+    } else {
+      errors = errors.concat(checkType(param, value));
+      if (!param.isArguments) {
+        paramIndex += 1;
+      }
+    }
+  }
+
+  return errors;
+}
+
+function checkType(param, value) {
+  var errors = [];
+  var types = param.types;
+  var satisfied = false;
+  var valueType;
+  var type;
+
+  for (var i = 0; i < types.length; i++) {
+    type = types[i].toLowerCase();
+    type = type.replace('...', '');
+
+    if (type == '*') {
+      satisfied = true;
+      break;
+    }
+
+    if (type == 'falsy') {
+      if (!value) {
+        satisfied = true;
+        break;
+      } else {
+        continue;
+      }
+    } else if (type == 'truthy') {
+      if (value) {
+        satisfied = true;
+        break;
+      } else {
+        continue;
+      }
+    } else if (customTypes[type]) {
+      satisfied = customTypes[type](value);
+      if (satisfied) {
+        break;
+      } else {
+        continue;
+      }
+    } else if (blocks.isObservable(value)) {
+      valueType = 'blocks.observable()';
+    } else {
+      valueType = blocks.type(value).toLowerCase();
+    }
+
+    if (type === valueType) {
+      satisfied = true;
+      break;
+    } else if (valueType == 'blocks.observable()') {
+      valueType = blocks.type(blocks.unwrapObservable(value));
+      if (type === valueType) {
+        satisfied = true;
+        break;
+      }
+    }
+  }
+
+  if (!satisfied) {
+    errors.push({
+      type: 'param',
+      param: param,
+      actual: valueType,
+      expected: types
+    });
+  }
+
+  return errors;
+}
+
+function addMethodSignature(message, method) {
+  var params = method.params;
+  var paramNames = [];
+  var index;
+
+  message
+    .newLine()
+    .beginSpan({ 'font-size': '15px', 'font-weight': 'bold' })
+    .addText(method.name + '(');
+
+  for (index = 0; index < params.length; index++) {
+    paramNames.push(params[index].rawName);
+  }
+  message.addText(paramNames.join(', ') + ')');
+  if (method.returns) {
+    message.addText(' returns ' + method.returns.types[0]);
+    if (method.returns.description) {
+
+    }
+  }
+
+  message.endSpan();
+
+  for (index = 0; index < params.length; index++) {
+    message
+      .newLine()
+      .addText('    ' + params[index].rawName + ' {' + params[index].types.join('|') + '} - ' + params[index].description);
+  }
+
+  message.newLine();
+}
+
+function examples(method) {
+  var examples = method.examples;
+
+  if (examples) {
+    console.groupCollapsed('%cUsage examples', 'color: blue;');
+
+    for (var i = 0; i < examples.length; i++) {
+      console.log(examples[i].code);
+      if (i != examples.length - 1) {
+        console.log('-------------------------------');
+      }
+    }
+
+    console.groupEnd();
+  }
+}
+
+function params(method) {
+  var params = method.params;
+  for (var i = 0; i < params.length; i++) {
+    console.log('    ' + method.params[i].name + ': ' + method.params[i].description);
+  }
+}
+
+function ConsoleMessage() {
+  if (!ConsoleMessage.prototype.isPrototypeOf(this)) {
+    return new ConsoleMessage();
+  }
+  this._rootSpan = {
+    styles: {},
+    children: [],
+    parent: null
+  };
+  this._currentSpan = this._rootSpan;
+}
+
+ConsoleMessage.Support = (function () {
+  // https://github.com/jquery/jquery-migrate/blob/master/src/core.js
+  function uaMatch( ua ) {
+    ua = ua.toLowerCase();
+
+    var match = /(chrome)[ \/]([\w.]+)/.exec( ua ) ||
+      /(webkit)[ \/]([\w.]+)/.exec( ua ) ||
+      /(opera)(?:.*version|)[ \/]([\w.]+)/.exec( ua ) ||
+      /(msie) ([\w.]+)/.exec( ua ) ||
+      ua.indexOf("compatible") < 0 && /(mozilla)(?:.*? rv:([\w.]+)|)/.exec( ua ) ||
+      [];
+
+    return {
+      browser: match[ 1 ] || "",
+      version: match[ 2 ] || "0"
+    };
+  }
+  var browserData = uaMatch(navigator.userAgent);
+
+  return {
+    isIE: browserData.browser == 'msie' || (browserData.browser == 'mozilla' && parseInt(browserData.version, 10) == 11)
+  };
+})();
+
+ConsoleMessage.prototype = {
+  beginGroup: function () {
+    this._currentSpan.children.push({
+      type: 'group',
+      parent: this._currentSpan
+    });
+    return this;
+  },
+
+  beginCollapsedGroup: function () {
+    this._currentSpan.children.push({
+      type: 'groupCollapsed'
+    });
+    return this;
+  },
+
+  endGroup: function () {
+    this._currentSpan.children.push({
+      type: 'groupEnd',
+      parent: this._currentSpan
+    });
+    return this;
+  },
+
+  beginSpan: function (styles) {
+    var span = {
+      type: 'span',
+      styles: styles,
+      children: [],
+      parent: this._currentSpan
+    };
+    this._currentSpan.children.push(span);
+    this._currentSpan = span;
+    return this;
+  },
+
+  endSpan: function () {
+    this._currentSpan = this._currentSpan.parent || this._currentSpan;
+    return this;
+  },
+
+  addSpan: function (text, styles) {
+    this.beginSpan(styles);
+    this.addText(text);
+    this.endSpan();
+    return this;
+  },
+
+  addText: function (message) {
+    this._currentSpan.children.push({
+      type: 'text',
+      message: message,
+      parent: this._currentSpan
+    });
+    return this;
+  },
+
+  newLine: function (type) {
+    this._currentSpan.children.push({
+      type: type || 'log',
+      parent: this._currentSpan
+    });
+    return this;
+  },
+
+  addImage: function () {
+    (function () {
+      var faviconUrl = "http://d2c87l0yth4zbw.cloudfront.net/i/_global/favicon.png",
+        css = "background-image: url('" + faviconUrl + "');" +
+          "background-repeat: no-repeat;" +
+          "display: block;" +
+          "background-size: 13px 13px;" +
+          "padding-left: 13px;" +
+          "margin-left: 5px;",
+        text = "Do you like coding? Visit www.spotify.com/jobs";
+      if (navigator.userAgent.match(/chrome/i)) {
+        console.log(text + '%c', css);
+      } else {
+        console.log('%c   ' + text, css);
+      }
+    })();
+    return this;
+  },
+
+  addElement: function (element) {
+    this._currentSpan.children.push({
+      type: 'element',
+      element: element,
+      parent: this._currentSpan
+    });
+    return this;
+  },
+
+  print: function () {
+    if (typeof console == 'undefined') {
+      return;
+    }
+
+    var messages = [this._newMessage()];
+    var message;
+
+    this._printSpan(this._rootSpan, messages);
+
+    for (var i = 0; i < messages.length; i++) {
+      message = messages[i];
+      if (message.text && message.text != '%c') {
+        Function.prototype.apply.call(console[message.type], console, [message.text].concat(message.args));
+      }
+    }
+
+    return this;
+  },
+
+  _printSpan: function (span, messages) {
+    var children = span.children;
+    var message = messages[messages.length - 1];
+
+    this._addSpanData(span, message);
+
+    for (var i = 0; i < children.length; i++) {
+      this._handleChild(children[i], messages);
+    }
+  },
+
+  _handleChild: function (child, messages) {
+    var message = messages[messages.length - 1];
+
+    switch (child.type) {
+      case 'group':
+        messages.push(this._newMessage('group'));
+        break;
+      case 'groupCollapsed':
+        messages.push(this._newMessage('groupCollapsed'));
+        break;
+      case 'groupEnd':
+        message = this._newMessage('groupEnd');
+        message.text = ' ';
+        messages.push(message);
+        messages.push(this._newMessage())
+        break;
+      case 'span':
+        this._printSpan(child, messages);
+        this._addSpanData(child, message);
+        this._addSpanData(child.parent, message);
+        break;
+      case 'text':
+        message.text += child.message;
+        break;
+      case 'element':
+        message.text += '%o';
+        message.args.push(child.element);
+        break;
+      case 'log':
+        messages.push(this._newMessage(child.type));
+        break;
+    }
+  },
+
+  _addSpanData: function (span, message) {
+    if (!ConsoleMessage.Support.isIE) {
+      if (message.text.substring(message.text.length - 2) == '%c') {
+        message.args[message.args.length - 1] = this._stylesString(span.styles);
+      } else {
+        message.text += '%c';
+        message.args.push(this._stylesString(span.styles));
+      }
+    }
+  },
+
+  _newMessage: function (type) {
+    return {
+      type: type || 'log',
+      text: '',
+      args: []
+    };
+  },
+
+  _stylesString: function (styles) {
+    var result = '';
+    for (var key in styles) {
+      result += key + ':' + styles[key] + ';';
+    }
+    return result;
+  }
+};
+
+var highlightjs = {
+  'xml': {},
+  'hljs-tag': {
+
+  },
+  'hljs-title': {
+    color: '#5cd94d'
+  },
+  'hljs-expression': {
+    color: '#7b521e'
+  },
+  'hljs-variable': {
+    color: '#7b521e'
+  },
+  'hljs-keyword': {},
+  'hljs-string': {},
+  'hljs-function': {},
+  'hljs-params': {},
+  'hljs-number': {},
+  'hljs-regexp': {},
+  'hljs-comment': {
+    color: '#888'
+  },
+  'hljs-attribute': {
+    color: '#2d8fd0'
+  },
+  'hljs-value': {
+    color: '#e7635f'
+  }
+};
+})();
+(function () {
+blocks.debug.queries = {
+  'if': {
+    fullName: 'if',
+    name: 'if',
+    description: 'Executes particular query depending on the condition specified',
+    params: [{
+        name: 'condition',
+        rawName: 'condition',
+        types: ['boolean'],
+        optional: false,
+        isArguments: false,
+        description: 'The result will determine if the consequent or the alternate query will be executed',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'consequent',
+        rawName: 'consequent',
+        types: ['data-query'],
+        optional: false,
+        isArguments: false,
+        description: 'The query that will be executed if the specified condition returns a truthy value',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'alternate',
+        rawName: '[alternate]',
+        types: ['data-query'],
+        optional: true,
+        isArguments: false,
+        description: 'The query that will be executed if the specified condition returns a falsy value',
+        defaultValue: '',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [{
+        language: 'html',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"if(true, setClass(\'success\'), setClass(\'fail\'))"']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"if(false, setClass(\'success\'), setClass(\'fail\'))"']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }, '\n\n', {
+              name: 'hljs-comment',
+              children: ['<!-- will result in -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"if(true, setClass(\'success\'), setClass(\'fail\'))"']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['class']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"success"']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"if(false, setClass(\'success\'), setClass(\'fail\'))"']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['class']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"fail"']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }]
+        },
+        value: ''
+      }],
+    memberof: 'blocks.queries'
+  },
+  ifnot: {
+    fullName: 'ifnot',
+    name: 'ifnot',
+    description: 'Executes particular query depending on the condition specified.\n The opposite query of the \'if\'',
+    params: [{
+        name: 'condition',
+        rawName: 'condition',
+        types: ['boolean'],
+        optional: false,
+        isArguments: false,
+        description: 'The result will determine if the consequent or the alternate query will be executed',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'consequent',
+        rawName: 'consequent',
+        types: ['data-query'],
+        optional: false,
+        isArguments: false,
+        description: 'The query that will be executed if the specified condition returns a falsy value',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'alternate',
+        rawName: '[alternate]',
+        types: ['data-query'],
+        optional: true,
+        isArguments: false,
+        description: 'The query that will be executed if the specified condition returns a truthy value',
+        defaultValue: '',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [{
+        language: 'html',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"if(true, setClass(\'success\'), setClass(\'fail\'))"']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"if(false, setClass(\'success\'), setClass(\'fail\'))"']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }, '\n\n', {
+              name: 'hljs-comment',
+              children: ['<!-- will result in -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"if(true, setClass(\'success\'), setClass(\'fail\'))"']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['class']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"fail"']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"if(false, setClass(\'success\'), setClass(\'fail\'))"']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['class']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"success"']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }]
+        },
+        value: ''
+      }],
+    memberof: 'blocks.queries'
+  },
+  template: {
+    fullName: 'template',
+    name: 'template',
+    description: 'Queries and sets the inner html of the element from the template specified',
+    params: [{
+        name: 'template',
+        rawName: 'template',
+        types: ['HTMLElement', 'string'],
+        optional: false,
+        isArguments: false,
+        description: 'The template that will be rendered.\n The value could be an element id (the element innerHTML property will be taken), string (the template) or\n an element (again the element innerHTML property will be taken)',
+        defaultValue: '',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [{
+        language: 'html',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['script']
+                }, '>']
+            }, {
+              name: 'javascript',
+              children: ['\n  blocks.query({\n    name: ', {
+                  name: 'hljs-string',
+                  children: ['\'John Doe\'']
+                }, ',\n    age: ', {
+                  name: 'hljs-number',
+                  children: ['22']
+                }, '\n  });\n']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['script']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['script']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['id']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"user"']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['type']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"blocks-template"']
+                }, '>']
+            }, {
+              name: 'javascript',
+              children: ['\n  <h3>{{name}}<', {
+                  name: 'hljs-regexp',
+                  children: ['/h3>\n  <p>I am {{age}} years old.</']
+                }, 'p>\n']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['script']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"template(\'user\')"']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }, '\n\n', {
+              name: 'hljs-comment',
+              children: ['<!-- will result in -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"template(\'user\')"']
+                }, '>']
+            }, '\n  ', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['h3']
+                }, '>']
+            }, 'John Doe', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['h3']
+                }, '>']
+            }, '\n  ', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['p']
+                }, '>']
+            }, 'I am 22 years old.', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['p']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }]
+        },
+        value: ''
+      }],
+    memberof: 'blocks.queries'
+  },
+  define: {
+    fullName: 'define',
+    name: 'define',
+    description: 'Creates a variable name that could be used in child elements',
+    params: [{
+        name: 'propertyName',
+        rawName: 'propertyName',
+        types: ['string'],
+        optional: false,
+        isArguments: false,
+        description: 'The name of the value that will be\n created and you could access its value later using that name',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'propertyValue',
+        rawName: 'propertyValue',
+        types: ['*'],
+        optional: false,
+        isArguments: false,
+        description: 'The value that the property will have',
+        defaultValue: '',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [{
+        language: 'html',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['script']
+                }, '>']
+            }, {
+              name: 'javascript',
+              children: ['\n  blocks.query({\n    strings: {\n      title: {\n        text: ', {
+                  name: 'hljs-string',
+                  children: ['\'Hello World!\'']
+                }, '\n      }\n    }\n  });\n']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['script']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"define(\'$title\', strings.title.text)"']
+                }, '>']
+            }, '\n  The title is {{$title}}.\n', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }, '\n\n', {
+              name: 'hljs-comment',
+              children: ['<!-- will result in -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"define(\'$title\', strings.title.text)"']
+                }, '>']
+            }, '\n  The title is Hello World!.\n', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }]
+        },
+        value: ''
+      }],
+    memberof: 'blocks.queries'
+  },
+  'with': {
+    fullName: 'with',
+    name: 'with',
+    description: 'Changes the current context for the child elements.\n Useful when you will work a lot with a particular value',
+    params: [{
+        name: 'value',
+        rawName: 'value',
+        types: ['*'],
+        optional: false,
+        isArguments: false,
+        description: 'The new context',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'name',
+        rawName: '[name]',
+        types: ['string'],
+        optional: true,
+        isArguments: false,
+        description: 'Optional name of the new context.\n This way the context will also available under the name not only under the $this context property',
+        defaultValue: '',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [{
+        language: 'html',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['script']
+                }, '>']
+            }, {
+              name: 'javascript',
+              children: ['\n  blocks.query({\n    ProfilePage: {\n      user: {\n        name: ', {
+                  name: 'hljs-string',
+                  children: ['\'John Doe\'']
+                }, ',\n        age: ', {
+                  name: 'hljs-number',
+                  children: ['22']
+                }, '\n      }\n    }\n  });\n']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['script']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"view(ProfilePage.user, \'$user\')"']
+                }, '>']
+            }, '\n My name is {{$user.name}} and I am {{$this.age}} years old.\n', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }, '\n\n', {
+              name: 'hljs-comment',
+              children: ['<!-- will result in -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"view(ProfilePage.user, \'$user\')"']
+                }, '>']
+            }, '\n My name is John Doe and I am 22 years old.\n', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }]
+        },
+        value: ''
+      }],
+    memberof: 'blocks.queries'
+  },
+  each: {
+    fullName: 'each',
+    name: 'each',
+    description: 'The each method iterates through an array items or object values\n and repeats the child elements by using them as a template',
+    params: [{
+        name: 'collection',
+        rawName: 'collection',
+        types: ['Array', 'Object'],
+        optional: false,
+        isArguments: false,
+        description: 'The collection to iterate over',
+        defaultValue: '',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [{
+        language: 'html',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['script']
+                }, '>']
+            }, {
+              name: 'javascript',
+              children: ['\n  blocks.query({\n    items: [', {
+                  name: 'hljs-string',
+                  children: ['\'John\'']
+                }, ', ', {
+                  name: 'hljs-string',
+                  children: ['\'Doe\'']
+                }, ']\n  });\n']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['script']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['ul']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"each(items)"']
+                }, '>']
+            }, '\n  ', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['li']
+                }, '>']
+            }, '{{$this}}', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['li']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['ul']
+                }, '>']
+            }, '\n\n', {
+              name: 'hljs-comment',
+              children: ['<!-- will result in -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['ul']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"each(items)"']
+                }, '>']
+            }, '\n  ', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['li']
+                }, '>']
+            }, 'John', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['li']
+                }, '>']
+            }, '\n  ', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['li']
+                }, '>']
+            }, 'Doe', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['li']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['ul']
+                }, '>']
+            }]
+        },
+        value: ''
+      }],
+    memberof: 'blocks.queries'
+  },
+  options: {
+    fullName: 'options',
+    name: 'options',
+    description: 'Render options for a <select> element by providing an collection.',
+    params: [{
+        name: 'collection',
+        rawName: 'collection',
+        types: ['Array', 'Object'],
+        optional: false,
+        isArguments: false,
+        description: 'The collection to iterate over',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'options',
+        rawName: '[options]',
+        types: ['Object'],
+        optional: true,
+        isArguments: false,
+        description: 'Options to customize the behavior for creating each option.\n options.value - determines the field in the collection to server for the option value\n options.text - determines the field in the collection to server for the option text\n options.caption - creates a option with the specified text at the first option',
+        defaultValue: '',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [{
+        language: 'html',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['script']
+                }, '>']
+            }, {
+              name: 'javascript',
+              children: ['\nblocks.query({\n  caption: ', {
+                  name: 'hljs-string',
+                  children: ['\'Select user\'']
+                }, '\n  data: [\n    { name: ', {
+                  name: 'hljs-string',
+                  children: ['\'John\'']
+                }, ', id: ', {
+                  name: 'hljs-number',
+                  children: ['1']
+                }, ' },\n    { name: ', {
+                  name: 'hljs-string',
+                  children: ['\'Doe\'']
+                }, ', id: ', {
+                  name: 'hljs-number',
+                  children: ['2']
+                }, ' }\n  ]\n});\n']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['script']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['select']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"options(data, { text: \'name\', value: \'id\', caption: caption })"']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['select']
+                }, '>']
+            }, '\n\n', {
+              name: 'hljs-comment',
+              children: ['<!-- will result in -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['select']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"options(data, { text: \'name\', value: \'id\', caption: caption })"']
+                }, '>']
+            }, '\n  ', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['option']
+                }, '>']
+            }, 'Select user', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['option']
+                }, '>']
+            }, '\n  ', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['option']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['value']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"1"']
+                }, '>']
+            }, 'John', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['option']
+                }, '>']
+            }, '\n  ', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['option']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['value']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"2"']
+                }, '>']
+            }, 'Doe', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['option']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['select']
+                }, '>']
+            }]
+        },
+        value: ''
+      }],
+    memberof: 'blocks.queries'
+  },
+  render: {
+    fullName: 'render',
+    name: 'render',
+    description: 'The render query allows elements to be skipped from rendering and not to exist in the HTML result',
+    params: [{
+        name: 'condition',
+        rawName: 'condition',
+        types: ['boolean'],
+        optional: false,
+        isArguments: false,
+        description: 'The value determines if the element will be rendered or not',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'renderChildren',
+        rawName: '[renderChildren=false]',
+        types: ['boolean'],
+        optional: true,
+        isArguments: false,
+        description: 'The value indicates if the children will be rendered',
+        defaultValue: 'false',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [{
+        language: 'html',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"render(true)"']
+                }, '>']
+            }, 'Visible', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"render(false)"']
+                }, '>']
+            }, 'Invisible', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }, '\n\n', {
+              name: 'hljs-comment',
+              children: ['<!-- html result will be -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"render(true)"']
+                }, '>']
+            }, 'Visible', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }]
+        },
+        value: ''
+      }],
+    memberof: 'blocks.queries'
+  },
+  animate: {
+    fullName: 'animate',
+    name: 'animate',
+    description: 'Could be used for custom JavaScript animation by providing a callback function\n that will be called the an animation needs to be performed',
+    params: [{
+        name: 'callback',
+        rawName: 'callback',
+        types: ['Function'],
+        optional: false,
+        isArguments: false,
+        description: 'The function that will be called when animation needs\n to be performed.',
+        defaultValue: '',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [{
+        language: 'html',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['script']
+                }, '>']
+            }, {
+              name: 'javascript',
+              children: ['\nblocks.query({\n  visible: blocks.observable(', {
+                  name: 'hljs-literal',
+                  children: ['true']
+                }, '),\n  toggleVisibility: ', {
+                  name: 'hljs-function',
+                  children: [{
+                      name: 'hljs-keyword',
+                      children: ['function']
+                    }, ' ', {
+                      name: 'hljs-params',
+                      children: ['()']
+                    }, ' ']
+                }, '{\n    ', {
+                  name: 'hljs-comment',
+                  children: ['// this points to the model object passed to blocks.query() method']
+                }, '\n    ', {
+                  name: 'hljs-keyword',
+                  children: ['this']
+                }, '.visible(!', {
+                  name: 'hljs-keyword',
+                  children: ['this']
+                }, '.visible());\n  },\n\n  fade: ', {
+                  name: 'hljs-function',
+                  children: [{
+                      name: 'hljs-keyword',
+                      children: ['function']
+                    }, ' ', {
+                      name: 'hljs-params',
+                      children: ['(element, ready)']
+                    }, ' ']
+                }, '{\n    Velocity(element, {\n      ', {
+                  name: 'hljs-comment',
+                  children: ['// this points to the model object passed to blocks.query() method']
+                }, '\n      opacity: ', {
+                  name: 'hljs-keyword',
+                  children: ['this']
+                }, '.visible() ? ', {
+                  name: 'hljs-number',
+                  children: ['1']
+                }, ' : ', {
+                  name: 'hljs-number',
+                  children: ['0']
+                }, '\n    }, {\n      duration: ', {
+                  name: 'hljs-number',
+                  children: ['1000']
+                }, ',\n      queue: ', {
+                  name: 'hljs-literal',
+                  children: ['false']
+                }, ',\n\n      ', {
+                  name: 'hljs-comment',
+                  children: ['// setting the ready callback to the complete callback']
+                }, '\n      complete: ready\n    });\n  }\n});\n']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['script']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['button']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"click(toggleVisibility)"']
+                }, '>']
+            }, 'Toggle visibility', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['button']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"visible(visible).animate(fade)"']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['style']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"background: red;width: 300px;height: 240px;"']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }]
+        },
+        value: ''
+      }],
+    memberof: 'blocks.queries'
+  },
+  setClass: {
+    fullName: 'setClass',
+    name: 'setClass',
+    description: 'Adds or removes a class from an element',
+    params: [{
+        name: 'className',
+        rawName: 'className',
+        types: ['string', 'Array'],
+        optional: false,
+        isArguments: false,
+        description: 'The class string (or array of strings) that will be added or removed from the element.',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'condition',
+        rawName: '[condition=true]',
+        types: ['boolean'],
+        optional: true,
+        isArguments: false,
+        description: 'Optional value indicating if the class name will be added or removed. true - add, false - remove.',
+        defaultValue: 'true',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [{
+        language: 'html',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"setClass(\'header\')"']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }, '\n\n', {
+              name: 'hljs-comment',
+              children: ['<!-- will result in -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"setClass(\'header\')"']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['class']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"header"']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }]
+        },
+        value: ''
+      }],
+    memberof: 'blocks.queries'
+  },
+  html: {
+    fullName: 'html',
+    name: 'html',
+    description: 'Sets the inner html to the element',
+    params: [{
+        name: 'html',
+        rawName: 'html',
+        types: ['string'],
+        optional: false,
+        isArguments: false,
+        description: 'The html that will be places inside element replacing any other content.',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'condition',
+        rawName: '[condition=true]',
+        types: ['boolean'],
+        optional: true,
+        isArguments: false,
+        description: 'Condition indicating if the html will be set.',
+        defaultValue: 'true',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [{
+        language: 'html',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"html(\'<b>some content</b>\')"']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }, '\n\n', {
+              name: 'hljs-comment',
+              children: ['<!-- will result in -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"html(\'<b>some content</b>\')"']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['b']
+                }, '>']
+            }, 'some content', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['b']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }]
+        },
+        value: ''
+      }],
+    memberof: 'blocks.queries'
+  },
+  text: {
+    fullName: 'text',
+    name: 'text',
+    description: 'Adds or removes the inner text from an element',
+    params: [{
+        name: 'text',
+        rawName: 'text',
+        types: ['string'],
+        optional: false,
+        isArguments: false,
+        description: 'The text that will be places inside element replacing any other content.',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'condition',
+        rawName: '[condition=true]',
+        types: ['boolean'],
+        optional: true,
+        isArguments: false,
+        description: 'Value indicating if the text will be added or cleared. true - add, false - clear.',
+        defaultValue: 'true',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [{
+        language: 'html',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"html(\'some content\')"']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }, '\n\n', {
+              name: 'hljs-comment',
+              children: ['<!-- will result in -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"html(\'some content\')"']
+                }, '>']
+            }, 'some content', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }]
+        },
+        value: ''
+      }],
+    memberof: 'blocks.queries'
+  },
+  visible: {
+    fullName: 'visible',
+    name: 'visible',
+    description: 'Determines if an html element will be visible. Sets the CSS display property.',
+    params: [{
+        name: 'condition',
+        rawName: '[condition=true]',
+        types: ['boolean'],
+        optional: true,
+        isArguments: false,
+        description: 'Value indicating if element will be visible or not.',
+        defaultValue: 'true',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [{
+        language: 'html',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"visible(true)"']
+                }, '>']
+            }, 'Visible', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"visible(false)"']
+                }, '>']
+            }, 'Invisible', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }, '\n\n', {
+              name: 'hljs-comment',
+              children: ['<!-- html result will be -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"visible(true)"']
+                }, '>']
+            }, 'Visible', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"visible(false)"']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['style']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"display: none;"']
+                }, '>']
+            }, 'Invisible', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }]
+        },
+        value: ''
+      }],
+    memberof: 'blocks.queries'
+  },
+  attr: {
+    fullName: 'attr',
+    name: 'attr',
+    description: 'Gets, sets or removes an element attribute.\n Passing only the first parameter will return the attributeName value',
+    params: [{
+        name: 'attributeName',
+        rawName: 'attributeName',
+        types: ['string'],
+        optional: false,
+        isArguments: false,
+        description: 'The attribute name that will be get, set or removed.',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'attributeValue',
+        rawName: 'attributeValue',
+        types: ['string'],
+        optional: false,
+        isArguments: false,
+        description: 'The value of the attribute. It will be set if condition is true.',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'condition',
+        rawName: '[condition=true]',
+        types: ['boolean'],
+        optional: true,
+        isArguments: false,
+        description: 'Value indicating if the attribute will be set or removed.',
+        defaultValue: 'true',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [{
+        language: 'html',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"attr(\'data-content\', \'some content\')"']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }, '\n\n', {
+              name: 'hljs-comment',
+              children: ['<!-- will result in -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"attr(\'data-content\', \'some content\')"']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-content']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"some content"']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }]
+        },
+        value: ''
+      }],
+    memberof: 'blocks.queries'
+  },
+  val: {
+    fullName: 'val',
+    name: 'val',
+    description: 'Sets the value attribute on an element.',
+    params: [{
+        name: 'value',
+        rawName: 'value',
+        types: ['string', 'number', 'Array', 'falsy'],
+        optional: false,
+        isArguments: false,
+        description: 'The new value for the element.',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'condition',
+        rawName: '[condition=true]',
+        types: ['boolean'],
+        optional: true,
+        isArguments: false,
+        description: 'Determines if the value will be set or not.',
+        defaultValue: 'true',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [{
+        language: 'html',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['script']
+                }, '>']
+            }, {
+              name: 'javascript',
+              children: ['\nblocks.query({\n  name: blocks.observable(', {
+                  name: 'hljs-string',
+                  children: ['\'John Doe\'']
+                }, ')\n});\n']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['script']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['input']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"val(name)"']
+                }, ' />']
+            }, '\n\n', {
+              name: 'hljs-comment',
+              children: ['<!-- will result in -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['input']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"val(name)"']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['value']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"John Doe"']
+                }, ' />']
+            }]
+        },
+        value: ''
+      }],
+    memberof: 'blocks.queries'
+  },
+  checked: {
+    fullName: 'checked',
+    name: 'checked',
+    description: 'Sets the checked attribute on an element',
+    params: [{
+        name: 'condition',
+        rawName: '[condition=true]',
+        types: ['boolean'],
+        optional: true,
+        isArguments: false,
+        description: 'Determines if the element will be checked or not',
+        defaultValue: 'true',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [{
+        language: 'html',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['input']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['type']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"checkbox"']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"checked(true)"']
+                }, ' />']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['input']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['type']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"checkbox"']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"checked(false)"']
+                }, ' />']
+            }, '\n\n', {
+              name: 'hljs-comment',
+              children: ['<!-- will result in -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['input']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['type']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"checkbox"']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"checked(true)"']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['checked']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"checked"']
+                }, ' />']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['input']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['type']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"checkbox"']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"checked(false)"']
+                }, ' />']
+            }]
+        },
+        value: ''
+      }],
+    memberof: 'blocks.queries'
+  },
+  disabled: {
+    fullName: 'disabled',
+    name: 'disabled',
+    description: 'Sets the disabled attribute on an element',
+    params: [{
+        name: 'condition',
+        rawName: '[condition=true]',
+        types: ['boolean'],
+        optional: true,
+        isArguments: false,
+        description: 'Determines if the element will be disabled or not',
+        defaultValue: 'true',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [],
+    memberof: 'blocks.queries'
+  },
+  css: {
+    fullName: 'css',
+    name: 'css',
+    description: 'Gets, sets or removes a CSS style from an element.\n Passing only the first parameter will return the CSS propertyName value.',
+    params: [{
+        name: 'name',
+        rawName: 'name',
+        types: ['string'],
+        optional: false,
+        isArguments: false,
+        description: 'The name of the CSS property that will be get, set or removed.',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'value',
+        rawName: 'value',
+        types: ['string'],
+        optional: false,
+        isArguments: false,
+        description: 'The value of the of the attribute. It will be set if condition is true.',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'condition',
+        rawName: '[condition=true]',
+        types: ['boolean'],
+        optional: true,
+        isArguments: false,
+        description: 'Condition indicating if the attribute will be set or removed.',
+        defaultValue: 'true',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [{
+        language: 'html',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['script']
+                }, '>']
+            }, {
+              name: 'javascript',
+              children: ['\n  blocks.query({\n    h1FontSize: ', {
+                  name: 'hljs-number',
+                  children: ['12']
+                }, '\n  });\n']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['script']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['h1']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"css(\'font-size\', h1FontSize)"']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['h1']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['h1']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"css(\'fontSize\', h1FontSize)"']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['h1']
+                }, '>']
+            }, '\n\n', {
+              name: 'hljs-comment',
+              children: ['<!-- will result in -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['h1']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"css(\'font-size\', h1FontSize)"']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['style']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"font-size: 12px;"']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['h1']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['h1']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"css(\'fontSize\', h1FontSize)"']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['style']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"font-size: 12px;"']
+                }, '>']
+            }, {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['h1']
+                }, '>']
+            }]
+        },
+        value: ''
+      }],
+    memberof: 'blocks.queries'
+  },
+  width: {
+    fullName: 'width',
+    name: 'width',
+    description: 'Sets the width of the element',
+    params: [{
+        name: 'value',
+        rawName: 'value',
+        types: ['number', 'string'],
+        optional: false,
+        isArguments: false,
+        description: 'The new width of the element',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'condition',
+        rawName: '[condition=true]',
+        types: ['boolean'],
+        optional: true,
+        isArguments: false,
+        description: 'Value indicating if the width property will be updated',
+        defaultValue: 'true',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [],
+    memberof: 'blocks.queries'
+  },
+  height: {
+    fullName: 'height',
+    name: 'height',
+    description: 'Sets the height of the element',
+    params: [{
+        name: 'value',
+        rawName: 'value',
+        types: ['number', 'string'],
+        optional: false,
+        isArguments: false,
+        description: 'The new height of the element',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'condition',
+        rawName: '[condition=true]',
+        types: ['boolean'],
+        optional: true,
+        isArguments: false,
+        description: 'Value indicating if the height property will be updated',
+        defaultValue: 'true',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [],
+    memberof: 'blocks.queries'
+  },
+  on: {
+    fullName: 'on',
+    name: 'on',
+    description: 'Subscribes to an event',
+    params: [{
+        name: 'events',
+        rawName: 'events',
+        types: ['String', 'Array'],
+        optional: false,
+        isArguments: false,
+        description: 'The event or events to subscribe to',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'callback',
+        rawName: 'callback',
+        types: ['Function'],
+        optional: false,
+        isArguments: false,
+        description: 'The callback that will be executed when the event is fired',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'args',
+        rawName: '[args]',
+        types: ['*'],
+        optional: true,
+        isArguments: false,
+        description: 'Optional arguments that will be passed as second parameter to\n the callback function after the event arguments',
+        defaultValue: '',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [],
+    memberof: 'blocks.queries'
+  },
+  view: {
+    fullName: 'view',
+    name: 'view',
+    description: 'Associates the element with the particular view and creates a $view context property.\n The View will be automatically hidden and shown if the view have routing. The visibility\n of the View could be also controled using the isActive observable property',
+    params: [{
+        name: 'view',
+        rawName: 'view',
+        types: ['View'],
+        optional: false,
+        isArguments: false,
+        description: 'The view to associate with the current element',
+        defaultValue: '',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [{
+        language: 'html',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-comment',
+              children: ['<!-- Associating the div element and its children with the Profiles view -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"view(Profiles)"']
+                }, '>']
+            }, '\n  ', {
+              name: 'hljs-comment',
+              children: ['<!-- looping through the View users collection -->']
+            }, '\n  ', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['ul']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"view(users)"']
+                }, '>']
+            }, '\n    ', {
+              name: 'hljs-comment',
+              children: ['<!-- Using the $view context value to point to the View selectUser handler -->']
+            }, '\n    ', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['li']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"click($view.selectUser)"']
+                }, '>']
+            }, '{{username}}', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['li']
+                }, '>']
+            }, '\n  ', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['ul']
+                }, '>']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['div']
+                }, '>']
+            }]
+        },
+        value: ''
+      }, {
+        language: 'javascript',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-keyword',
+              children: ['var']
+            }, ' App = blocks.Application();\n\nApp.View(', {
+              name: 'hljs-string',
+              children: ['\'Profiles\'']
+            }, ', {\n  init: ', {
+              name: 'hljs-function',
+              children: [{
+                  name: 'hljs-keyword',
+                  children: ['function']
+                }, ' ', {
+                  name: 'hljs-params',
+                  children: ['()']
+                }, ' ']
+            }, '{\n    ', {
+              name: 'hljs-comment',
+              children: ['// ...initing this.users...']
+            }, '\n  },\n\n  selectUser: ', {
+              name: 'hljs-function',
+              children: [{
+                  name: 'hljs-keyword',
+                  children: ['function']
+                }, ' ', {
+                  name: 'hljs-params',
+                  children: ['(e)']
+                }, ' ']
+            }, '{\n    ', {
+              name: 'hljs-comment',
+              children: ['// ...stuff...']
+            }, '\n  }\n});\n\nApp.start();']
+        },
+        value: ''
+      }],
+    memberof: 'blocks.queries'
+  },
+  navigateTo: {
+    fullName: 'navigateTo',
+    name: 'navigateTo',
+    description: 'Navigates to a particular view by specifying the target view or route and optional parameters',
+    params: [{
+        name: 'viewOrRoute',
+        rawName: 'viewOrRoute',
+        types: ['View', 'String'],
+        optional: false,
+        isArguments: false,
+        description: 'the view or route to which to navigate to',
+        defaultValue: '',
+        value: ''
+      }, {
+        name: 'params',
+        rawName: '[params]',
+        types: ['Object'],
+        optional: true,
+        isArguments: false,
+        description: 'parameters needed for the current route',
+        defaultValue: '',
+        value: ''
+      }],
+    returns: undefined,
+    examples: [{
+        language: 'html',
+        code: {
+          name: '',
+          children: [{
+              name: 'hljs-comment',
+              children: ['<!-- will navigate to /contactus because the ContactUs View have /contactus route -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['a']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"navigate(ContactUs)"']
+                }, '>']
+            }, 'Contact Us', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['a']
+                }, '>']
+            }, '\n\n', {
+              name: 'hljs-comment',
+              children: ['<!-- will navigate to /products/t-shirts because the Products View have /products/{{category}} route -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['a']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"navigate(Products, { category: \'t-shirts\' })"']
+                }, '>']
+            }, 'T-Shirts', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['a']
+                }, '>']
+            }, '\n\n', {
+              name: 'hljs-comment',
+              children: ['<!-- the same example as above but the route is directly specifying instead of using the View instance -->']
+            }, '\n', {
+              name: 'hljs-tag',
+              children: ['<', {
+                  name: 'hljs-title',
+                  children: ['a']
+                }, ' ', {
+                  name: 'hljs-attribute',
+                  children: ['data-query']
+                }, '=', {
+                  name: 'hljs-value',
+                  children: ['"navigate(\'/products/{{category}}\', { category: \'t-shirts\' })"']
+                }, '>']
+            }, 'T-Shirts', {
+              name: 'hljs-tag',
+              children: ['</', {
+                  name: 'hljs-title',
+                  children: ['a']
+                }, '>']
+            }]
+        },
+        value: ''
+      }],
+    memberof: 'blocks.queries'
+  }
+}
+})();// @debug-code
+  })();
 
   (function () {
     
@@ -6539,7 +9473,7 @@ return result;
     setClass: {
       preprocess: function (className, condition) {
         if (arguments.length > 1) {
-          this.toggleClass(className, condition);
+          this.toggleClass(className, !!condition);
         } else {
           this.addClass(className);
         }
@@ -6638,7 +9572,7 @@ return result;
     * Sets the value attribute on an element.
     *
     * @memberof blocks.queries
-    * @param {(string|number|Array)} value - The new value for the element.
+    * @param {(string|number|Array|falsy)} value - The new value for the element.
     * @param {boolean} [condition=true] - Determines if the value will be set or not.
     *
     * @example {html}
@@ -6738,6 +9672,16 @@ return result;
       */
     height: {
       call: 'css'
+    },
+
+    focused: {
+      preprocess: blocks.noop,
+
+      update: function (value) {
+        if (value) {
+          this.focus();
+        }
+      }
     },
 
     /**
@@ -7403,11 +10347,10 @@ return result;
               index: 0
             });
           } else {
-            var length = array.length;
             var isCallbackAFunction = blocks.isFunction(callback);
             var value;
 
-            for (i = 0; i < length; i++) {
+            for (i = 0; i < array.length; i++) {
               value = array[i];
               if (value === callback || (isCallbackAFunction && callback.call(thisArg, value, i, array))) {
                 this.splice(i, 1);
@@ -7780,17 +10723,22 @@ return result;
 
     observable.on('add', function (args) {
       if (observable.view._initialized) {
+        observable.view._connections = {};
+        observable.view.reset();
         executeOperations(observable);
       } else {
+        for (var i = 0; i < args.items.length; i++) {
+          observable.view._connections[args.index + i] = true;
+        }
         observable.view.splice.apply(observable.view, [args.index, 0].concat(args.items));
       }
     });
 
     observable.on('remove', function (args) {
       if (observable.view._initialized) {
-        blocks.each(args.items, function (item) {
-          observable.view.remove(item);
-        });
+        observable.view._connections = {};
+        observable.view.reset();
+        executeOperations(observable);
       }
     });
 
@@ -7937,7 +10885,6 @@ return result;
     var collection = observable.__value__;
     var view = observable.view;
     var connections = view._connections;
-    //var initialized = view._initialized;
     var viewIndex = 0;
     var update = view.update;
     var skip = 0;
@@ -8005,8 +10952,8 @@ return result;
 
       switch (action) {
         case ADD:
-          view.splice(viewIndex, 0, value);
           connections[index] = viewIndex;
+          view.splice(viewIndex, 0, value);
           viewIndex++;
           break;
         case REMOVE:
@@ -9106,11 +12053,18 @@ return result;
       var target = e.target;
 
       while (target) {
-        if (target && target.tagName && target.tagName.toLowerCase() == 'a' && this._hostRegEx.test(target.href) &&
-          !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.which !== 2) {
-          // handle click
-          this.navigate(target.href);
-          e.preventDefault();
+        if (target && target.tagName && target.tagName.toLowerCase() == 'a') {
+          var download = target.getAttribute('download');
+
+          if (download !== '' && !download && this._hostRegEx.test(target.href) &&
+            !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.which !== 2) {
+
+            // handle click
+            this.navigate(target.href);
+            e.preventDefault();
+          }
+
+          break;
         }
         target = target.parentNode;
       }
@@ -10006,6 +12960,11 @@ return result;
     this._collection = collection;
     this._initialDataItem = blocks.clone(dataItem, true);
 
+    blocks.each(Model.prototype, function (value, key) {
+      if (blocks.isFunction(value) && key.indexOf('_') != 0) {
+        _this[key] = blocks.bind(value, _this);
+      }
+    });
     clonePrototype(prototype, this);
 
     this.isValid = blocks.observable(true);
@@ -10198,7 +13157,7 @@ return result;
      */
     isNew: function () {
       var idAttr = this.options.idAttr;
-      var value = blocks.unwrapAll(this[idAttr]);
+      var value = blocks.unwrap(this[idAttr]);
       var property = this._properties[idAttr];
 
       if ((!value && value !== 0) || (property && value === property.defaultValue)) {
@@ -10229,6 +13188,7 @@ return result;
 
 
     destroy: function (removeFromCollection) {
+      removeFromCollection = removeFromCollection === false ? false : true;
       if (removeFromCollection && this._collection) {
         this._collection.remove(this);
       }
@@ -10362,6 +13322,11 @@ return result;
     }
 
     observable._baseUpdate = observable.update;
+    blocks.each(blocks.observable.fn.collection, function (value, key) {
+      if (blocks.isFunction(value) && key.indexOf('_') != 0) {
+        observable[key] = blocks.bind(observable[key], observable);
+      }
+    });
     blocks.extend(observable, blocks.observable.fn.collection, prototype);
     clonePrototype(prototype, observable);
     observable._Model = ModelType;
@@ -10549,22 +13514,21 @@ return result;
     _onChange: function (args) {
       var type = args.type;
       var items = args.items;
+      var newItems = [];
       var i = 0;
       var item;
 
       for (; i < items.length; i++) {
         item = items[i];
         if (item && (type == 'remove' || (type == 'add' && item.isNew()))) {
-          items[i] = item.dataItem();
-        } else {
-          items.splice(i, 1);
-          i--;
+          newItems.push(item.dataItem());
         }
       }
+
       if (type == 'remove') {
         this._dataSource.removeAt(args.index, args.items.length);
       } else if (type == 'add') {
-        this._dataSource.add(items);
+        this._dataSource.add(newItems);
       }
     },
 
@@ -10762,9 +13726,14 @@ return result;
 
   Events.register(View.prototype, ['on', 'off', 'trigger']);
 
-
-
-  //var PROPERTY = '__blocks.property__';
+ {
+    blocks.debug.addType('View', function (value) {
+      if (value && View.prototype.isPrototypeOf(value)) {
+        return true;
+      }
+      return false;
+    });
+  }  //var PROPERTY = '__blocks.property__';
 
   /**
    * [Application description]
@@ -11102,11 +14071,10 @@ return result;
       var _this = this;
       var currentView = this._currentView;
       var routes = this._router.routeFrom(data.url);
+      var found = false;
 
-      if (routes) {
-        var route = routes[0];
-
-        blocks.each(this._views, function (view) {
+      blocks.each(routes, function (route) {
+        blocks.each(_this._views, function (view) {
           if (view.options.routeName == route.id) {
             if (!currentView && view.options.initialPreload) {
               view.options.url = undefined;
@@ -11116,13 +14084,17 @@ return result;
             }
             view._routed(route.params);
             _this._currentView = view;
+            found = true;
             return false;
           }
         });
-      } else {
-        if (currentView) {
-          currentView.isActive(false);
+        if (found) {
+          return false;
         }
+      });
+
+      if (!found && currentView) {
+        currentView.isActive(false);
       }
     },
 
@@ -11262,2950 +14234,18 @@ return result;
 
 
 
-})();
-(function () {
-blocks.extend(blocks.debug, {
-  checkArgs: debugFunc(function (method, args, options) {
-    if (!options) {
-      return;
-    }
-    var errors = checkMethod(method, args);
-
-    if (errors.length === 0) {
-      return;
-    }
-
-    blocks.debug.printErrors(method, args, options, errors);
-  }),
-
-  printErrors: function (method, args, options, errors) {
-    var message = new ConsoleMessage();
-    var one = errors.length === 1;
-    var firstError = errors[0];
-
-    if (one) {
-      message.beginCollapsedGroup();
-    } else {
-      message.beginGroup();
-    }
-
-    message
-      .addSpan('Arguments missmatch:', { background: 'yellow'})
-      .addText(' ');
-
-    if (one) {
-      addError(message, firstError, method, options.paramsNames);
-      tryInsertElement(message, options.element);
-      addMethodReference(message, method);
-    } else {
-      message.addText('Multiple errors:');
-      tryInsertElement(message, options.element);
-      message.newLine();
-      for (var i = 0; i < errors.length; i++) {
-        message.addText((i + 1) + '. ');
-        addError(message, errors[i], method, options.paramsNames);
-        message.newLine();
-      }
-      message.beginCollapsedGroup();
-      message.addText('Method reference');
-      message.newLine();
-      addMethodReference(message, method, true);
-      message.endGroup();
-    }
-
-    message.endGroup();
-    message.print();
-  },
-
-  checkQuery: function (name, args, query, element) {
-    var method = blocks.debug.queries[name];
-    if (method) {
-      blocks.debug.checkArgs(method, args, {
-        paramsNames: query.params,
-        element: element
-      });
-    }
-  },
-
-  queryNotExists: function (query, element) {
-    var message = blocks.debug.Message();
-    message.beginSpan({ 'font-weight': 'bold' });
-    message.addSpan('Warning:', { background: 'orange', padding: '0 3px' });
-
-    message.addText(' ');
-    message.addSpan(query.name, { background: 'red', color: 'white' });
-    message.addSpan('(' + query.params.join(', ') + ')', { background: '#EEE' });
-
-    message.addText(' - data-query ');
-    message.addSpan(query.name, { background: '#EEE', padding: '0 5px' });
-    message.addText(' does not exists');
-    tryInsertElement(message, element);
-    message.endSpan();
-
-    message.print();
-  },
-
-  queryParameterFail: function (query, failedParameter, element) {
-    var method = blocks.debug.queries[query.name];
-    var message = blocks.debug.Message();
-    var params = query.params;
-    var param;
-
-    message.beginCollapsedGroup();
-    message.beginSpan({ 'font-weight': 'bold' });
-    message.addSpan('Critical:', { background: 'red', color: 'white' });
-    message.addText(' ');
-    message.beginSpan({ background: '#EEE' });
-    message.addText(query.name + '(');
-    for (var i = 0; i < params.length; i++) {
-      param = params[i];
-      if (param == failedParameter) {
-        message.addSpan(param, { background: 'red', color: 'white' });
-      } else {
-        message.addText(param);
-      }
-      if (i != params.length - 1) {
-        message.addText(', ');
-      }
-    }
-    message.addText(')');
-    message.endSpan();
-    message.addText(' - exception thrown while executing query parameter');
-    tryInsertElement(message, element);
-    addMethodReference(message, method);
-    message.endGroup();
-
-    message.print();
-  },
-
-  expressionFail: function (expressionText, element) {
-    var message = new blocks.debug.Message();
-
-    message.beginSpan({ 'font-weight': 'bold' });
-    message.addSpan('Critical:', { background: 'red', color: 'white' });
-    message.addText(' ');
-    message.addSpan('{{' + expressionText + '}}', { background: 'red', color: 'white' });
-    message.addText(' - exception thrown while executing expression');
-    message.endSpan();
-
-    tryInsertElement(message, element);
-
-    message.print();
-  },
-
-  Message: ConsoleMessage
-});
-
-function tryInsertElement(message, element) {
-  if (element) {
-    //message.addText(' -->');
-    message.addText('   ');
-    if (blocks.VirtualElement.Is(element)) {
-      if (element._el._element) {
-        message.addElement(element._el._element);
-      } else {
-        message.addText(element.renderBeginTag());
-      }
-    } else {
-      message.addElement(element);
-    }
-  }
-}
-
-function addMethodReference(message, method, examplesExpanded) {
-  var examples = method.examples;
-
-  message
-    .newLine()
-    .addSpan(method.description, { color: 'green' });
-
-  addMethodSignature(message, method);
-
-  if (examplesExpanded) {
-    message.beginGroup();
-  } else {
-    message.beginCollapsedGroup();
-  }
-
-  message
-    .addSpan('Usage example' + (examples.length > 1 ? 's' : ''), { color: 'blue' })
-    .newLine();
-
-  for (var i = 0; i < method.examples.length;i++) {
-    addCodeTree(message, method.examples[i].code);
-  }
-
-  message.endGroup();
-}
-
-function addCodeTree(message, codeTree) {
-  var children = codeTree.children;
-  var lines;
-  var child;
-
-  message.beginSpan(highlightjs[codeTree.name]);
-
-  for (var i = 0; i < children.length; i++) {
-    child = children[i];
-
-    if (typeof child == 'string') {
-      message.addText(child.split('\n').join('\n '));
-    } else {
-      addCodeTree(message, child);
-    }
-  }
-
-  message.endSpan();
-}
-
-function addError(message, error, method, paramNames) {
-  var params = method.params;
-  var index;
-
-  if (!paramNames) {
-    paramNames = [];
-    for (index = 0; index < params.length; index++) {
-      paramNames.push(params[index].name);
-    }
-  }
-
-  message.beginSpan({
-    'background-color': '#EEE'
-  });
-
-  message.addText(method.name + '(');
-
-  if (error) {
-    switch (error.type) {
-      case 'less-args':
-        message.addText(paramNames.slice(0, error.actual).join(', '));
-        if (error.actual > 0) {
-          message.addText(', ');
-        }
-        for (index = 0; index < error.expected; index++) {
-          message
-            .beginSpan({
-              'background-color': 'red',
-              padding: '0 5px',
-              color: 'white'
-            })
-            .addText('?')
-            .endSpan();
-          if (index != error.expected - 1) {
-            message.addText(', ');
-          }
-        }
-        message.addText(')');
-        message.endSpan();
-        message.addText(' - less arguments then the required specified');
-        break;
-      case 'more-args':
-        message.addText(paramNames.slice(0, error.expected).join(', '));
-        if (error.expected > 0) {
-          message.addText(', ');
-        }
-        for (index = error.expected; index < error.actual; index++) {
-          message.addSpan(paramNames[index], {
-            'background-color': 'red',
-            'text-decoration': 'line-through',
-            color: 'white'
-          });
-          if (index != error.actual - 1) {
-            message.addText(', ');
-          }
-        }
-        message.addText(')');
-        message.endSpan();
-        message.addText(' - ' + (error.actual - error.expected) + ' unnecessary arguments specified');
-        break;
-      case 'param':
-        for (index = 0; index < paramNames.length; index++) {
-          if (method.params[index] == error.param) {
-            message.addSpan(paramNames[index], {
-              'background-color': 'red',
-              color: 'white'
-            });
-          } else {
-            message.addText(paramNames[index]);
-          }
-          if (index != paramNames.length - 1) {
-            message.addText(', ');
-          }
-        }
-        message.addText(')');
-        message.endSpan();
-        message.addText(' - ' + error.actual + ' specified where ' + error.expected + ' expected');
-        break;
-    }
-  } else {
-    message.addText(')');
-    message.endSpan();
-  }
-}
-
-function debugFunc(callback) {
-  return function () {
-    if (blocks.debug.executing) {
-      return;
-    }
-    blocks.debug.executing = true;
-    callback.apply(blocks.debug, blocks.toArray(arguments));
-    blocks.debug.executing = false;
-  };
-}
-
-function checkMethod(method, args) {
-  var errors = [];
-
-  errors = errors.concat(checkArgsCount(method, args));
-  if (errors.length === 0 || errors[0].type == 'more-args') {
-    errors = errors.concat(checkArgsTypes(method, args));
-  }
-
-  return errors;
-}
-
-function checkArgsCount(method, args) {
-  var errors = [];
-  var requiredCount = 0;
-  var hasArguments = false;
-  var params = method.params;
-  var param;
-
-  for (var i = 0; i < params.length; i++) {
-    param = params[i];
-    if (!param.optional) {
-      requiredCount++;
-    }
-    if (param.isArguments) {
-      hasArguments = true;
-    }
-  }
-
-  if (args.length < requiredCount) {
-    errors.push({
-      type: 'less-args',
-      actual: args.length,
-      expected: requiredCount
-    });
-  }
-  if (!hasArguments && args.length > params.length) {
-    errors.push({
-      type: 'more-args',
-      actual: args.length,
-      expected: params.length
-    });
-  }
-
-  return errors;
-}
-
-function getOptionalParamsCount(params) {
-  var count = 0;
-
-  for (var i = 0; i < params.length; i++) {
-    if (params[i].optional) {
-      count++;
-    }
-  }
-
-  return count;
-}
-
-function checkArgsTypes(method, args) {
-  var errors = [];
-  var params = method.params;
-  var maxOptionals = params.length - (params.length - getOptionalParamsCount(method.params));
-  var paramIndex = 0;
-  var currentErrors;
-  var param;
-  var value;
-
-  for (var i = 0; i < args.length; i++) {
-    param = params[paramIndex];
-    value = args[i];
-
-    if (!param) {
-      break;
-    }
-
-    if (param.optional) {
-      if (maxOptionals > 0) {
-        currentErrors = checkType(param, value);
-        if (currentErrors.length === 0) {
-          maxOptionals -= 1;
-          if (!param.isArguments) {
-            paramIndex += 1;
-          }
-        }
-      }
-    } else {
-      errors = errors.concat(checkType(param, value));
-      if (!param.isArguments) {
-        paramIndex += 1;
-      }
-    }
-  }
-
-  return errors;
-}
-
-function checkType(param, value) {
-  var errors = [];
-  var types = param.types;
-  var satisfied = false;
-  var valueType;
-  var type;
-
-  for (var i = 0; i < types.length; i++) {
-    type = types[i].toLowerCase();
-    type = type.replace('...', '');
-
-    if (type == '*') {
-      satisfied = true;
-      break;
-    }
-
-    if (blocks.isObservable(value)) {
-      valueType = 'blocks.observable()';
-    } else {
-      valueType = blocks.type(value).toLowerCase();
-    }
-
-    if (type === valueType) {
-      satisfied = true;
-      break;
-    } else if (valueType == 'blocks.observable()') {
-      valueType = blocks.type(blocks.unwrapObservable(value));
-      if (type === valueType) {
-        satisfied = true;
-        break;
-      }
-    }
-  }
-
-  if (!satisfied) {
-    errors.push({
-      type: 'param',
-      param: param,
-      actual: valueType,
-      expected: types
-    });
-  }
-
-  return errors;
-}
-
-function addMethodSignature(message, method) {
-  var params = method.params;
-  var paramNames = [];
-  var index;
-
-  message
-    .newLine()
-    .beginSpan({ 'font-size': '15px', 'font-weight': 'bold' })
-    .addText(method.name + '(');
-
-  for (index = 0; index < params.length; index++) {
-    paramNames.push(params[index].rawName);
-  }
-  message.addText(paramNames.join(', ') + ')');
-  if (method.returns) {
-    message.addText(' returns ' + method.returns.types[0]);
-    if (method.returns.description) {
-
-    }
-  }
-
-  message.endSpan();
-
-  for (index = 0; index < params.length; index++) {
-    message
-      .newLine()
-      .addText('    ' + params[index].rawName + ' {' + params[index].types.join('|') + '} - ' + params[index].description);
-  }
-
-  message.newLine();
-}
-
-function examples(method) {
-  var examples = method.examples;
-
-  if (examples) {
-    console.groupCollapsed('%cUsage examples', 'color: blue;');
-
-    for (var i = 0; i < examples.length; i++) {
-      console.log(examples[i].code);
-      if (i != examples.length - 1) {
-        console.log('-------------------------------');
-      }
-    }
-
-    console.groupEnd();
-  }
-}
-
-function params(method) {
-  var params = method.params;
-  for (var i = 0; i < params.length; i++) {
-    console.log('    ' + method.params[i].name + ': ' + method.params[i].description);
-  }
-}
-
-function ConsoleMessage() {
-  if (!ConsoleMessage.prototype.isPrototypeOf(this)) {
-    return new ConsoleMessage();
-  }
-  this._rootSpan = {
-    styles: {},
-    children: [],
-    parent: null
-  };
-  this._currentSpan = this._rootSpan;
-}
-
-ConsoleMessage.Support = (function () {
-  // https://github.com/jquery/jquery-migrate/blob/master/src/core.js
-  function uaMatch( ua ) {
-    ua = ua.toLowerCase();
-
-    var match = /(chrome)[ \/]([\w.]+)/.exec( ua ) ||
-      /(webkit)[ \/]([\w.]+)/.exec( ua ) ||
-      /(opera)(?:.*version|)[ \/]([\w.]+)/.exec( ua ) ||
-      /(msie) ([\w.]+)/.exec( ua ) ||
-      ua.indexOf("compatible") < 0 && /(mozilla)(?:.*? rv:([\w.]+)|)/.exec( ua ) ||
-      [];
-
-    return {
-      browser: match[ 1 ] || "",
-      version: match[ 2 ] || "0"
-    };
-  }
-  var browserData = uaMatch(navigator.userAgent);
-
-  return {
-    isIE: browserData.browser == 'msie' || (browserData.browser == 'mozilla' && parseInt(browserData.version, 10) == 11)
-  };
-})();
-
-ConsoleMessage.prototype = {
-  beginGroup: function () {
-    this._currentSpan.children.push({
-      type: 'group',
-      parent: this._currentSpan
-    });
-    return this;
-  },
-
-  beginCollapsedGroup: function () {
-    this._currentSpan.children.push({
-      type: 'groupCollapsed'
-    });
-    return this;
-  },
-
-  endGroup: function () {
-    this._currentSpan.children.push({
-      type: 'groupEnd',
-      parent: this._currentSpan
-    });
-    return this;
-  },
-
-  beginSpan: function (styles) {
-    var span = {
-      type: 'span',
-      styles: styles,
-      children: [],
-      parent: this._currentSpan
-    };
-    this._currentSpan.children.push(span);
-    this._currentSpan = span;
-    return this;
-  },
-
-  endSpan: function () {
-    this._currentSpan = this._currentSpan.parent || this._currentSpan;
-    return this;
-  },
-
-  addSpan: function (text, styles) {
-    this.beginSpan(styles);
-    this.addText(text);
-    this.endSpan();
-    return this;
-  },
-
-  addText: function (message) {
-    this._currentSpan.children.push({
-      type: 'text',
-      message: message,
-      parent: this._currentSpan
-    });
-    return this;
-  },
-
-  newLine: function (type) {
-    this._currentSpan.children.push({
-      type: type || 'log',
-      parent: this._currentSpan
-    });
-    return this;
-  },
-
-  addImage: function () {
-    (function () {
-      var faviconUrl = "http://d2c87l0yth4zbw.cloudfront.net/i/_global/favicon.png",
-        css = "background-image: url('" + faviconUrl + "');" +
-          "background-repeat: no-repeat;" +
-          "display: block;" +
-          "background-size: 13px 13px;" +
-          "padding-left: 13px;" +
-          "margin-left: 5px;",
-        text = "Do you like coding? Visit www.spotify.com/jobs";
-      if (navigator.userAgent.match(/chrome/i)) {
-        console.log(text + '%c', css);
-      } else {
-        console.log('%c   ' + text, css);
-      }
-    })();
-    return this;
-  },
-
-  addElement: function (element) {
-    this._currentSpan.children.push({
-      type: 'element',
-      element: element,
-      parent: this._currentSpan
-    });
-    return this;
-  },
-
-  print: function () {
-    if (typeof console == 'undefined') {
-      return;
-    }
-
-    var messages = [this._newMessage()];
-    var message;
-
-    this._printSpan(this._rootSpan, messages);
-
-    for (var i = 0; i < messages.length; i++) {
-      message = messages[i];
-      if (message.text && message.text != '%c') {
-        Function.prototype.apply.call(console[message.type], console, [message.text].concat(message.args));
-      }
-    }
-
-    return this;
-  },
-
-  _printSpan: function (span, messages) {
-    var children = span.children;
-    var message = messages[messages.length - 1];
-
-    this._addSpanData(span, message);
-
-    for (var i = 0; i < children.length; i++) {
-      this._handleChild(children[i], messages);
-    }
-  },
-
-  _handleChild: function (child, messages) {
-    var message = messages[messages.length - 1];
-
-    switch (child.type) {
-      case 'group':
-        messages.push(this._newMessage('group'));
-        break;
-      case 'groupCollapsed':
-        messages.push(this._newMessage('groupCollapsed'));
-        break;
-      case 'groupEnd':
-        message = this._newMessage('groupEnd');
-        message.text = ' ';
-        messages.push(message);
-        messages.push(this._newMessage())
-        break;
-      case 'span':
-        this._printSpan(child, messages);
-        this._addSpanData(child, message);
-        this._addSpanData(child.parent, message);
-        break;
-      case 'text':
-        message.text += child.message;
-        break;
-      case 'element':
-        message.text += '%o';
-        message.args.push(child.element);
-        break;
-      case 'log':
-        messages.push(this._newMessage(child.type));
-        break;
-    }
-  },
-
-  _addSpanData: function (span, message) {
-    if (!ConsoleMessage.Support.isIE) {
-      if (message.text.substring(message.text.length - 2) == '%c') {
-        message.args[message.args.length - 1] = this._stylesString(span.styles);
-      } else {
-        message.text += '%c';
-        message.args.push(this._stylesString(span.styles));
-      }
-    }
-  },
-
-  _newMessage: function (type) {
-    return {
-      type: type || 'log',
-      text: '',
-      args: []
-    };
-  },
-
-  _stylesString: function (styles) {
-    var result = '';
-    for (var key in styles) {
-      result += key + ':' + styles[key] + ';';
-    }
-    return result;
-  }
-};
-
-var highlightjs = {
-  'xml': {},
-  'hljs-tag': {
-
-  },
-  'hljs-title': {
-    color: '#5cd94d'
-  },
-  'hljs-expression': {
-    color: '#7b521e'
-  },
-  'hljs-variable': {
-    color: '#7b521e'
-  },
-  'hljs-keyword': {},
-  'hljs-string': {},
-  'hljs-function': {},
-  'hljs-params': {},
-  'hljs-number': {},
-  'hljs-regexp': {},
-  'hljs-comment': {
-    color: '#888'
-  },
-  'hljs-attribute': {
-    color: '#2d8fd0'
-  },
-  'hljs-value': {
-    color: '#e7635f'
-  }
-};
-})();
-(function () {
-blocks.debug.queries = {
-  'if': {
-    fullName: 'if',
-    name: 'if',
-    description: 'Executes particular query depending on the condition specified',
-    params: [{
-        name: 'condition',
-        rawName: 'condition',
-        types: ['boolean'],
-        optional: false,
-        isArguments: false,
-        description: 'The result will determine if the consequent or the alternate query will be executed',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'consequent',
-        rawName: 'consequent',
-        types: ['data-query'],
-        optional: false,
-        isArguments: false,
-        description: 'The query that will be executed if the specified condition returns a truthy value',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'alternate',
-        rawName: '[alternate]',
-        types: ['data-query'],
-        optional: true,
-        isArguments: false,
-        description: 'The query that will be executed if the specified condition returns a falsy value',
-        defaultValue: '',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [{
-        language: 'html',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"if(true, setClass(\'success\'), setClass(\'fail\'))"']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"if(false, setClass(\'success\'), setClass(\'fail\'))"']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }, '\n\n', {
-              name: 'hljs-comment',
-              children: ['<!-- will result in -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"if(true, setClass(\'success\'), setClass(\'fail\'))"']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['class']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"success"']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"if(false, setClass(\'success\'), setClass(\'fail\'))"']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['class']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"fail"']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }]
-        },
-        value: ''
-      }],
-    memberof: 'blocks.queries'
-  },
-  ifnot: {
-    fullName: 'ifnot',
-    name: 'ifnot',
-    description: 'Executes particular query depending on the condition specified.\n The opposite query of the \'if\'',
-    params: [{
-        name: 'condition',
-        rawName: 'condition',
-        types: ['boolean'],
-        optional: false,
-        isArguments: false,
-        description: 'The result will determine if the consequent or the alternate query will be executed',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'consequent',
-        rawName: 'consequent',
-        types: ['data-query'],
-        optional: false,
-        isArguments: false,
-        description: 'The query that will be executed if the specified condition returns a falsy value',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'alternate',
-        rawName: '[alternate]',
-        types: ['data-query'],
-        optional: true,
-        isArguments: false,
-        description: 'The query that will be executed if the specified condition returns a truthy value',
-        defaultValue: '',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [{
-        language: 'html',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"if(true, setClass(\'success\'), setClass(\'fail\'))"']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"if(false, setClass(\'success\'), setClass(\'fail\'))"']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }, '\n\n', {
-              name: 'hljs-comment',
-              children: ['<!-- will result in -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"if(true, setClass(\'success\'), setClass(\'fail\'))"']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['class']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"fail"']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"if(false, setClass(\'success\'), setClass(\'fail\'))"']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['class']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"success"']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }]
-        },
-        value: ''
-      }],
-    memberof: 'blocks.queries'
-  },
-  template: {
-    fullName: 'template',
-    name: 'template',
-    description: 'Queries and sets the inner html of the element from the template specified',
-    params: [{
-        name: 'template',
-        rawName: 'template',
-        types: ['HTMLElement', 'string'],
-        optional: false,
-        isArguments: false,
-        description: 'The template that will be rendered.\n The value could be an element id (the element innerHTML property will be taken), string (the template) or\n an element (again the element innerHTML property will be taken)',
-        defaultValue: '',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [{
-        language: 'html',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['script']
-                }, '>']
-            }, {
-              name: 'javascript',
-              children: ['\n  blocks.query({\n    name: ', {
-                  name: 'hljs-string',
-                  children: ['\'John Doe\'']
-                }, ',\n    age: ', {
-                  name: 'hljs-number',
-                  children: ['22']
-                }, '\n  });\n']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['script']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['script']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['id']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"user"']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['type']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"blocks-template"']
-                }, '>']
-            }, {
-              name: 'javascript',
-              children: ['\n  <h3>{{name}}<', {
-                  name: 'hljs-regexp',
-                  children: ['/h3>\n  <p>I am {{age}} years old.</']
-                }, 'p>\n']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['script']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"template(\'user\')"']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }, '\n\n', {
-              name: 'hljs-comment',
-              children: ['<!-- will result in -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"template(\'user\')"']
-                }, '>']
-            }, '\n  ', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['h3']
-                }, '>']
-            }, 'John Doe', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['h3']
-                }, '>']
-            }, '\n  ', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['p']
-                }, '>']
-            }, 'I am 22 years old.', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['p']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }]
-        },
-        value: ''
-      }],
-    memberof: 'blocks.queries'
-  },
-  define: {
-    fullName: 'define',
-    name: 'define',
-    description: 'Creates a variable name that could be used in child elements',
-    params: [{
-        name: 'propertyName',
-        rawName: 'propertyName',
-        types: ['string'],
-        optional: false,
-        isArguments: false,
-        description: 'The name of the value that will be\n created and you could access its value later using that name',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'propertyValue',
-        rawName: 'propertyValue',
-        types: ['*'],
-        optional: false,
-        isArguments: false,
-        description: 'The value that the property will have',
-        defaultValue: '',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [{
-        language: 'html',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['script']
-                }, '>']
-            }, {
-              name: 'javascript',
-              children: ['\n  blocks.query({\n    strings: {\n      title: {\n        text: ', {
-                  name: 'hljs-string',
-                  children: ['\'Hello World!\'']
-                }, '\n      }\n    }\n  });\n']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['script']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"define(\'$title\', strings.title.text)"']
-                }, '>']
-            }, '\n  The title is {{$title}}.\n', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }, '\n\n', {
-              name: 'hljs-comment',
-              children: ['<!-- will result in -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"define(\'$title\', strings.title.text)"']
-                }, '>']
-            }, '\n  The title is Hello World!.\n', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }]
-        },
-        value: ''
-      }],
-    memberof: 'blocks.queries'
-  },
-  'with': {
-    fullName: 'with',
-    name: 'with',
-    description: 'Changes the current context for the child elements.\n Useful when you will work a lot with a particular value',
-    params: [{
-        name: 'value',
-        rawName: 'value',
-        types: ['*'],
-        optional: false,
-        isArguments: false,
-        description: 'The new context',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'name',
-        rawName: '[name]',
-        types: ['string'],
-        optional: true,
-        isArguments: false,
-        description: 'Optional name of the new context.\n This way the context will also available under the name not only under the $this context property',
-        defaultValue: '',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [{
-        language: 'html',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['script']
-                }, '>']
-            }, {
-              name: 'javascript',
-              children: ['\n  blocks.query({\n    ProfilePage: {\n      user: {\n        name: ', {
-                  name: 'hljs-string',
-                  children: ['\'John Doe\'']
-                }, ',\n        age: ', {
-                  name: 'hljs-number',
-                  children: ['22']
-                }, '\n      }\n    }\n  });\n']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['script']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"view(ProfilePage.user, \'$user\')"']
-                }, '>']
-            }, '\n My name is {{$user.name}} and I am {{$this.age}} years old.\n', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }, '\n\n', {
-              name: 'hljs-comment',
-              children: ['<!-- will result in -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"view(ProfilePage.user, \'$user\')"']
-                }, '>']
-            }, '\n My name is John Doe and I am 22 years old.\n', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }]
-        },
-        value: ''
-      }],
-    memberof: 'blocks.queries'
-  },
-  each: {
-    fullName: 'each',
-    name: 'each',
-    description: 'The each method iterates through an array items or object values\n and repeats the child elements by using them as a template',
-    params: [{
-        name: 'collection',
-        rawName: 'collection',
-        types: ['Array', 'Object'],
-        optional: false,
-        isArguments: false,
-        description: 'The collection to iterate over',
-        defaultValue: '',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [{
-        language: 'html',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['script']
-                }, '>']
-            }, {
-              name: 'javascript',
-              children: ['\n  blocks.query({\n    items: [', {
-                  name: 'hljs-string',
-                  children: ['\'John\'']
-                }, ', ', {
-                  name: 'hljs-string',
-                  children: ['\'Doe\'']
-                }, ']\n  });\n']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['script']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['ul']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"each(items)"']
-                }, '>']
-            }, '\n  ', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['li']
-                }, '>']
-            }, '{{$this}}', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['li']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['ul']
-                }, '>']
-            }, '\n\n', {
-              name: 'hljs-comment',
-              children: ['<!-- will result in -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['ul']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"each(items)"']
-                }, '>']
-            }, '\n  ', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['li']
-                }, '>']
-            }, 'John', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['li']
-                }, '>']
-            }, '\n  ', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['li']
-                }, '>']
-            }, 'Doe', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['li']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['ul']
-                }, '>']
-            }]
-        },
-        value: ''
-      }],
-    memberof: 'blocks.queries'
-  },
-  options: {
-    fullName: 'options',
-    name: 'options',
-    description: 'Render options for a <select> element by providing an collection.',
-    params: [{
-        name: 'collection',
-        rawName: 'collection',
-        types: ['Array', 'Object'],
-        optional: false,
-        isArguments: false,
-        description: 'The collection to iterate over',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'options',
-        rawName: '[options]',
-        types: ['Object'],
-        optional: true,
-        isArguments: false,
-        description: 'Options to customize the behavior for creating each option.\n options.value - determines the field in the collection to server for the option value\n options.text - determines the field in the collection to server for the option text\n options.caption - creates a option with the specified text at the first option',
-        defaultValue: '',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [{
-        language: 'html',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['script']
-                }, '>']
-            }, {
-              name: 'javascript',
-              children: ['\nblocks.query({\n  caption: ', {
-                  name: 'hljs-string',
-                  children: ['\'Select user\'']
-                }, '\n  data: [\n    { name: ', {
-                  name: 'hljs-string',
-                  children: ['\'John\'']
-                }, ', id: ', {
-                  name: 'hljs-number',
-                  children: ['1']
-                }, ' },\n    { name: ', {
-                  name: 'hljs-string',
-                  children: ['\'Doe\'']
-                }, ', id: ', {
-                  name: 'hljs-number',
-                  children: ['2']
-                }, ' }\n  ]\n});\n']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['script']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['select']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"options(data, { text: \'name\', value: \'id\', caption: caption })"']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['select']
-                }, '>']
-            }, '\n\n', {
-              name: 'hljs-comment',
-              children: ['<!-- will result in -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['select']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"options(data, { text: \'name\', value: \'id\', caption: caption })"']
-                }, '>']
-            }, '\n  ', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['option']
-                }, '>']
-            }, 'Select user', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['option']
-                }, '>']
-            }, '\n  ', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['option']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['value']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"1"']
-                }, '>']
-            }, 'John', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['option']
-                }, '>']
-            }, '\n  ', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['option']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['value']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"2"']
-                }, '>']
-            }, 'Doe', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['option']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['select']
-                }, '>']
-            }]
-        },
-        value: ''
-      }],
-    memberof: 'blocks.queries'
-  },
-  render: {
-    fullName: 'render',
-    name: 'render',
-    description: 'The render query allows elements to be skipped from rendering and not to exist in the HTML result',
-    params: [{
-        name: 'condition',
-        rawName: 'condition',
-        types: ['boolean'],
-        optional: false,
-        isArguments: false,
-        description: 'The value determines if the element will be rendered or not',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'renderChildren',
-        rawName: '[renderChildren=false]',
-        types: ['boolean'],
-        optional: true,
-        isArguments: false,
-        description: 'The value indicates if the children will be rendered',
-        defaultValue: 'false',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [{
-        language: 'html',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"render(true)"']
-                }, '>']
-            }, 'Visible', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"render(false)"']
-                }, '>']
-            }, 'Invisible', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }, '\n\n', {
-              name: 'hljs-comment',
-              children: ['<!-- html result will be -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"render(true)"']
-                }, '>']
-            }, 'Visible', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }]
-        },
-        value: ''
-      }],
-    memberof: 'blocks.queries'
-  },
-  animate: {
-    fullName: 'animate',
-    name: 'animate',
-    description: 'Could be used for custom JavaScript animation by providing a callback function\n that will be called the an animation needs to be performed',
-    params: [{
-        name: 'callback',
-        rawName: 'callback',
-        types: ['Function'],
-        optional: false,
-        isArguments: false,
-        description: 'The function that will be called when animation needs\n to be performed.',
-        defaultValue: '',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [{
-        language: 'html',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['script']
-                }, '>']
-            }, {
-              name: 'javascript',
-              children: ['\nblocks.query({\n  visible: blocks.observable(', {
-                  name: 'hljs-literal',
-                  children: ['true']
-                }, '),\n  toggleVisibility: ', {
-                  name: 'hljs-function',
-                  children: [{
-                      name: 'hljs-keyword',
-                      children: ['function']
-                    }, ' ', {
-                      name: 'hljs-params',
-                      children: ['()']
-                    }, ' ']
-                }, '{\n    ', {
-                  name: 'hljs-comment',
-                  children: ['// this points to the model object passed to blocks.query() method']
-                }, '\n    ', {
-                  name: 'hljs-keyword',
-                  children: ['this']
-                }, '.visible(!', {
-                  name: 'hljs-keyword',
-                  children: ['this']
-                }, '.visible());\n  },\n\n  fade: ', {
-                  name: 'hljs-function',
-                  children: [{
-                      name: 'hljs-keyword',
-                      children: ['function']
-                    }, ' ', {
-                      name: 'hljs-params',
-                      children: ['(element, ready)']
-                    }, ' ']
-                }, '{\n    Velocity(element, {\n      ', {
-                  name: 'hljs-comment',
-                  children: ['// this points to the model object passed to blocks.query() method']
-                }, '\n      opacity: ', {
-                  name: 'hljs-keyword',
-                  children: ['this']
-                }, '.visible() ? ', {
-                  name: 'hljs-number',
-                  children: ['1']
-                }, ' : ', {
-                  name: 'hljs-number',
-                  children: ['0']
-                }, '\n    }, {\n      duration: ', {
-                  name: 'hljs-number',
-                  children: ['1000']
-                }, ',\n      queue: ', {
-                  name: 'hljs-literal',
-                  children: ['false']
-                }, ',\n\n      ', {
-                  name: 'hljs-comment',
-                  children: ['// setting the ready callback to the complete callback']
-                }, '\n      complete: ready\n    });\n  }\n});\n']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['script']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['button']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"click(toggleVisibility)"']
-                }, '>']
-            }, 'Toggle visibility', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['button']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"visible(visible).animate(fade)"']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['style']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"background: red;width: 300px;height: 240px;"']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }]
-        },
-        value: ''
-      }],
-    memberof: 'blocks.queries'
-  },
-  setClass: {
-    fullName: 'setClass',
-    name: 'setClass',
-    description: 'Adds or removes a class from an element',
-    params: [{
-        name: 'className',
-        rawName: 'className',
-        types: ['string', 'Array'],
-        optional: false,
-        isArguments: false,
-        description: 'The class string (or array of strings) that will be added or removed from the element.',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'condition',
-        rawName: '[condition=true]',
-        types: ['boolean'],
-        optional: true,
-        isArguments: false,
-        description: 'Optional value indicating if the class name will be added or removed. true - add, false - remove.',
-        defaultValue: 'true',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [{
-        language: 'html',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"setClass(\'header\')"']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }, '\n\n', {
-              name: 'hljs-comment',
-              children: ['<!-- will result in -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"setClass(\'header\')"']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['class']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"header"']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }]
-        },
-        value: ''
-      }],
-    memberof: 'blocks.queries'
-  },
-  html: {
-    fullName: 'html',
-    name: 'html',
-    description: 'Sets the inner html to the element',
-    params: [{
-        name: 'html',
-        rawName: 'html',
-        types: ['string'],
-        optional: false,
-        isArguments: false,
-        description: 'The html that will be places inside element replacing any other content.',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'condition',
-        rawName: '[condition=true]',
-        types: ['boolean'],
-        optional: true,
-        isArguments: false,
-        description: 'Condition indicating if the html will be set.',
-        defaultValue: 'true',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [{
-        language: 'html',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"html(\'<b>some content</b>\')"']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }, '\n\n', {
-              name: 'hljs-comment',
-              children: ['<!-- will result in -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"html(\'<b>some content</b>\')"']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['b']
-                }, '>']
-            }, 'some content', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['b']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }]
-        },
-        value: ''
-      }],
-    memberof: 'blocks.queries'
-  },
-  text: {
-    fullName: 'text',
-    name: 'text',
-    description: 'Adds or removes the inner text from an element',
-    params: [{
-        name: 'text',
-        rawName: 'text',
-        types: ['string'],
-        optional: false,
-        isArguments: false,
-        description: 'The text that will be places inside element replacing any other content.',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'condition',
-        rawName: '[condition=true]',
-        types: ['boolean'],
-        optional: true,
-        isArguments: false,
-        description: 'Value indicating if the text will be added or cleared. true - add, false - clear.',
-        defaultValue: 'true',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [{
-        language: 'html',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"html(\'some content\')"']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }, '\n\n', {
-              name: 'hljs-comment',
-              children: ['<!-- will result in -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"html(\'some content\')"']
-                }, '>']
-            }, 'some content', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }]
-        },
-        value: ''
-      }],
-    memberof: 'blocks.queries'
-  },
-  visible: {
-    fullName: 'visible',
-    name: 'visible',
-    description: 'Determines if an html element will be visible. Sets the CSS display property.',
-    params: [{
-        name: 'condition',
-        rawName: '[condition=true]',
-        types: ['boolean'],
-        optional: true,
-        isArguments: false,
-        description: 'Value indicating if element will be visible or not.',
-        defaultValue: 'true',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [{
-        language: 'html',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"visible(true)"']
-                }, '>']
-            }, 'Visible', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"visible(false)"']
-                }, '>']
-            }, 'Invisible', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }, '\n\n', {
-              name: 'hljs-comment',
-              children: ['<!-- html result will be -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"visible(true)"']
-                }, '>']
-            }, 'Visible', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"visible(false)"']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['style']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"display: none;"']
-                }, '>']
-            }, 'Invisible', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }]
-        },
-        value: ''
-      }],
-    memberof: 'blocks.queries'
-  },
-  attr: {
-    fullName: 'attr',
-    name: 'attr',
-    description: 'Gets, sets or removes an element attribute.\n Passing only the first parameter will return the attributeName value',
-    params: [{
-        name: 'attributeName',
-        rawName: 'attributeName',
-        types: ['string'],
-        optional: false,
-        isArguments: false,
-        description: 'The attribute name that will be get, set or removed.',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'attributeValue',
-        rawName: 'attributeValue',
-        types: ['string'],
-        optional: false,
-        isArguments: false,
-        description: 'The value of the attribute. It will be set if condition is true.',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'condition',
-        rawName: '[condition=true]',
-        types: ['boolean'],
-        optional: true,
-        isArguments: false,
-        description: 'Value indicating if the attribute will be set or removed.',
-        defaultValue: 'true',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [{
-        language: 'html',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"attr(\'data-content\', \'some content\')"']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }, '\n\n', {
-              name: 'hljs-comment',
-              children: ['<!-- will result in -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"attr(\'data-content\', \'some content\')"']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-content']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"some content"']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }]
-        },
-        value: ''
-      }],
-    memberof: 'blocks.queries'
-  },
-  val: {
-    fullName: 'val',
-    name: 'val',
-    description: 'Sets the value attribute on an element.',
-    params: [{
-        name: 'value',
-        rawName: 'value',
-        types: ['string', 'number', 'Array'],
-        optional: false,
-        isArguments: false,
-        description: 'The new value for the element.',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'condition',
-        rawName: '[condition=true]',
-        types: ['boolean'],
-        optional: true,
-        isArguments: false,
-        description: 'Determines if the value will be set or not.',
-        defaultValue: 'true',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [{
-        language: 'html',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['script']
-                }, '>']
-            }, {
-              name: 'javascript',
-              children: ['\nblocks.query({\n  name: blocks.observable(', {
-                  name: 'hljs-string',
-                  children: ['\'John Doe\'']
-                }, ')\n});\n']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['script']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['input']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"val(name)"']
-                }, ' />']
-            }, '\n\n', {
-              name: 'hljs-comment',
-              children: ['<!-- will result in -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['input']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"val(name)"']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['value']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"John Doe"']
-                }, ' />']
-            }]
-        },
-        value: ''
-      }],
-    memberof: 'blocks.queries'
-  },
-  checked: {
-    fullName: 'checked',
-    name: 'checked',
-    description: 'Sets the checked attribute on an element',
-    params: [{
-        name: 'condition',
-        rawName: '[condition=true]',
-        types: ['boolean'],
-        optional: true,
-        isArguments: false,
-        description: 'Determines if the element will be checked or not',
-        defaultValue: 'true',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [{
-        language: 'html',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['input']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['type']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"checkbox"']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"checked(true)"']
-                }, ' />']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['input']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['type']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"checkbox"']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"checked(false)"']
-                }, ' />']
-            }, '\n\n', {
-              name: 'hljs-comment',
-              children: ['<!-- will result in -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['input']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['type']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"checkbox"']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"checked(true)"']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['checked']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"checked"']
-                }, ' />']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['input']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['type']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"checkbox"']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"checked(false)"']
-                }, ' />']
-            }]
-        },
-        value: ''
-      }],
-    memberof: 'blocks.queries'
-  },
-  disabled: {
-    fullName: 'disabled',
-    name: 'disabled',
-    description: 'Sets the disabled attribute on an element',
-    params: [{
-        name: 'condition',
-        rawName: '[condition=true]',
-        types: ['boolean'],
-        optional: true,
-        isArguments: false,
-        description: 'Determines if the element will be disabled or not',
-        defaultValue: 'true',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [],
-    memberof: 'blocks.queries'
-  },
-  css: {
-    fullName: 'css',
-    name: 'css',
-    description: 'Gets, sets or removes a CSS style from an element.\n Passing only the first parameter will return the CSS propertyName value.',
-    params: [{
-        name: 'name',
-        rawName: 'name',
-        types: ['string'],
-        optional: false,
-        isArguments: false,
-        description: 'The name of the CSS property that will be get, set or removed.',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'value',
-        rawName: 'value',
-        types: ['string'],
-        optional: false,
-        isArguments: false,
-        description: 'The value of the of the attribute. It will be set if condition is true.',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'condition',
-        rawName: '[condition=true]',
-        types: ['boolean'],
-        optional: true,
-        isArguments: false,
-        description: 'Condition indicating if the attribute will be set or removed.',
-        defaultValue: 'true',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [{
-        language: 'html',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['script']
-                }, '>']
-            }, {
-              name: 'javascript',
-              children: ['\n  blocks.query({\n    h1FontSize: ', {
-                  name: 'hljs-number',
-                  children: ['12']
-                }, '\n  });\n']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['script']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['h1']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"css(\'font-size\', h1FontSize)"']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['h1']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['h1']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"css(\'fontSize\', h1FontSize)"']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['h1']
-                }, '>']
-            }, '\n\n', {
-              name: 'hljs-comment',
-              children: ['<!-- will result in -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['h1']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"css(\'font-size\', h1FontSize)"']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['style']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"font-size: 12px;"']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['h1']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['h1']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"css(\'fontSize\', h1FontSize)"']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['style']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"font-size: 12px;"']
-                }, '>']
-            }, {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['h1']
-                }, '>']
-            }]
-        },
-        value: ''
-      }],
-    memberof: 'blocks.queries'
-  },
-  width: {
-    fullName: 'width',
-    name: 'width',
-    description: 'Sets the width of the element',
-    params: [{
-        name: 'value',
-        rawName: 'value',
-        types: ['number', 'string'],
-        optional: false,
-        isArguments: false,
-        description: 'The new width of the element',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'condition',
-        rawName: '[condition=true]',
-        types: ['boolean'],
-        optional: true,
-        isArguments: false,
-        description: 'Value indicating if the width property will be updated',
-        defaultValue: 'true',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [],
-    memberof: 'blocks.queries'
-  },
-  height: {
-    fullName: 'height',
-    name: 'height',
-    description: 'Sets the height of the element',
-    params: [{
-        name: 'value',
-        rawName: 'value',
-        types: ['number', 'string'],
-        optional: false,
-        isArguments: false,
-        description: 'The new height of the element',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'condition',
-        rawName: '[condition=true]',
-        types: ['boolean'],
-        optional: true,
-        isArguments: false,
-        description: 'Value indicating if the height property will be updated',
-        defaultValue: 'true',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [],
-    memberof: 'blocks.queries'
-  },
-  on: {
-    fullName: 'on',
-    name: 'on',
-    description: 'Subscribes to an event',
-    params: [{
-        name: 'events',
-        rawName: 'events',
-        types: ['String', 'Array'],
-        optional: false,
-        isArguments: false,
-        description: 'The event or events to subscribe to',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'callback',
-        rawName: 'callback',
-        types: ['Function'],
-        optional: false,
-        isArguments: false,
-        description: 'The callback that will be executed when the event is fired',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'args',
-        rawName: '[args]',
-        types: ['*'],
-        optional: true,
-        isArguments: false,
-        description: 'Optional arguments that will be passed as second parameter to\n the callback function after the event arguments',
-        defaultValue: '',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [],
-    memberof: 'blocks.queries'
-  },
-  view: {
-    fullName: 'view',
-    name: 'view',
-    description: 'Associates the element with the particular view and creates a $view context property.\n The View will be automatically hidden and shown if the view have routing. The visibility\n of the View could be also controled using the isActive observable property',
-    params: [{
-        name: 'view',
-        rawName: 'view',
-        types: ['View'],
-        optional: false,
-        isArguments: false,
-        description: 'The view to associate with the current element',
-        defaultValue: '',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [{
-        language: 'html',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-comment',
-              children: ['<!-- Associating the div element and its children with the Profiles view -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"view(Profiles)"']
-                }, '>']
-            }, '\n  ', {
-              name: 'hljs-comment',
-              children: ['<!-- looping through the View users collection -->']
-            }, '\n  ', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['ul']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"view(users)"']
-                }, '>']
-            }, '\n    ', {
-              name: 'hljs-comment',
-              children: ['<!-- Using the $view context value to point to the View selectUser handler -->']
-            }, '\n    ', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['li']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"click($view.selectUser)"']
-                }, '>']
-            }, '{{username}}', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['li']
-                }, '>']
-            }, '\n  ', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['ul']
-                }, '>']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['div']
-                }, '>']
-            }]
-        },
-        value: ''
-      }, {
-        language: 'javascript',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-keyword',
-              children: ['var']
-            }, ' App = blocks.Application();\n\nApp.View(', {
-              name: 'hljs-string',
-              children: ['\'Profiles\'']
-            }, ', {\n  init: ', {
-              name: 'hljs-function',
-              children: [{
-                  name: 'hljs-keyword',
-                  children: ['function']
-                }, ' ', {
-                  name: 'hljs-params',
-                  children: ['()']
-                }, ' ']
-            }, '{\n    ', {
-              name: 'hljs-comment',
-              children: ['// ...initing this.users...']
-            }, '\n  },\n\n  selectUser: ', {
-              name: 'hljs-function',
-              children: [{
-                  name: 'hljs-keyword',
-                  children: ['function']
-                }, ' ', {
-                  name: 'hljs-params',
-                  children: ['(e)']
-                }, ' ']
-            }, '{\n    ', {
-              name: 'hljs-comment',
-              children: ['// ...stuff...']
-            }, '\n  }\n});\n\nApp.start();']
-        },
-        value: ''
-      }],
-    memberof: 'blocks.queries'
-  },
-  navigateTo: {
-    fullName: 'navigateTo',
-    name: 'navigateTo',
-    description: 'Navigates to a particular view by specifying the target view or route and optional parameters',
-    params: [{
-        name: 'viewOrRoute',
-        rawName: 'viewOrRoute',
-        types: ['View', 'String'],
-        optional: false,
-        isArguments: false,
-        description: 'the view or route to which to navigate to',
-        defaultValue: '',
-        value: ''
-      }, {
-        name: 'params',
-        rawName: '[params]',
-        types: ['Object'],
-        optional: true,
-        isArguments: false,
-        description: 'parameters needed for the current route',
-        defaultValue: '',
-        value: ''
-      }],
-    returns: undefined,
-    examples: [{
-        language: 'html',
-        code: {
-          name: '',
-          children: [{
-              name: 'hljs-comment',
-              children: ['<!-- will navigate to /contactus because the ContactUs View have /contactus route -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['a']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"navigate(ContactUs)"']
-                }, '>']
-            }, 'Contact Us', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['a']
-                }, '>']
-            }, '\n\n', {
-              name: 'hljs-comment',
-              children: ['<!-- will navigate to /products/t-shirts because the Products View have /products/{{category}} route -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['a']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"navigate(Products, { category: \'t-shirts\' })"']
-                }, '>']
-            }, 'T-Shirts', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['a']
-                }, '>']
-            }, '\n\n', {
-              name: 'hljs-comment',
-              children: ['<!-- the same example as above but the route is directly specifying instead of using the View instance -->']
-            }, '\n', {
-              name: 'hljs-tag',
-              children: ['<', {
-                  name: 'hljs-title',
-                  children: ['a']
-                }, ' ', {
-                  name: 'hljs-attribute',
-                  children: ['data-query']
-                }, '=', {
-                  name: 'hljs-value',
-                  children: ['"navigate(\'/products/{{category}}\', { category: \'t-shirts\' })"']
-                }, '>']
-            }, 'T-Shirts', {
-              name: 'hljs-tag',
-              children: ['</', {
-                  name: 'hljs-title',
-                  children: ['a']
-                }, '>']
-            }]
-        },
-        value: ''
-      }],
-    memberof: 'blocks.queries'
-  }
-}
 })();// @source-code
   })();
 
-
-  (function () {
+  (function() {
     var toString = blocks.toString;
-    blocks.toString = function (value) {
-      if (arguments.length == 0) {
-        return 'jsblocks - let\'s build the web block by block';
+    blocks.toString = function(value) {
+      if (arguments.length === 0) {
+        return 'jsblocks - better MV-ish framework';
       }
       return toString(value);
     };
   })();
-
-  if (typeof global === 'undefined') {
-    window.blocks = blocks;
-    return;
-  }
 
   var _blocks = global.blocks;
 
@@ -14221,12 +14261,14 @@ blocks.debug.queries = {
     return blocks;
   };
 
-  global.blocks = blocks;
-
   if (typeof define === 'function' && define.amd) {
     define('blocks', [], function () {
       return blocks;
     });
+  }
+
+  if (noGlobal !== true) {
+    global.blocks = blocks;
   }
 
   return blocks;

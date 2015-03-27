@@ -20,7 +20,7 @@ define([
     this._html = undefined;
 
     this.loading = blocks.observable(false);
-    this.isActive = blocks.observable(!options.route);
+    this.isActive = blocks.observable(!blocks.has(options, 'route'));
     this.isActive.on('changing', function (oldValue, newValue) {
       blocks.each(views, function (view) {
         if (!view.options.route) {
@@ -188,4 +188,13 @@ define([
   };
 
   Events.register(View.prototype, ['on', 'off', 'trigger']);
+
+  /* @if DEBUG */ {
+    blocks.debug.addType('View', function (value) {
+      if (value && View.prototype.isPrototypeOf(value)) {
+        return true;
+      }
+      return false;
+    });
+  } /* @endif */
 });

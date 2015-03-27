@@ -28,6 +28,11 @@ define([
     }
 
     observable._baseUpdate = observable.update;
+    blocks.each(blocks.observable.fn.collection, function (value, key) {
+      if (blocks.isFunction(value) && key.indexOf('_') != 0) {
+        observable[key] = blocks.bind(observable[key], observable);
+      }
+    });
     blocks.extend(observable, blocks.observable.fn.collection, prototype);
     clonePrototype(prototype, observable);
     observable._Model = ModelType;
@@ -215,22 +220,21 @@ define([
     _onChange: function (args) {
       var type = args.type;
       var items = args.items;
+      var newItems = [];
       var i = 0;
       var item;
 
       for (; i < items.length; i++) {
         item = items[i];
         if (item && (type == 'remove' || (type == 'add' && item.isNew()))) {
-          items[i] = item.dataItem();
-        } else {
-          items.splice(i, 1);
-          i--;
+          newItems.push(item.dataItem());
         }
       }
+
       if (type == 'remove') {
         this._dataSource.removeAt(args.index, args.items.length);
       } else if (type == 'add') {
-        this._dataSource.add(items);
+        this._dataSource.add(newItems);
       }
     },
 

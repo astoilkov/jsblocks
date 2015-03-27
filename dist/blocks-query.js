@@ -3058,7 +3058,7 @@
     setClass: {
       preprocess: function (className, condition) {
         if (arguments.length > 1) {
-          this.toggleClass(className, condition);
+          this.toggleClass(className, !!condition);
         } else {
           this.addClass(className);
         }
@@ -3157,7 +3157,7 @@
     * Sets the value attribute on an element.
     *
     * @memberof blocks.queries
-    * @param {(string|number|Array)} value - The new value for the element.
+    * @param {(string|number|Array|falsy)} value - The new value for the element.
     * @param {boolean} [condition=true] - Determines if the value will be set or not.
     *
     * @example {html}
@@ -3257,6 +3257,16 @@
       */
     height: {
       call: 'css'
+    },
+
+    focused: {
+      preprocess: blocks.noop,
+
+      update: function (value) {
+        if (value) {
+          this.focus();
+        }
+      }
     },
 
     /**
@@ -3922,11 +3932,10 @@
               index: 0
             });
           } else {
-            var length = array.length;
             var isCallbackAFunction = blocks.isFunction(callback);
             var value;
 
-            for (i = 0; i < length; i++) {
+            for (i = 0; i < array.length; i++) {
               value = array[i];
               if (value === callback || (isCallbackAFunction && callback.call(thisArg, value, i, array))) {
                 this.splice(i, 1);
@@ -4299,17 +4308,22 @@
 
     observable.on('add', function (args) {
       if (observable.view._initialized) {
+        observable.view._connections = {};
+        observable.view.reset();
         executeOperations(observable);
       } else {
+        for (var i = 0; i < args.items.length; i++) {
+          observable.view._connections[args.index + i] = true;
+        }
         observable.view.splice.apply(observable.view, [args.index, 0].concat(args.items));
       }
     });
 
     observable.on('remove', function (args) {
       if (observable.view._initialized) {
-        blocks.each(args.items, function (item) {
-          observable.view.remove(item);
-        });
+        observable.view._connections = {};
+        observable.view.reset();
+        executeOperations(observable);
       }
     });
 
@@ -4456,7 +4470,6 @@
     var collection = observable.__value__;
     var view = observable.view;
     var connections = view._connections;
-    //var initialized = view._initialized;
     var viewIndex = 0;
     var update = view.update;
     var skip = 0;
@@ -4524,8 +4537,8 @@
 
       switch (action) {
         case ADD:
-          view.splice(viewIndex, 0, value);
           connections[index] = viewIndex;
+          view.splice(viewIndex, 0, value);
           viewIndex++;
           break;
         case REMOVE:

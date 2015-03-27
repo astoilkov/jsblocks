@@ -141,11 +141,18 @@ define([
       var target = e.target;
 
       while (target) {
-        if (target && target.tagName && target.tagName.toLowerCase() == 'a' && this._hostRegEx.test(target.href) &&
-          !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.which !== 2) {
-          // handle click
-          this.navigate(target.href);
-          e.preventDefault();
+        if (target && target.tagName && target.tagName.toLowerCase() == 'a') {
+          var download = target.getAttribute('download');
+
+          if (download !== '' && !download && this._hostRegEx.test(target.href) &&
+            !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.which !== 2) {
+
+            // handle click
+            this.navigate(target.href);
+            e.preventDefault();
+          }
+
+          break;
         }
         target = target.parentNode;
       }

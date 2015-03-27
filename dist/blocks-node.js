@@ -8,7 +8,7 @@
  *
  * Date: @DATE
  */
-(function (global, factory) {
+(function(global, factory) {
   if (typeof module === 'object' && typeof module.exports === 'object') {
     module.exports = factory(global, true);
   } else {
@@ -16,7 +16,7 @@
   }
 
   // Pass this if window is not defined yet
-}(typeof window !== 'undefined' && !window.__mock__ ? window : this, function (global, noGlobal) {
+}(typeof window !== 'undefined' && !window.__mock__ ? window : this, function(global, noGlobal) {
   var toString = Object.prototype.toString;
   var slice = Array.prototype.slice;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -24,8 +24,8 @@
   var core = {};
 
   /**
-   * @namespace blocks
-   */
+  * @namespace blocks
+  */
   var blocks = function (value) {
     if (core.expressionsCreated) {
       if (arguments.length === 0) {
@@ -37,17 +37,17 @@
     return value;
   };
 
+  blocks.version = '0.8.0';
   blocks.core = core;
-  blocks.debug = {};
 
   /**
    * Works like [jQuery extend](@link )
    * @memberof blocks
    * @param {Object} obj
-   * @param {Object} ...objects
+   * @param {...Object} objects
    * @returns {Object}
    */
-  blocks.extend = function () {
+  blocks.extend = function() {
     var src, copyIsArray, copy, name, options, clone,
       target = arguments[0] || {},
       i = 1,
@@ -125,7 +125,7 @@
    *   // collection points to the array passed to the function - [3, 1, 4]
    * });
    */
-  blocks.each = function (collection, callback, thisArg) {
+  blocks.each = function(collection, callback, thisArg) {
     if (collection == null) {
       return;
     }
@@ -166,7 +166,7 @@
    *   // collection points to the array passed to the function - [3, 1, 4]
    * });
    */
-  blocks.eachRight = function (collection, callback, thisArg) {
+  blocks.eachRight = function(collection, callback, thisArg) {
     if (collection == null) {
       return;
     }
@@ -188,8 +188,8 @@
     }
   };
 
-  blocks.each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp'], function (type) {
-    blocks['is' + type] = function (obj) {
+  blocks.each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp'], function(type) {
+    blocks['is' + type] = function(obj) {
       return toString.call(obj) == '[object ' + type + ']';
     };
   });
@@ -197,14 +197,14 @@
   // Define a fallback version of the method in browsers (ahem, IE), where
   // there isn't any inspectable 'Arguments' type.
   if (!blocks.isArguments(arguments)) {
-    blocks.isArguments = function (obj) {
+    blocks.isArguments = function(obj) {
       return !!(obj && hasOwn.call(obj, 'callee'));
     };
   }
 
   // Optimize `isFunction` if appropriate.
-  if (typeof (/./) !== 'function') {
-    blocks.isFunction = function (obj) {
+  if (typeof(/./) !== 'function') {
+    blocks.isFunction = function(obj) {
       return !!(obj && typeof obj === 'function');
     };
   }
@@ -226,7 +226,7 @@
    *   // -> false
    * }
    */
-  blocks.isArray = Array.isArray || function (value) {
+  blocks.isArray = Array.isArray || function(value) {
     return toString.call(value) == '[object Array]';
   };
 
@@ -243,7 +243,7 @@
      *   callback = callback || blocks.noop;
      * }
      */
-    noop: function () {},
+    noop: function() {},
 
     /**
      * The method helps create inheritance easily and avoid working with prototypes directly.
@@ -279,7 +279,7 @@
      * monkey.message();
      * // -> 'This mammal is Monkey'
      */
-    inherit: function (BaseClass, Class, prototype) {
+    inherit: function(BaseClass, Class, prototype) {
       if ((arguments.length < 3 && blocks.isPlainObject(Class)) || arguments.length == 1) {
         prototype = Class;
         Class = BaseClass;
@@ -331,7 +331,7 @@
      * blocks.type(null);
      * // -> null
      */
-    type: function (value) {
+    type: function(value) {
       if (value instanceof Array) {
         return 'array';
       }
@@ -380,7 +380,7 @@
      * blocks.is(function () {}, 'object');
      * // -> false
      */
-    is: function (value, type) {
+    is: function(value, type) {
       if (arguments.length > 1 && blocks.isFunction(type)) {
         return type.prototype.isPrototypeOf(value);
       }
@@ -407,7 +407,7 @@
      * }, 'ratio');
      * // -> false
      */
-    has: function (obj, key) {
+    has: function(obj, key) {
       return !!(obj && hasOwn.call(obj, key));
     },
 
@@ -416,11 +416,11 @@
      * @param {*} value
      * @returns {boolean}
      */
-    hasValue: function (value) {
+    hasValue: function(value) {
       return value != null && (!blocks.isNumber(value) || !isNaN(value));
     },
 
-    toString: function (value) {
+    toString: function(value) {
       // TODO: Implement and make tests
       var result = '';
       if (blocks.hasValue(value)) {
@@ -447,28 +447,13 @@
      * blocks.unwrap('a string or any other value will not be changed');
      * // -> 'a string or any other value will not be changed'
      */
-    unwrap: function (value) {
+    unwrap: function(value) {
       if (core.expressionsCreated && core.isExpression(value)) {
         return value.value();
       }
 
       if (blocks.unwrapObservable) {
         return blocks.unwrapObservable(value);
-      }
-      return value;
-    },
-
-    unwrapAll: function (value) {
-      value = blocks.unwrap(value);
-      if (blocks.isFunction(value)) {
-        value = value();
-      }
-      return value;
-    },
-
-    unwrapFunction: function (value) {
-      if (blocks.isFunction(value)) {
-        return value();
       }
       return value;
     },
@@ -483,19 +468,19 @@
      * var articles = $('.article');
      * blocks.$unwrap()
      */
-    $unwrap: function (element, callback, thisArg) {
-      // check if jQuery and get the first element in the colleciton
-      // Note: Consider looping through all elements in the jQuery collection
+    $unwrap: function(element, callback, thisArg) {
+      callback = parseCallback(callback, thisArg);
+
       if (element && element.jquery) {
         if (callback) {
-          blocks.each(element, function (el) {
-            callback.call(thisArg || el, el);
+          element.each(function () {
+            callback(this);
           });
         }
         element = element[0];
       } else {
         if (callback) {
-          callback.call(thisArg || element, element);
+          callback(element);
         }
       }
 
@@ -522,7 +507,7 @@
      * blocks.toArray([3, 1, 4]);
      * // -> [3, 1, 4]
      */
-    toArray: function (value) {
+    toArray: function(value) {
       // TODO: Think if it should be removed permanantely.
       // Run tests after change to observe difference
       //if (value == null) {
@@ -533,6 +518,7 @@
       }
       if (blocks.isElements(value)) {
         // TODO: if not IE8 and below use slice.call
+        /* jshint newcap: false */
         var result = Array(value.length);
         var index = -1;
         var length = value.length;
@@ -567,7 +553,7 @@
      * blocks.toUnit('60px', '%');
      * // -> 60%
      */
-    toUnit: function (value, unit) {
+    toUnit: function(value, unit) {
       var unitIsSpecified = unit;
       unit = unit || 'px';
 
@@ -575,7 +561,7 @@
         return value;
       }
 
-      if (blocks.isString(value) && blocks.isNaN(parseInt(value.charAt(value.length - 1)))) {
+      if (blocks.isString(value) && blocks.isNaN(parseInt(value.charAt(value.length - 1), 10))) {
         if (unitIsSpecified) {
           return value.replace(/[^0-9]+$/, unit);
         }
@@ -599,7 +585,7 @@
      * var areEqual = array == cloned;
      * // -> false
      */
-    clone: function (value, deepClone) {
+    clone: function(value, deepClone) {
       if (value == null) {
         return value;
       }
@@ -652,7 +638,7 @@
      * @param {*} value - The value to check if it is elements collection
      * @returns {boolean} - Returns whether the value is elements collection
      */
-    isElements: function (value) {
+    isElements: function(value) {
       var isElements = false;
       if (value) {
         if (typeof HTMLCollection != 'undefined') {
@@ -685,7 +671,7 @@
      * blocks.isElement({});
      * // -> false
      */
-    isElement: function (value) {
+    isElement: function(value) {
       return !!(value && value.nodeType === 1);
     },
 
@@ -706,7 +692,7 @@
      * blocks.isBoolean(1);
      * // -> false
      */
-    isBoolean: function (value) {
+    isBoolean: function(value) {
       return value === true || value === false || toString.call(value) == '[object Boolean]';
     },
 
@@ -717,7 +703,7 @@
      * @param {[type]} obj - The value to check for if it is an object
      * @returns {boolean} - Returns whether the value is an object
      */
-    isObject: function (obj) {
+    isObject: function(obj) {
       return obj === Object(obj);
     },
 
@@ -742,7 +728,7 @@
      * blocks.isPlainObject(new Car());
      * // -> false
      */
-    isPlainObject: function (obj) {
+    isPlainObject: function(obj) {
       var key;
 
       // Must be an Object.
@@ -779,19 +765,19 @@
       return key === undefined || hasOwn.call(obj, key);
     },
 
-    isFinite: function (value) {
+    isFinite: function(value) {
       return isFinite(value) && !blocks.isNaN(parseFloat(value));
     },
 
-    isNaN: function (value) {
+    isNaN: function(value) {
       return blocks.isNumber(value) && value != +value;
     },
 
-    isNull: function (value) {
+    isNull: function(value) {
       return value === null;
     },
 
-    isUndefined: function (value) {
+    isUndefined: function(value) {
       return value === undefined;
     },
 
@@ -800,12 +786,12 @@
     /**
      *
      *
-     * @param {Object} obj
+     * @param {Object} obj 
      * @param {String} path
      * @param {*} defaultValue
      * @returns {[type]}              [description]
      */
-    access: function (obj, path, defaultValue) {
+    access: function(obj, path, defaultValue) {
       var index = 0;
       var name;
 
@@ -830,10 +816,10 @@
      * @param {Number} indexB -
      * @returns {Array}
      */
-    swap: function (array, indexA, indexB) {
+    swap: function(array, indexA, indexB) {
       var length = array.length;
       if (indexA >= 0 && indexB >= 0 && indexA < length && indexB < length) {
-        array[indexA] = array[indexB] + (array[indexB] = array[indexA], 0)
+        array[indexA] = array[indexB] + (array[indexB] = array[indexA], 0);
       }
       return array;
     },
@@ -845,7 +831,7 @@
      * @param {Number} targetIndex -
      * @returns {Array}
      */
-    move: function (array, sourceIndex, targetIndex) {
+    move: function(array, sourceIndex, targetIndex) {
       if (sourceIndex != targetIndex) {
         if (sourceIndex <= targetIndex) {
           targetIndex++;
@@ -886,12 +872,12 @@
      * alertAll();
      * // -> alerts 'My name is John Doe'
      */
-    bind: function (func, thisArg) {
-      var Class = function () {};
+    bind: function(func, thisArg) {
+      var Class = function() {};
       var args = slice.call(arguments, 2);
       var bound;
 
-      bound = function () {
+      bound = function() {
         if (!(this instanceof bound)) {
           return func.apply(thisArg, args.concat(slice.call(arguments)));
         }
@@ -925,7 +911,7 @@
      * blocks.equals({ value: 7 }, { value: 7, result: 1});
      * // -> false
      */
-    equals: function (a, b, deepEqual) {
+    equals: function(a, b, deepEqual) {
       // TODO: deepEqual could accept a Number which represents the levels it could go in the recursion
       a = blocks.unwrap(a);
       b = blocks.unwrap(b);
@@ -1059,7 +1045,7 @@
     aStack.pop();
     bStack.pop();
     return result;
-  };
+  }
 
   blocks.at = function (index) {
     return {
@@ -1076,21 +1062,6 @@
     return blocks.last;
   };
 
-  var positions = {
-    isPosition: function (position) {
-      return position == blocks.first || position == blocks.last || (position && position.prototypeIndentification == '__blocks.at__');
-    },
-
-    determineIndex: function (value, length) {
-      if (value == blocks.first) {
-        return 0;
-      } else if (value.prototypeIndentification == '__blocks.at__') {
-        return value.index;
-      }
-      return length;
-    }
-  };
-
   function _super(name, args) {
     var func;
     if (blocks.isString(name)) {
@@ -1103,8 +1074,8 @@
     return func.apply(this, args || []);
   }
 
-  var objectCreate = Object.create || function (prototype) {
-    var Class = function () {};
+  var objectCreate = Object.create || function(prototype) {
+    var Class = function() {};
     Class.prototype = prototype;
     return new Class();
   };
@@ -1112,16 +1083,21 @@
   for (var key in [support]) {
     break;
   }
+  support.ownPropertiesAreLast = key != '0';
 
   function parseCallback(callback, thisArg) {
     if (thisArg != null) {
       var orgCallback = callback;
-      callback = function (value, index, collection) {
+      callback = function(value, index, collection) {
         return orgCallback.call(thisArg, value, index, collection);
       };
     }
     return callback;
   }
+
+  (function () {
+    // @debug-code
+  })();
 
   (function () {
     
@@ -6518,7 +6494,7 @@ return result;
     setClass: {
       preprocess: function (className, condition) {
         if (arguments.length > 1) {
-          this.toggleClass(className, condition);
+          this.toggleClass(className, !!condition);
         } else {
           this.addClass(className);
         }
@@ -6617,7 +6593,7 @@ return result;
     * Sets the value attribute on an element.
     *
     * @memberof blocks.queries
-    * @param {(string|number|Array)} value - The new value for the element.
+    * @param {(string|number|Array|falsy)} value - The new value for the element.
     * @param {boolean} [condition=true] - Determines if the value will be set or not.
     *
     * @example {html}
@@ -6717,6 +6693,16 @@ return result;
       */
     height: {
       call: 'css'
+    },
+
+    focused: {
+      preprocess: blocks.noop,
+
+      update: function (value) {
+        if (value) {
+          this.focus();
+        }
+      }
     },
 
     /**
@@ -7382,11 +7368,10 @@ return result;
               index: 0
             });
           } else {
-            var length = array.length;
             var isCallbackAFunction = blocks.isFunction(callback);
             var value;
 
-            for (i = 0; i < length; i++) {
+            for (i = 0; i < array.length; i++) {
               value = array[i];
               if (value === callback || (isCallbackAFunction && callback.call(thisArg, value, i, array))) {
                 this.splice(i, 1);
@@ -7759,17 +7744,22 @@ return result;
 
     observable.on('add', function (args) {
       if (observable.view._initialized) {
+        observable.view._connections = {};
+        observable.view.reset();
         executeOperations(observable);
       } else {
+        for (var i = 0; i < args.items.length; i++) {
+          observable.view._connections[args.index + i] = true;
+        }
         observable.view.splice.apply(observable.view, [args.index, 0].concat(args.items));
       }
     });
 
     observable.on('remove', function (args) {
       if (observable.view._initialized) {
-        blocks.each(args.items, function (item) {
-          observable.view.remove(item);
-        });
+        observable.view._connections = {};
+        observable.view.reset();
+        executeOperations(observable);
       }
     });
 
@@ -7916,7 +7906,6 @@ return result;
     var collection = observable.__value__;
     var view = observable.view;
     var connections = view._connections;
-    //var initialized = view._initialized;
     var viewIndex = 0;
     var update = view.update;
     var skip = 0;
@@ -7984,8 +7973,8 @@ return result;
 
       switch (action) {
         case ADD:
-          view.splice(viewIndex, 0, value);
           connections[index] = viewIndex;
+          view.splice(viewIndex, 0, value);
           viewIndex++;
           break;
         case REMOVE:
@@ -9085,11 +9074,18 @@ return result;
       var target = e.target;
 
       while (target) {
-        if (target && target.tagName && target.tagName.toLowerCase() == 'a' && this._hostRegEx.test(target.href) &&
-          !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.which !== 2) {
-          // handle click
-          this.navigate(target.href);
-          e.preventDefault();
+        if (target && target.tagName && target.tagName.toLowerCase() == 'a') {
+          var download = target.getAttribute('download');
+
+          if (download !== '' && !download && this._hostRegEx.test(target.href) &&
+            !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.which !== 2) {
+
+            // handle click
+            this.navigate(target.href);
+            e.preventDefault();
+          }
+
+          break;
         }
         target = target.parentNode;
       }
@@ -9985,6 +9981,11 @@ return result;
     this._collection = collection;
     this._initialDataItem = blocks.clone(dataItem, true);
 
+    blocks.each(Model.prototype, function (value, key) {
+      if (blocks.isFunction(value) && key.indexOf('_') != 0) {
+        _this[key] = blocks.bind(value, _this);
+      }
+    });
     clonePrototype(prototype, this);
 
     this.isValid = blocks.observable(true);
@@ -10177,7 +10178,7 @@ return result;
      */
     isNew: function () {
       var idAttr = this.options.idAttr;
-      var value = blocks.unwrapAll(this[idAttr]);
+      var value = blocks.unwrap(this[idAttr]);
       var property = this._properties[idAttr];
 
       if ((!value && value !== 0) || (property && value === property.defaultValue)) {
@@ -10208,6 +10209,7 @@ return result;
 
 
     destroy: function (removeFromCollection) {
+      removeFromCollection = removeFromCollection === false ? false : true;
       if (removeFromCollection && this._collection) {
         this._collection.remove(this);
       }
@@ -10341,6 +10343,11 @@ return result;
     }
 
     observable._baseUpdate = observable.update;
+    blocks.each(blocks.observable.fn.collection, function (value, key) {
+      if (blocks.isFunction(value) && key.indexOf('_') != 0) {
+        observable[key] = blocks.bind(observable[key], observable);
+      }
+    });
     blocks.extend(observable, blocks.observable.fn.collection, prototype);
     clonePrototype(prototype, observable);
     observable._Model = ModelType;
@@ -10528,22 +10535,21 @@ return result;
     _onChange: function (args) {
       var type = args.type;
       var items = args.items;
+      var newItems = [];
       var i = 0;
       var item;
 
       for (; i < items.length; i++) {
         item = items[i];
         if (item && (type == 'remove' || (type == 'add' && item.isNew()))) {
-          items[i] = item.dataItem();
-        } else {
-          items.splice(i, 1);
-          i--;
+          newItems.push(item.dataItem());
         }
       }
+
       if (type == 'remove') {
         this._dataSource.removeAt(args.index, args.items.length);
       } else if (type == 'add') {
-        this._dataSource.add(items);
+        this._dataSource.add(newItems);
       }
     },
 
@@ -10740,8 +10746,6 @@ return result;
   };
 
   Events.register(View.prototype, ['on', 'off', 'trigger']);
-
-
 
   //var PROPERTY = '__blocks.property__';
 
@@ -11081,11 +11085,10 @@ return result;
       var _this = this;
       var currentView = this._currentView;
       var routes = this._router.routeFrom(data.url);
+      var found = false;
 
-      if (routes) {
-        var route = routes[0];
-
-        blocks.each(this._views, function (view) {
+      blocks.each(routes, function (route) {
+        blocks.each(_this._views, function (view) {
           if (view.options.routeName == route.id) {
             if (!currentView && view.options.initialPreload) {
               view.options.url = undefined;
@@ -11095,13 +11098,17 @@ return result;
             }
             view._routed(route.params);
             _this._currentView = view;
+            found = true;
             return false;
           }
         });
-      } else {
-        if (currentView) {
-          currentView.isActive(false);
+        if (found) {
+          return false;
         }
+      });
+
+      if (!found && currentView) {
+        currentView.isActive(false);
       }
     },
 
@@ -11407,7 +11414,7 @@ return result;
     staticFolder: 'public',
     blocksPath: 'auto-include', // 'auto-find'
     pages: 'auto',
-    cache: true
+    cache: 'smart'
   };
 
   ServerApplication.prototype = {
@@ -11845,21 +11852,15 @@ return result;
 })();// @source-code
   })();
 
-
-  (function () {
+  (function() {
     var toString = blocks.toString;
-    blocks.toString = function (value) {
-      if (arguments.length == 0) {
-        return 'jsblocks - let\'s build the web block by block';
+    blocks.toString = function(value) {
+      if (arguments.length === 0) {
+        return 'jsblocks - better MV-ish framework';
       }
       return toString(value);
     };
   })();
-
-  if (typeof global === 'undefined') {
-    window.blocks = blocks;
-    return;
-  }
 
   var _blocks = global.blocks;
 
@@ -11875,12 +11876,14 @@ return result;
     return blocks;
   };
 
-  global.blocks = blocks;
-
   if (typeof define === 'function' && define.amd) {
     define('blocks', [], function () {
       return blocks;
     });
+  }
+
+  if (noGlobal !== true) {
+    global.blocks = blocks;
   }
 
   return blocks;

@@ -21,12 +21,10 @@ define([
    */
   function Application(data) {
     this._router = new Router(this);
-    this._defaultRoute = '/';
     this._modelPrototypes = {};
     this._collectionPrototypes = {};
     this._viewPrototypes = {};
     this._views = {};
-    this._defaultView = undefined;
     this._currentRoutedView = undefined;
     this._started = false;
 
@@ -346,11 +344,10 @@ define([
       var _this = this;
       var currentView = this._currentView;
       var routes = this._router.routeFrom(data.url);
+      var found = false;
 
-      if (routes) {
-        var route = routes[0];
-
-        blocks.each(this._views, function (view) {
+      blocks.each(routes, function (route) {
+        blocks.each(_this._views, function (view) {
           if (view.options.routeName == route.id) {
             if (!currentView && view.options.initialPreload) {
               view.options.url = undefined;
@@ -360,13 +357,17 @@ define([
             }
             view._routed(route.params);
             _this._currentView = view;
+            found = true;
             return false;
           }
         });
-      } else {
-        if (currentView) {
-          currentView.isActive(false);
+        if (found) {
+          return false;
         }
+      });
+
+      if (!found && currentView) {
+        currentView.isActive(false);
       }
     },
 
@@ -424,10 +425,7 @@ define([
           }
 
           if (currentView) {
-            if (currentView.options.route == this._defaultRoute) {
-              this._defaultView = currentView;
-            }
-            if (currentView.options.route) {
+            if (blocks.has(currentView.options, 'route')) {
               currentView.options.routeName = this._router.registerRoute(
                 currentView.options.route, this._getParentRouteName(currentView));
             }

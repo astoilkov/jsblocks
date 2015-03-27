@@ -564,7 +564,7 @@ define([
     setClass: {
       preprocess: function (className, condition) {
         if (arguments.length > 1) {
-          this.toggleClass(className, condition);
+          this.toggleClass(className, !!condition);
         } else {
           this.addClass(className);
         }
@@ -663,7 +663,7 @@ define([
     * Sets the value attribute on an element.
     *
     * @memberof blocks.queries
-    * @param {(string|number|Array)} value - The new value for the element.
+    * @param {(string|number|Array|falsy)} value - The new value for the element.
     * @param {boolean} [condition=true] - Determines if the value will be set or not.
     *
     * @example {html}
@@ -763,6 +763,16 @@ define([
       */
     height: {
       call: 'css'
+    },
+
+    focused: {
+      preprocess: blocks.noop,
+
+      update: function (value) {
+        if (value) {
+          this.focus();
+        }
+      }
     },
 
     /**

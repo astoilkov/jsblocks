@@ -31,17 +31,22 @@ define([
 
     observable.on('add', function (args) {
       if (observable.view._initialized) {
+        observable.view._connections = {};
+        observable.view.reset();
         executeOperations(observable);
       } else {
+        for (var i = 0; i < args.items.length; i++) {
+          observable.view._connections[args.index + i] = true;
+        }
         observable.view.splice.apply(observable.view, [args.index, 0].concat(args.items));
       }
     });
 
     observable.on('remove', function (args) {
       if (observable.view._initialized) {
-        blocks.each(args.items, function (item) {
-          observable.view.remove(item);
-        });
+        observable.view._connections = {};
+        observable.view.reset();
+        executeOperations(observable);
       }
     });
 
@@ -188,7 +193,6 @@ define([
     var collection = observable.__value__;
     var view = observable.view;
     var connections = view._connections;
-    //var initialized = view._initialized;
     var viewIndex = 0;
     var update = view.update;
     var skip = 0;
@@ -256,8 +260,8 @@ define([
 
       switch (action) {
         case ADD:
-          view.splice(viewIndex, 0, value);
           connections[index] = viewIndex;
+          view.splice(viewIndex, 0, value);
           viewIndex++;
           break;
         case REMOVE:

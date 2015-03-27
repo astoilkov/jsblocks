@@ -3058,7 +3058,7 @@
     setClass: {
       preprocess: function (className, condition) {
         if (arguments.length > 1) {
-          this.toggleClass(className, condition);
+          this.toggleClass(className, !!condition);
         } else {
           this.addClass(className);
         }
@@ -3157,7 +3157,7 @@
     * Sets the value attribute on an element.
     *
     * @memberof blocks.queries
-    * @param {(string|number|Array)} value - The new value for the element.
+    * @param {(string|number|Array|falsy)} value - The new value for the element.
     * @param {boolean} [condition=true] - Determines if the value will be set or not.
     *
     * @example {html}
@@ -3257,6 +3257,16 @@
       */
     height: {
       call: 'css'
+    },
+
+    focused: {
+      preprocess: blocks.noop,
+
+      update: function (value) {
+        if (value) {
+          this.focus();
+        }
+      }
     },
 
     /**
@@ -3922,11 +3932,10 @@
               index: 0
             });
           } else {
-            var length = array.length;
             var isCallbackAFunction = blocks.isFunction(callback);
             var value;
 
-            for (i = 0; i < length; i++) {
+            for (i = 0; i < array.length; i++) {
               value = array[i];
               if (value === callback || (isCallbackAFunction && callback.call(thisArg, value, i, array))) {
                 this.splice(i, 1);
@@ -4299,17 +4308,22 @@
 
     observable.on('add', function (args) {
       if (observable.view._initialized) {
+        observable.view._connections = {};
+        observable.view.reset();
         executeOperations(observable);
       } else {
+        for (var i = 0; i < args.items.length; i++) {
+          observable.view._connections[args.index + i] = true;
+        }
         observable.view.splice.apply(observable.view, [args.index, 0].concat(args.items));
       }
     });
 
     observable.on('remove', function (args) {
       if (observable.view._initialized) {
-        blocks.each(args.items, function (item) {
-          observable.view.remove(item);
-        });
+        observable.view._connections = {};
+        observable.view.reset();
+        executeOperations(observable);
       }
     });
 
@@ -4456,7 +4470,6 @@
     var collection = observable.__value__;
     var view = observable.view;
     var connections = view._connections;
-    //var initialized = view._initialized;
     var viewIndex = 0;
     var update = view.update;
     var skip = 0;
@@ -4524,8 +4537,8 @@
 
       switch (action) {
         case ADD:
-          view.splice(viewIndex, 0, value);
           connections[index] = viewIndex;
+          view.splice(viewIndex, 0, value);
           viewIndex++;
           break;
         case REMOVE:
@@ -5625,11 +5638,18 @@
       var target = e.target;
 
       while (target) {
-        if (target && target.tagName && target.tagName.toLowerCase() == 'a' && this._hostRegEx.test(target.href) &&
-          !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.which !== 2) {
-          // handle click
-          this.navigate(target.href);
-          e.preventDefault();
+        if (target && target.tagName && target.tagName.toLowerCase() == 'a') {
+          var download = target.getAttribute('download');
+
+          if (download !== '' && !download && this._hostRegEx.test(target.href) &&
+            !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.which !== 2) {
+
+            // handle click
+            this.navigate(target.href);
+            e.preventDefault();
+          }
+
+          break;
         }
         target = target.parentNode;
       }
@@ -6525,6 +6545,11 @@
     this._collection = collection;
     this._initialDataItem = blocks.clone(dataItem, true);
 
+    blocks.each(Model.prototype, function (value, key) {
+      if (blocks.isFunction(value) && key.indexOf('_') != 0) {
+        _this[key] = blocks.bind(value, _this);
+      }
+    });
     clonePrototype(prototype, this);
 
     this.isValid = blocks.observable(true);
@@ -6717,7 +6742,7 @@
      */
     isNew: function () {
       var idAttr = this.options.idAttr;
-      var value = blocks.unwrapAll(this[idAttr]);
+      var value = blocks.unwrap(this[idAttr]);
       var property = this._properties[idAttr];
 
       if ((!value && value !== 0) || (property && value === property.defaultValue)) {
@@ -6748,6 +6773,7 @@
 
 
     destroy: function (removeFromCollection) {
+      removeFromCollection = removeFromCollection === false ? false : true;
       if (removeFromCollection && this._collection) {
         this._collection.remove(this);
       }
@@ -6881,6 +6907,11 @@
     }
 
     observable._baseUpdate = observable.update;
+    blocks.each(blocks.observable.fn.collection, function (value, key) {
+      if (blocks.isFunction(value) && key.indexOf('_') != 0) {
+        observable[key] = blocks.bind(observable[key], observable);
+      }
+    });
     blocks.extend(observable, blocks.observable.fn.collection, prototype);
     clonePrototype(prototype, observable);
     observable._Model = ModelType;
@@ -7068,22 +7099,21 @@
     _onChange: function (args) {
       var type = args.type;
       var items = args.items;
+      var newItems = [];
       var i = 0;
       var item;
 
       for (; i < items.length; i++) {
         item = items[i];
         if (item && (type == 'remove' || (type == 'add' && item.isNew()))) {
-          items[i] = item.dataItem();
-        } else {
-          items.splice(i, 1);
-          i--;
+          newItems.push(item.dataItem());
         }
       }
+
       if (type == 'remove') {
         this._dataSource.removeAt(args.index, args.items.length);
       } else if (type == 'add') {
-        this._dataSource.add(items);
+        this._dataSource.add(newItems);
       }
     },
 
@@ -7280,6 +7310,15 @@
   };
 
   Events.register(View.prototype, ['on', 'off', 'trigger']);
+
+  /* @if DEBUG */ {
+    blocks.debug.addType('View', function (value) {
+      if (value && View.prototype.isPrototypeOf(value)) {
+        return true;
+      }
+      return false;
+    });
+  } /* @endif */
 
 
 
@@ -7621,11 +7660,10 @@
       var _this = this;
       var currentView = this._currentView;
       var routes = this._router.routeFrom(data.url);
+      var found = false;
 
-      if (routes) {
-        var route = routes[0];
-
-        blocks.each(this._views, function (view) {
+      blocks.each(routes, function (route) {
+        blocks.each(_this._views, function (view) {
           if (view.options.routeName == route.id) {
             if (!currentView && view.options.initialPreload) {
               view.options.url = undefined;
@@ -7635,13 +7673,17 @@
             }
             view._routed(route.params);
             _this._currentView = view;
+            found = true;
             return false;
           }
         });
-      } else {
-        if (currentView) {
-          currentView.isActive(false);
+        if (found) {
+          return false;
         }
+      });
+
+      if (!found && currentView) {
+        currentView.isActive(false);
       }
     },
 

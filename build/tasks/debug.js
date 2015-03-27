@@ -90,7 +90,7 @@ module.exports = function (grunt) {
     var sourceCodeLocation;
     var result = baseCode;
 
-    sourceCodeLocation = result.indexOf('// @source-code');
+    sourceCodeLocation = result.indexOf('// @debug-code');
     result = result.substring(0, sourceCodeLocation) + '\n' + getSourceCodeWrap(insertCode) + result.substring(sourceCodeLocation);
 
     return result;

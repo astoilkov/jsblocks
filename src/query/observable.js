@@ -471,11 +471,10 @@ define([
               index: 0
             });
           } else {
-            var length = array.length;
             var isCallbackAFunction = blocks.isFunction(callback);
             var value;
 
-            for (i = 0; i < length; i++) {
+            for (i = 0; i < array.length; i++) {
               value = array[i];
               if (value === callback || (isCallbackAFunction && callback.call(thisArg, value, i, array))) {
                 this.splice(i, 1);
