@@ -2,7 +2,7 @@
 
 Better MV-ish Framework
 
-From simple user interfaces to complex single-page applications using server-side rendered, faster and easy to learn framework.
+From simple user interfaces to complex single-page applications using faster, server-side rendered and easy to learn framework.
 
 [[ official website ]](http://104.131.138.38)
 
