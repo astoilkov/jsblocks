@@ -48,3 +48,4 @@ From simple user interfaces to complex single-page applications using faster, se
 ```
 
 ### Example projects
+ * [TodoMVC](https://github.com/astoilkov/jsblocks-todomvc)
