@@ -159,7 +159,7 @@ define([
           value.__context__ = this;
         }
       }
-      this.init.apply(this, this._initArgs);
+      this.init();
       blocks.__viewInInitialize__ = undefined;
       this._initCalled = true;
     },

@@ -71,13 +71,17 @@ define([
       observable._dependencyType = 2; // Custom object
     }
 
+    updateDependencies(observable);
+
+    return observable;
+  };
+
+  function updateDependencies(observable) {
     if (observable._dependencyType) {
       observable._getDependency = blocks.bind(getDependency, observable);
       observable.on('get', observable._getDependency);
     }
-
-    return observable;
-  };
+  }
 
   function getDependency() {
     var observable = this;
@@ -90,7 +94,18 @@ define([
     Observer.startObserving();
     accessor.call(observable.__context__);
     blocks.each(Observer.stopObserving(), function (dependency) {
-      (dependency._dependencies = dependency._dependencies || []).push(observable);
+      //(dependency._dependencies = dependency._dependencies || []).push(observable);
+      var dependencies = (dependency._dependencies = dependency._dependencies || []);
+      var exists = false;
+      blocks.each(dependencies, function (value) {
+        if (observable === value) {
+          exists = true;
+          return false;
+        }
+      });
+      if (!exists) {
+        dependencies.push(observable);
+      }
     });
   }
 
@@ -110,7 +125,7 @@ define([
       var $index;
 
       if (indexes) {
-        if (indexes.length == observable().length || forceGet) {
+        if (indexes.length == observable.__value__.length || forceGet) {
           $index = indexes[index];
         } else {
           $index = blocks.observable(index);
@@ -141,9 +156,6 @@ define([
           var offset;
           var value;
 
-
-          // Expression support
-          //value = value == null ? '' : value.toString();
           blocks.eachRight(this._expressions, function updateExpression(expression) {
             element = expression.element;
             context = expression.context;
@@ -178,14 +190,17 @@ define([
           for (var i = 0; i < elements.length; i++) {
             value = elements[i];
             element = value.element;
-            if (!element) {
+            if (!element && ElementsData.rawData[value.elementId]) {
               element = value.element = ElementsData.rawData[value.elementId].dom;
+              if (!element) {
+                element = ElementsData.rawData[value.elementId].virtual;
+              }
             }
-            if (document.body.contains(element)) {
+            if (document.body.contains(element) || VirtualElement.Is(element)) {
               domQuery = blocks.domQuery(element);
               domQuery.context(value.context);
               domQuery.executeMethods(element, value.cache);
-              domQuery.context(undefined);
+              domQuery.popContext();
             } else {
               elements.splice(i, 1);
               i -= 1;
@@ -193,6 +208,7 @@ define([
           }
 
           blocks.each(this._dependencies, function updateDependency(dependency) {
+            updateDependencies(dependency);
             dependency.update();
           });
 

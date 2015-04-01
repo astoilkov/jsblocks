@@ -10,8 +10,8 @@
     function getDataId(element) {
       var result = element ? VirtualElement.Is(element) ? element._attributes[dataIdAttr] :
         element.nodeType == 1 ? element.getAttribute(dataIdAttr) :
-        element.nodeType == 8 ? /\s+(\d+):[^\/]/.exec(element.nodeValue) :
-        null :
+          element.nodeType == 8 ? /\s+(\d+):[^\/]/.exec(element.nodeValue) :
+            null :
         null;
 
       return blocks.isArray(result) ? result[1] : result;
@@ -34,9 +34,8 @@
 
       collectGarbage: function () {
         blocks.each(data, function (value, key) {
-          if (value && !document.body.contains(value.dom)) {
-            data[key] = undefined;
-            freeIds.push(key);
+          if (value && value.dom && !document.body.contains(value.dom)) {
+            ElementsData.clear(value.virtual, true);
           }
         });
       },
@@ -85,9 +84,19 @@
 
       clear: function (element, force) {
         var id = getDataId(element);
-        if (data[id] && (!data[id].haveData || force)) {
+        var currentData = data[id];
+
+        if (currentData && (!currentData.haveData || force)) {
+          blocks.each(currentData.observables, function (value) {
+            for (var i = 0; i < value._elements.length; i++) {
+              if (value._elements[i].elementId == data.id) {
+                value._elements.splice(i, 1);
+                i--;
+              }
+            }
+          });
           data[id] = undefined;
-          freeIds.push(id);
+          //freeIds.push(id);
           if (VirtualElement.Is(element)) {
             element.attr(dataIdAttr, null);
           } else if (element.nodeType == 1) {

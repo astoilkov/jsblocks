@@ -79,6 +79,7 @@ define([
     Execute: function (context, elementData, expressionData, entireExpression) {
       var expression = expressionData.expression;
       var attributeName = expressionData.attributeName;
+      var expressionObj;
       var observables;
       var result;
       var value;
@@ -123,17 +124,19 @@ define([
         if (elementData) {
           elementData.haveData = true;
 
+          expressionObj = {
+            length: result.length,
+            attr: attributeName,
+            context: context,
+            elementId: elementData.id,
+            expression: expression,
+            entire: entireExpression
+          };
+
           blocks.each(observables, function (observable) {
             if (!observable._expressionKeys[elementData.id]) {
               observable._expressionKeys[elementData.id] = true;
-              observable._expressions.push({
-                length: result.length,
-                attr: attributeName,
-                context: context,
-                elementId: elementData.id,
-                expression: expression,
-                entire: entireExpression
-              });
+              observable._expressions.push(expressionObj);
             }
           });
         }

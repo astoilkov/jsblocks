@@ -31,7 +31,9 @@ define([
     context: createProperty('_context'),
 
     popContext: function () {
-      this._context = this._context.$parentContext;
+      if (this._context) {
+        this._context = this._context.$parentContext;
+      }
     },
 
     applyContextToElement: function (element) {
@@ -265,7 +267,7 @@ define([
         elementData.haveData = true;
         blocks.each(observables, function (observable) {
           if (!elementData.observables[observable.__id__ + method.query]) {
-            elementData.observables[observable.__id__ + method.query] = true;
+            elementData.observables[observable.__id__ + method.query] = observable;
             observable._elements.push({
               elementId: elementData.id,
               cache: [method],

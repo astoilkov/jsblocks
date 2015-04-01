@@ -246,7 +246,7 @@ define([
       if (removeFromCollection && this._collection) {
         this._collection.remove(this);
       }
-      this._dataSource.remove(this);
+      this._dataSource._remove([this.dataItem()]);
       return this;
     },
 

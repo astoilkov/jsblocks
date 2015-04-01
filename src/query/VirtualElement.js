@@ -181,7 +181,7 @@ define([
         }
 
         if (propertyName == 'display') {
-          value = value == 'none' || value == null || value === false ? 'none' : '';
+          value = value == 'none' || (!value && value !== '') ? 'none' : '';
         }
 
         if (this._changes) {
@@ -411,12 +411,17 @@ define([
       return html;
     },
 
-    _createAttributeExpressions: function () {
+    _createAttributeExpressions: function (serverData) {
       var attributeExpressions = this._attributeExpressions;
+      var dataId = this._attributes[dataIdAttr];
       var expression;
 
       blocks.each(this._attributes, function (attributeValue, attributeName) {
-        expression = Expression.Create(attributeValue, attributeName);
+        if (serverData) {
+          expression = Expression.Create(serverData[dataId + attributeName] || '', attributeName);
+        } else {
+          expression = Expression.Create(attributeValue, attributeName);
+        }
         if (expression) {
           attributeExpressions.push(expression);
         }

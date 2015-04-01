@@ -14,6 +14,9 @@ define(function () {
       __mock__: true,
 
       doctype: createElementMock(),
+
+      body: createElementMock(),
+
       createElement: function (tagName) {
         return createElementMock(tagName);
       }

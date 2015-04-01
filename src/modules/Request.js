@@ -87,7 +87,7 @@
     },
 
     createXHR: function () {
-      var Type = window.ActiveXObject || XMLHttpRequest;
+      var Type = XMLHttpRequest || window.ActiveXObject;
       try {
         return new Type('Microsoft.XMLHTTP');
       } catch (e) {

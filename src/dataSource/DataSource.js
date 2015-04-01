@@ -283,7 +283,7 @@
       return this._changes.length > 0;
     },
 
-    clearChanges: function () { // or in kendo called 'cancelChanges'
+    clearChanges: function () {
       this._changes.splice(0, this._changes.length);
       this._changesMeta = {};
       this.hasChanges(false);
@@ -302,9 +302,9 @@
           if (item.__id__) {
             delete item.__id__;
           }
-          if (change.type == DESTROY && blocks.isObject(item) && _this.options.idAttr) {
-            data = item[_this.options.idAttr];
-          }
+          //if (change.type == DESTROY && blocks.isObject(item) && _this.options.idAttr) {
+          //  data = item[_this.options.idAttr];
+          //}
           _this._ajax(change.type, {
             data: data
           }, function () {
@@ -483,21 +483,6 @@
       });
       this._onChangePush();
     },
-
-    //_checkForExistent: function (items) {
-    //    var changes = this._changes;
-    //    var count = 0;
-
-    //    blocks.each(changes, function (change, i) {
-    //        blocks.each(change.items, function (item) {
-    //            if (blocks.contains(items, item)) {
-    //                count++;
-    //                blocks.removeAt(changes, i);
-    //            }
-    //        });
-    //    });
-    //    return items.length != 0 && count == items.length;
-    //},
 
     _haveData: function () {
       var startIndex = (this._page + 1) * this._pageSize;

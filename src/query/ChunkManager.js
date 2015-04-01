@@ -3,7 +3,7 @@ define([
   './animation',
   './ElementsData'
 ], function (blocks, animation, ElementsData) {
-  var ChunkManager = function (observable) {
+  function ChunkManager(observable) {
     this.observable = observable;
     this.chunkLengths = {};
     this.dispose();
@@ -25,7 +25,7 @@ define([
     // TODO: Explain why we even need this method. Required to fix a bug.
     setChildNodesCount: function (count) {
       if (this.childNodesCount === undefined) {
-        this.observableLength = this.observable().length;
+        this.observableLength = this.observable.__value__.length;
       }
       this.childNodesCount = count - (this.startOffset + this.endOffset);
     },
@@ -111,6 +111,10 @@ define([
     },
 
     setup: function (domElement, callback) {
+      if (!domElement) {
+        return;
+      }
+
       var eachData = ElementsData.data(domElement).eachData;
       var element;
       var commentId;

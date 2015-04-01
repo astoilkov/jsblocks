@@ -8,6 +8,7 @@ define([
   './VirtualComment'
 ], function (trimRegExp, dataQueryAttr, escapeValue, browser, Expression, VirtualElement, VirtualComment) {
   function createVirtual(htmlElement, parentElement) {
+    var serverData = window.__blocksServerData__;
     var elements = [];
     var element;
     var tagName;
@@ -42,7 +43,7 @@ define([
           }
         }
         element._attributes = elementAttributes;
-        element._createAttributeExpressions();
+        element._createAttributeExpressions(serverData);
 
         if (htmlElement.style.cssText) {
           element._haveStyle = true;
@@ -84,10 +85,10 @@ define([
           };
         } else if (VirtualComment.Is(parentElement)) {
           elements.push('<!--' + commentText + '-->');
-        } else if (window.__blocksServerData__) {
+        } else if (serverData) {
           var number = parseInt(/[0-9]+/.exec(commentTextTrimmed), 10);
-          if (!blocks.isNaN(number) && window.__blocksServerData__[number]) {
-            elements.push(Expression.Create(window.__blocksServerData__[number]));
+          if (!blocks.isNaN(number) && serverData[number]) {
+            elements.push(Expression.Create(serverData[number]));
           }
         } else if (commentTextTrimmed.indexOf('/blocks') !== 0) {
           elements.push('<!--' + commentText + '-->');

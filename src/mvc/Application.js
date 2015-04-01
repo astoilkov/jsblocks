@@ -289,7 +289,7 @@ define([
     },
 
     navigateTo: function (view, params) {
-      if (view.isActive() || !view.options.route) {
+      if (!view.options.route) {
         return false;
       }
       this._history.navigate(this._router.routeTo(view.options.routeName, params));
@@ -332,7 +332,6 @@ define([
     },
 
     _ready: function (element) {
-      this._router.registerRoute(this._defaultRoute);
       this._history = new History(this.options);
       this._history
           .on('urlChange', blocks.bind(this._urlChange, this))

@@ -92,14 +92,19 @@ define([
      * });
      */
     read: function (params, callback) {
-      // TODO: Write tests for the callback checking if it is beeing called
+      // TODO: Write tests for the callback checking if it is being called
+      var context = this.__context__;
+
       if (blocks.isFunction(params)) {
         callback = params;
         params = undefined;
       }
       this._dataSource.read({
         data: params
-      }, callback);
+      }, callback ? function () {
+        callback.call(context);
+      } : blocks.noop);
+
       return this;
     },
 

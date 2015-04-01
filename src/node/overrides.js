@@ -29,7 +29,19 @@ define([
     var virtual = parseToVirtual(server.html);
 
     domQuery.pushContext(model);
-    server.rendered = virtual.render(domQuery) + VirtualElement('script').html('window.__blocksServerData__ = ' + JSON.stringify(server.data)).render();
+
+    blocks.each(virtual.children(), function (child) {
+      if (VirtualElement.Is(child)) {
+        if (child.tagName() == 'body') {
+          child._parent = null;
+          server.rendered += child.render(domQuery) + VirtualElement('script').html('window.__blocksServerData__ = ' + JSON.stringify(server.data)).render();
+        } else {
+          server.rendered += child.render();
+        }
+      } else {
+        server.rendered += child;
+      }
+    });
   };
 
   var executeExpressionValue = Expression.Execute;
@@ -37,8 +49,12 @@ define([
   Expression.Execute = function (context, elementData, expressionData, entireExpression) {
     var value = executeExpressionValue(context, elementData, expressionData, entireExpression);
     elementData = value.elementData;
-    if (elementData && !expressionData.attributeName) {
-      server.data[elementData.id] = '{{' + elementData.expression + '}}';
+    if (elementData) {
+      if (expressionData.attributeName) {
+        server.data[elementData.id + expressionData.attributeName] =  entireExpression.text;
+      } else {
+        server.data[elementData.id] = '{{' + expressionData.expression + '}}';
+      }
     }
 
     return value;

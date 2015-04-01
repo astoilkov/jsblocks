@@ -3953,8 +3953,8 @@ return result;
     function getDataId(element) {
       var result = element ? VirtualElement.Is(element) ? element._attributes[dataIdAttr] :
         element.nodeType == 1 ? element.getAttribute(dataIdAttr) :
-        element.nodeType == 8 ? /\s+(\d+):[^\/]/.exec(element.nodeValue) :
-        null :
+          element.nodeType == 8 ? /\s+(\d+):[^\/]/.exec(element.nodeValue) :
+            null :
         null;
 
       return blocks.isArray(result) ? result[1] : result;
@@ -3977,9 +3977,8 @@ return result;
 
       collectGarbage: function () {
         blocks.each(data, function (value, key) {
-          if (value && !document.body.contains(value.dom)) {
-            data[key] = undefined;
-            freeIds.push(key);
+          if (value && value.dom && !document.body.contains(value.dom)) {
+            ElementsData.clear(value.virtual, true);
           }
         });
       },
@@ -4028,9 +4027,19 @@ return result;
 
       clear: function (element, force) {
         var id = getDataId(element);
-        if (data[id] && (!data[id].haveData || force)) {
+        var currentData = data[id];
+
+        if (currentData && (!currentData.haveData || force)) {
+          blocks.each(currentData.observables, function (value) {
+            for (var i = 0; i < value._elements.length; i++) {
+              if (value._elements[i].elementId == data.id) {
+                value._elements.splice(i, 1);
+                i--;
+              }
+            }
+          });
           data[id] = undefined;
-          freeIds.push(id);
+          //freeIds.push(id);
           if (VirtualElement.Is(element)) {
             element.attr(dataIdAttr, null);
           } else if (element.nodeType == 1) {
@@ -4150,6 +4159,7 @@ return result;
     Execute: function (context, elementData, expressionData, entireExpression) {
       var expression = expressionData.expression;
       var attributeName = expressionData.attributeName;
+      var expressionObj;
       var observables;
       var result;
       var value;
@@ -4186,17 +4196,19 @@ return result;
         if (elementData) {
           elementData.haveData = true;
 
+          expressionObj = {
+            length: result.length,
+            attr: attributeName,
+            context: context,
+            elementId: elementData.id,
+            expression: expression,
+            entire: entireExpression
+          };
+
           blocks.each(observables, function (observable) {
             if (!observable._expressionKeys[elementData.id]) {
               observable._expressionKeys[elementData.id] = true;
-              observable._expressions.push({
-                length: result.length,
-                attr: attributeName,
-                context: context,
-                elementId: elementData.id,
-                expression: expression,
-                entire: entireExpression
-              });
+              observable._expressions.push(expressionObj);
             }
           });
         }
@@ -4659,7 +4671,7 @@ return result;
         }
 
         if (propertyName == 'display') {
-          value = value == 'none' || value == null || value === false ? 'none' : '';
+          value = value == 'none' || (!value && value !== '') ? 'none' : '';
         }
 
         if (this._changes) {
@@ -4889,12 +4901,17 @@ return result;
       return html;
     },
 
-    _createAttributeExpressions: function () {
+    _createAttributeExpressions: function (serverData) {
       var attributeExpressions = this._attributeExpressions;
+      var dataId = this._attributes[dataIdAttr];
       var expression;
 
       blocks.each(this._attributes, function (attributeValue, attributeName) {
-        expression = Expression.Create(attributeValue, attributeName);
+        if (serverData) {
+          expression = Expression.Create(serverData[dataId + attributeName] || '', attributeName);
+        } else {
+          expression = Expression.Create(attributeValue, attributeName);
+        }
         if (expression) {
           attributeExpressions.push(expression);
         }
@@ -5382,6 +5399,7 @@ return result;
   };
 
   function createVirtual(htmlElement, parentElement) {
+    var serverData = window.__blocksServerData__;
     var elements = [];
     var element;
     var tagName;
@@ -5416,7 +5434,7 @@ return result;
           }
         }
         element._attributes = elementAttributes;
-        element._createAttributeExpressions();
+        element._createAttributeExpressions(serverData);
 
         if (htmlElement.style.cssText) {
           element._haveStyle = true;
@@ -5458,10 +5476,10 @@ return result;
           };
         } else if (VirtualComment.Is(parentElement)) {
           elements.push('<!--' + commentText + '-->');
-        } else if (window.__blocksServerData__) {
+        } else if (serverData) {
           var number = parseInt(/[0-9]+/.exec(commentTextTrimmed), 10);
-          if (!blocks.isNaN(number) && window.__blocksServerData__[number]) {
-            elements.push(Expression.Create(window.__blocksServerData__[number]));
+          if (!blocks.isNaN(number) && serverData[number]) {
+            elements.push(Expression.Create(serverData[number]));
           }
         } else if (commentTextTrimmed.indexOf('/blocks') !== 0) {
           elements.push('<!--' + commentText + '-->');
@@ -5611,7 +5629,9 @@ return result;
     context: createProperty('_context'),
 
     popContext: function () {
-      this._context = this._context.$parentContext;
+      if (this._context) {
+        this._context = this._context.$parentContext;
+      }
     },
 
     applyContextToElement: function (element) {
@@ -5825,7 +5845,7 @@ return result;
         elementData.haveData = true;
         blocks.each(observables, function (observable) {
           if (!elementData.observables[observable.__id__ + method.query]) {
-            elementData.observables[observable.__id__ + method.query] = true;
+            elementData.observables[observable.__id__ + method.query] = observable;
             observable._elements.push({
               elementId: elementData.id,
               cache: [method],
@@ -6760,7 +6780,7 @@ return result;
     var OBSERVABLE = '__blocks.observable__';
 
 
-  var ChunkManager = function (observable) {
+  function ChunkManager(observable) {
     this.observable = observable;
     this.chunkLengths = {};
     this.dispose();
@@ -6782,7 +6802,7 @@ return result;
     // TODO: Explain why we even need this method. Required to fix a bug.
     setChildNodesCount: function (count) {
       if (this.childNodesCount === undefined) {
-        this.observableLength = this.observable().length;
+        this.observableLength = this.observable.__value__.length;
       }
       this.childNodesCount = count - (this.startOffset + this.endOffset);
     },
@@ -6868,6 +6888,10 @@ return result;
     },
 
     setup: function (domElement, callback) {
+      if (!domElement) {
+        return;
+      }
+
       var eachData = ElementsData.data(domElement).eachData;
       var element;
       var commentId;
@@ -6968,13 +6992,17 @@ return result;
       observable._dependencyType = 2; // Custom object
     }
 
+    updateDependencies(observable);
+
+    return observable;
+  };
+
+  function updateDependencies(observable) {
     if (observable._dependencyType) {
       observable._getDependency = blocks.bind(getDependency, observable);
       observable.on('get', observable._getDependency);
     }
-
-    return observable;
-  };
+  }
 
   function getDependency() {
     var observable = this;
@@ -6987,7 +7015,18 @@ return result;
     Observer.startObserving();
     accessor.call(observable.__context__);
     blocks.each(Observer.stopObserving(), function (dependency) {
-      (dependency._dependencies = dependency._dependencies || []).push(observable);
+      //(dependency._dependencies = dependency._dependencies || []).push(observable);
+      var dependencies = (dependency._dependencies = dependency._dependencies || []);
+      var exists = false;
+      blocks.each(dependencies, function (value) {
+        if (observable === value) {
+          exists = true;
+          return false;
+        }
+      });
+      if (!exists) {
+        dependencies.push(observable);
+      }
     });
   }
 
@@ -7007,7 +7046,7 @@ return result;
       var $index;
 
       if (indexes) {
-        if (indexes.length == observable().length || forceGet) {
+        if (indexes.length == observable.__value__.length || forceGet) {
           $index = indexes[index];
         } else {
           $index = blocks.observable(index);
@@ -7038,9 +7077,6 @@ return result;
           var offset;
           var value;
 
-
-          // Expression support
-          //value = value == null ? '' : value.toString();
           blocks.eachRight(this._expressions, function updateExpression(expression) {
             element = expression.element;
             context = expression.context;
@@ -7075,14 +7111,17 @@ return result;
           for (var i = 0; i < elements.length; i++) {
             value = elements[i];
             element = value.element;
-            if (!element) {
+            if (!element && ElementsData.rawData[value.elementId]) {
               element = value.element = ElementsData.rawData[value.elementId].dom;
+              if (!element) {
+                element = ElementsData.rawData[value.elementId].virtual;
+              }
             }
-            if (document.body.contains(element)) {
+            if (document.body.contains(element) || VirtualElement.Is(element)) {
               domQuery = blocks.domQuery(element);
               domQuery.context(value.context);
               domQuery.executeMethods(element, value.cache);
-              domQuery.context(undefined);
+              domQuery.popContext();
             } else {
               elements.splice(i, 1);
               i -= 1;
@@ -7090,6 +7129,7 @@ return result;
           }
 
           blocks.each(this._dependencies, function updateDependency(dependency) {
+            updateDependencies(dependency);
             dependency.update();
           });
 
@@ -7747,11 +7787,6 @@ return result;
         observable.view._connections = {};
         observable.view.reset();
         executeOperations(observable);
-      } else {
-        for (var i = 0; i < args.items.length; i++) {
-          observable.view._connections[args.index + i] = true;
-        }
-        observable.view.splice.apply(observable.view, [args.index, 0].concat(args.items));
       }
     });
 
@@ -7761,6 +7796,17 @@ return result;
         observable.view.reset();
         executeOperations(observable);
       }
+    });
+
+    return observable;
+  };
+
+  blocks.observable.step = function (options) {
+    var observable = initExpressionExtender(this);
+
+    observable._operations.push({
+      type: 'step',
+      step: options
     });
 
     return observable;
@@ -7831,6 +7877,8 @@ return result;
 
     newObservable.view = blocks.observable([]);
     newObservable.view._connections = {};
+    newObservable.view._observed = [];
+    newObservable.view._updateObservable = blocks.bind(updateObservable, newObservable);
     newObservable._operations = observable._operations ? blocks.clone(observable._operations) : [];
     newObservable._getter = blocks.bind(getter, newObservable);
     newObservable.view._initialized = false;
@@ -7841,29 +7889,42 @@ return result;
   }
 
   function getter() {
-    var _this = this;
+    Events.off(this.view, 'get', this._getter);
+    this._getter = undefined;
+    this.view._initialized = true;
+    executeOperations(this);
+  }
 
-    if (this.__value__.length) {
-      Events.off(_this.view, 'get', _this._getter);
-      this._getter = undefined;
-
-      Observer.startObserving();
-      executeOperations(_this);
-      blocks.each(Observer.stopObserving(), function (observable) {
-        observable.on('change', function () {
-          executeOperations(_this);
-        });
-      });
-      this.view._initialized = true;
-    }
+  function updateObservable() {
+    executeOperations(this);
   }
 
   function executeOperations(observable) {
     var chunk = [];
     var executedAtLeastOnce = false;
+    var observed = observable.view._observed;
+    var updateObservable = observable.view._updateObservable;
+
+    blocks.each(observed, function (observable) {
+      Events.off(observable, 'change', updateObservable);
+      //observable.off('change', updateObservable);
+    });
+    observed = observable.view._observed = [];
+    Observer.startObserving();
 
     blocks.each(observable._operations, function (operation) {
-      if (blocks.has(operation, 'sort')) {
+      if (operation.type == 'step') {
+        var view = observable.view;
+        observable.view = blocks.observable([]);
+        observable.view._connections = {};
+        if (chunk.length) {
+          executeOperationsChunk(observable, chunk);
+          executedAtLeastOnce = true;
+        }
+        operation.step.call(observable.__context__);
+        observable.view = view;
+      }
+      if (operation.type == 'sort') {
         if (chunk.length) {
           executeOperationsChunk(observable, chunk);
           executedAtLeastOnce = true;
@@ -7895,6 +7956,11 @@ return result;
     if (chunk.length) {
       executeOperationsChunk(observable, chunk);
     }
+
+    blocks.each(Observer.stopObserving(), function (observable) {
+      observed.push(observable);
+      observable.on('change', updateObservable);
+    });
   }
 
   function executeOperationsChunk(observable, operations) {
@@ -7906,6 +7972,7 @@ return result;
     var collection = observable.__value__;
     var view = observable.view;
     var connections = view._connections;
+    var newConnections = {};
     var viewIndex = 0;
     var update = view.update;
     var skip = 0;
@@ -7914,17 +7981,24 @@ return result;
 
     blocks.each(operations, function (operation) {
       if (operation.type == 'skip') {
-        skip = blocks.unwrap(operation.skip);
+        skip = operation.skip;
+        if (blocks.isFunction(skip)) {
+          skip = skip.call(observable.__context__);
+        }
+        skip = blocks.unwrap(skip);
       } else if (operation.type == 'take') {
-        take = blocks.unwrap(operation.take);
+        take = operation.take;
+        if (blocks.isFunction(take)) {
+          take = take.call(observable.__context__);
+        }
+        take = blocks.unwrap(take);
       }
     });
 
     blocks.each(collection, function iterateCollection(value, index) {
       if (take <= 0) {
         while (view().length - viewIndex > 0) {
-          connections[view.length - 1] = undefined;
-          view.removeAt(view.length - 1);
+          view.removeAt(view().length - 1);
         }
         return false;
       }
@@ -7952,10 +8026,10 @@ return result;
           skip -= 1;
           if (skip >= 0) {
             action = REMOVE;
+            return false;
           } else if (skip < 0 && connections[index] === undefined) {
             action = ADD;
           }
-          return false;
         } else if (operation.type == 'take') {
           if (take <= 0) {
             action = REMOVE;
@@ -7973,21 +8047,21 @@ return result;
 
       switch (action) {
         case ADD:
-          connections[index] = viewIndex;
+          newConnections[index] = viewIndex;
           view.splice(viewIndex, 0, value);
           viewIndex++;
           break;
         case REMOVE:
-          connections[index] = undefined;
           view.removeAt(viewIndex);
           break;
         case EXISTS:
-          connections[index] = viewIndex;
+          newConnections[index] = viewIndex;
           viewIndex++;
           break;
       }
     });
 
+    view._connections = newConnections;
     view.update = update;
     view.update();
   }
@@ -9224,7 +9298,7 @@ return result;
     },
 
     createXHR: function () {
-      var Type = window.ActiveXObject || XMLHttpRequest;
+      var Type = XMLHttpRequest || window.ActiveXObject;
       try {
         return new Type('Microsoft.XMLHTTP');
       } catch (e) {
@@ -9617,7 +9691,7 @@ return result;
       return this._changes.length > 0;
     },
 
-    clearChanges: function () { // or in kendo called 'cancelChanges'
+    clearChanges: function () {
       this._changes.splice(0, this._changes.length);
       this._changesMeta = {};
       this.hasChanges(false);
@@ -9636,9 +9710,9 @@ return result;
           if (item.__id__) {
             delete item.__id__;
           }
-          if (change.type == DESTROY && blocks.isObject(item) && _this.options.idAttr) {
-            data = item[_this.options.idAttr];
-          }
+          //if (change.type == DESTROY && blocks.isObject(item) && _this.options.idAttr) {
+          //  data = item[_this.options.idAttr];
+          //}
           _this._ajax(change.type, {
             data: data
           }, function () {
@@ -9817,21 +9891,6 @@ return result;
       });
       this._onChangePush();
     },
-
-    //_checkForExistent: function (items) {
-    //    var changes = this._changes;
-    //    var count = 0;
-
-    //    blocks.each(changes, function (change, i) {
-    //        blocks.each(change.items, function (item) {
-    //            if (blocks.contains(items, item)) {
-    //                count++;
-    //                blocks.removeAt(changes, i);
-    //            }
-    //        });
-    //    });
-    //    return items.length != 0 && count == items.length;
-    //},
 
     _haveData: function () {
       var startIndex = (this._page + 1) * this._pageSize;
@@ -10213,7 +10272,7 @@ return result;
       if (removeFromCollection && this._collection) {
         this._collection.remove(this);
       }
-      this._dataSource.remove(this);
+      this._dataSource._remove([this.dataItem()]);
       return this;
     },
 
@@ -10407,14 +10466,19 @@ return result;
      * });
      */
     read: function (params, callback) {
-      // TODO: Write tests for the callback checking if it is beeing called
+      // TODO: Write tests for the callback checking if it is being called
+      var context = this.__context__;
+
       if (blocks.isFunction(params)) {
         callback = params;
         params = undefined;
       }
       this._dataSource.read({
         data: params
-      }, callback);
+      }, callback ? function () {
+        callback.call(context);
+      } : blocks.noop);
+
       return this;
     },
 
@@ -10578,7 +10642,7 @@ return result;
     this._html = undefined;
 
     this.loading = blocks.observable(false);
-    this.isActive = blocks.observable(!options.route);
+    this.isActive = blocks.observable(!blocks.has(options, 'route'));
     this.isActive.on('changing', function (oldValue, newValue) {
       blocks.each(views, function (view) {
         if (!view.options.route) {
@@ -10717,7 +10781,7 @@ return result;
           value.__context__ = this;
         }
       }
-      this.init.apply(this, this._initArgs);
+      this.init();
       blocks.__viewInInitialize__ = undefined;
       this._initCalled = true;
     },
@@ -10760,12 +10824,10 @@ return result;
    */
   function Application(data) {
     this._router = new Router(this);
-    this._defaultRoute = '/';
     this._modelPrototypes = {};
     this._collectionPrototypes = {};
     this._viewPrototypes = {};
     this._views = {};
-    this._defaultView = undefined;
     this._currentRoutedView = undefined;
     this._started = false;
 
@@ -11030,7 +11092,7 @@ return result;
     },
 
     navigateTo: function (view, params) {
-      if (view.isActive() || !view.options.route) {
+      if (!view.options.route) {
         return false;
       }
       this._history.navigate(this._router.routeTo(view.options.routeName, params));
@@ -11073,7 +11135,6 @@ return result;
     },
 
     _ready: function (element) {
-      this._router.registerRoute(this._defaultRoute);
       this._history = new History(this.options);
       this._history
           .on('urlChange', blocks.bind(this._urlChange, this))
@@ -11166,10 +11227,7 @@ return result;
           }
 
           if (currentView) {
-            if (currentView.options.route == this._defaultRoute) {
-              this._defaultView = currentView;
-            }
-            if (currentView.options.route) {
+            if (blocks.has(currentView.options, 'route')) {
               currentView.options.routeName = this._router.registerRoute(
                 currentView.options.route, this._getParentRouteName(currentView));
             }

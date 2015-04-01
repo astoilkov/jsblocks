@@ -244,6 +244,7 @@
         var items = getItems();
         query({ items: items });
 
+        debugger;
         items.splice(1, 3,
             { FirstName: 'FirstName3', LastName: 'LastName3' },
             { FirstName: 'FirstName4', LastName: 'LastName4' });

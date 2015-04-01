@@ -81,11 +81,16 @@ define([
       },
 
       endTag: function(tagName /*, [location] */) {
-        if (parent && parent._parent) {
-          parent = parent._parent;
-        }
+        var newParent = parent._parent;
+
         if (skip) {
           skip -= 1;
+          if (skip === 0 && newParent) {
+            parent._innerHTML = parent.renderChildren();
+          }
+        }
+        if (parent && newParent) {
+          parent = newParent;
         }
       },
 
