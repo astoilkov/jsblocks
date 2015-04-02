@@ -29,7 +29,7 @@ module.exports = function (grunt) {
   };
 
   grunt.registerTask('npm', function () {
-    grunt.file.write('dist/npm/package.json', JSON.stringify(packageJSON));
+    grunt.file.write('dist/npm/package.json', JSON.stringify(packageJSON, null, 4));
     grunt.file.write('dist/npm/blocks.js', grunt.file.read('dist/blocks-node.js'));
   });
 };

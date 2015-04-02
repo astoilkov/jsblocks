@@ -1,15 +1,30 @@
 module.exports = function (grunt) {
-  var packageJSON = {
+  var bowerJSON = {
     name: 'blocks',
     version: grunt.config.get('version'),
-    main: 'blocks.js',
+    main: 'dist/blocks.js',
+    license: 'MIT',
+    author: {
+      name: 'Antonio Stoilkov',
+      email: 'antonio.stoilkov@gmail.com',
+      url: 'http://jsblocks.com'
+    },
+    ignore: [
+      'build',
+      'examples',
+      'lib',
+      'node_modules',
+      'src',
+      'test',
+      '*.gitignore',
+      'Gruntile.js',
+      'package.json',
+      'dist/npm'
+    ],
     keywords: []
   };
 
   grunt.registerTask('bower', function () {
-    grunt.file.write('dist/bower/package.json', JSON.stringify(packageJSON));
-    grunt.file.write('dist/bower/blocks.js', grunt.file.read('dist/blocks-debug.js'));
-    //grunt.file.write('dist/bower/blocks-source.js', grunt.file.read('dist/blocks.js'));
-    grunt.file.write('dist/bower/blocks.min.js', grunt.file.read('dist/min/blocks.min.js'));
+    grunt.file.write('bower.json', JSON.stringify(bowerJSON, null, 4));
   });
 };
