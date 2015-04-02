@@ -1,3 +1,3 @@
-{"name":"blocks","version":"0.1.2","main":"blocks.js","keywords":[],
+{"name":"blocks","version":"0.1.2","main":"dist/blocks.js","keywords":[],
   "ignore": ["build", "examples", "lib", "node_modules", "src", "test", "*.gitignore", "*.js", "package.json"]
 }
