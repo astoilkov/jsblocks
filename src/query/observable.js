@@ -9,8 +9,10 @@ define([
   './ChunkManager',
   './ElementsData',
   './Observer',
+  './VirtualElement',
   './HtmlElement'
-], function (blocks, slice, trimRegExp, Events, parameterQueryCache, OBSERVABLE, Expression, ChunkManager, ElementsData, Observer, HtmlElement) {
+], function (blocks, slice, trimRegExp, Events, parameterQueryCache, OBSERVABLE,
+             Expression, ChunkManager, ElementsData, Observer, VirtualElement, HtmlElement) {
 
   var observableId = 1;
 

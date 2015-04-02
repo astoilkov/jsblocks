@@ -29,7 +29,7 @@ define([
       filter: options
     });
 
-    observable.on('add', function (args) {
+    observable.on('add', function () {
       if (observable.view._initialized) {
         observable.view._connections = {};
         observable.view.reset();
@@ -37,7 +37,7 @@ define([
       }
     });
 
-    observable.on('remove', function (args) {
+    observable.on('remove', function () {
       if (observable.view._initialized) {
         observable.view._connections = {};
         observable.view.reset();
@@ -148,7 +148,6 @@ define([
 
   function executeOperations(observable) {
     var chunk = [];
-    var executedAtLeastOnce = false;
     var observed = observable.view._observed;
     var updateObservable = observable.view._updateObservable;
 
@@ -166,38 +165,31 @@ define([
         observable.view._connections = {};
         if (chunk.length) {
           executeOperationsChunk(observable, chunk);
-          executedAtLeastOnce = true;
         }
         operation.step.call(observable.__context__);
         observable.view = view;
-      }
-      if (operation.type == 'sort') {
-        if (chunk.length) {
-          executeOperationsChunk(observable, chunk);
-          executedAtLeastOnce = true;
-        }
-        if (blocks.isString(operation.sort)) {
-          if (!executedAtLeastOnce) {
-            observable.view.addMany(observable.__value__);
-          }
-          observable.view.sort(function (valueA, valueB) {
-            return valueA[operation.sort] - valueB[operation.sort];
-          });
-        } else if (blocks.isFunction(operation.sort)) {
-          if (!executedAtLeastOnce) {
-            observable.view.addMany(observable.__value__);
-          }
-          observable.view.sort(operation.sort);
-        } else {
-          if (!executedAtLeastOnce) {
-            observable.view.addMany(observable.__value__);
-          }
-          observable.view.sort();
-        }
         chunk = [];
-      } else {
-        chunk.push(operation);
       }
+      //if (operation.type == 'sort') {
+      //  if (chunk.length) {
+      //    executeOperationsChunk(observable, chunk);
+      //  } else {
+      //    executeOperationsChunk(observable, [{ type: 'filter', filter: function () { return true; }}]);
+      //  }
+      //  if (blocks.isString(operation.sort)) {
+      //    observable.view.sort(function (valueA, valueB) {
+      //      return valueA[operation.sort] - valueB[operation.sort];
+      //    });
+      //  } else if (blocks.isFunction(operation.sort)) {
+      //    observable.view.sort(operation.sort);
+      //  } else {
+      //    observable.view.sort();
+      //  }
+      //  chunk = [];
+      //} else {
+      //  chunk.push(operation);
+      //}
+      chunk.push(operation);
     });
 
     if (chunk.length) {
@@ -239,6 +231,19 @@ define([
           take = take.call(observable.__context__);
         }
         take = blocks.unwrap(take);
+      } else if (operation.type == 'sort') {
+        if (blocks.isString(operation.sort)) {
+          collection = blocks.clone(collection).sort(function (valueA, valueB) {
+            return valueA[operation.sort] - valueB[operation.sort];
+          });
+        } else if (blocks.isFunction(operation.sort)) {
+          collection = blocks.clone(collection).sort(operation.sort);
+        } else {
+          collection = blocks.clone(collection).sort();
+        }
+        if (operations.length == 1) {
+          operations.push({ type: 'filter', filter: function () { return true; }});
+        }
       }
     });
 

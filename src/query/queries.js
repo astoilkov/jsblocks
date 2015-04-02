@@ -90,6 +90,7 @@ define([
      */
     template: {
       passDomQuery: true,
+      passRawValues: true,
 
       preprocess: function (domQuery, template, value) {
         var html;

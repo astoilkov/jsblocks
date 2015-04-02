@@ -9,8 +9,12 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-karma');
   grunt.loadNpmTasks('grunt-notify');
 
+  var pkg = grunt.file.readJSON('package.json')
   grunt.initConfig({
-    pkg: grunt.file.readJSON('package.json'),
+    pkg: pkg,
+
+    version: pkg.version,
+
     banner: '/*! jsblocks v<%= pkg.version %> | ' +
     '(c) 2014, <%= grunt.template.today("yyyy") %> |' +
     'jsblocks.org/license */',
@@ -80,6 +84,6 @@ module.exports = function (grunt) {
 
   grunt.registerTask('compile', ['build', 'combine', 'preprocess', 'debug', 'notify:build', 'build-tests-definitions']);
   grunt.registerTask('live-compile', ['compile', 'watch:compile']);
-  grunt.registerTask('full-build', ['jshint', 'compile', 'uglify', 'test']);
+  grunt.registerTask('full-build', ['jshint', 'compile', 'uglify', 'test', 'npm', 'bower']);
   grunt.registerTask('default', []);
 };

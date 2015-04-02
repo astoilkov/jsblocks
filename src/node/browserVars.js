@@ -6,6 +6,8 @@ define([
     NaN       : true
   };
 
+  /* jshint -W001 */
+  /* 'hasOwnProperty' is a really bad name */
   var ecmaIdentifiers = {
     Array              : true,
     Boolean            : true,

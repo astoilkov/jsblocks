@@ -29,7 +29,7 @@ define([
 
     observable._baseUpdate = observable.update;
     blocks.each(blocks.observable.fn.collection, function (value, key) {
-      if (blocks.isFunction(value) && key.indexOf('_') != 0) {
+      if (blocks.isFunction(value) && key.indexOf('_') !== 0) {
         observable[key] = blocks.bind(observable[key], observable);
       }
     });

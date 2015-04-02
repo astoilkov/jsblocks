@@ -22,12 +22,12 @@
 
       });
 
-      describe('isValid()', function () {
+      describe('valid()', function () {
 
       });
     });
 
-    describe('isValid =>', function () {
+    describe('valid =>', function () {
       it('default value is true', function () {
         var Product = Application.Model();
         Application.start();
@@ -36,7 +36,7 @@
           FirstName: 'Antonio'
         });
         model.validate();
-        expect(model.isValid()).toBe(true);
+        expect(model.valid()).toBe(true);
       });
 
       it('is observable', function () {
@@ -47,10 +47,10 @@
           FirstName: 'Antonio'
         });
         model.validate();
-        expect(blocks.isObservable(model.isValid)).toBe(true);
+        expect(blocks.isObservable(model.valid)).toBe(true);
       });
 
-      it('isValid() updates after validate() is called', function () {
+      it('valid() updates after validate() is called', function () {
 
       });
     });
@@ -405,10 +405,10 @@
         });
         Application.start();
         var model = Product();
-        expect(model.isValid()).toBe(true);
+        expect(model.valid()).toBe(true);
 
         model.FirstName('');
-        expect(model.isValid()).toBe(false);
+        expect(model.valid()).toBe(false);
       });
 
       it('does not validate on change of a non observable value', function () {
@@ -421,9 +421,9 @@
         });
         Application.start();
         var model = Product();
-        expect(model.isValid()).toBe(true);
+        expect(model.valid()).toBe(true);
         model.FirstName('');
-        expect(model.isValid()).toBe(true);
+        expect(model.valid()).toBe(true);
       });
 
       it('does not validate a non observable value after calling validate()', function () {
@@ -436,10 +436,10 @@
         });
         Application.start();
         var model = Product();
-        expect(model.isValid()).toBe(true);
+        expect(model.valid()).toBe(true);
         model.FirstName('');
         model.validate();
-        expect(model.isValid()).toBe(true);
+        expect(model.valid()).toBe(true);
       });
 
       it('when false it does not validate on change', function () {
@@ -451,11 +451,11 @@
         });
         Application.start();
         var model = Product();
-        expect(model.isValid()).toBe(true);
+        expect(model.valid()).toBe(true);
         model.FirstName('');
-        expect(model.isValid()).toBe(true);
+        expect(model.valid()).toBe(true);
         model.validate();
-        expect(model.isValid()).toBe(false);
+        expect(model.valid()).toBe(false);
       });
     });
 
@@ -543,8 +543,8 @@
         Application.start();
         var model = Product();
         model.validate();
-        expect(model.Email.errorMessages().length).toBe(4);
-        expect(model.validationErrors().length).toBe(4);
+        expect(model.Email.errorMessages().length).toBe(3);
+        expect(model.validationErrors().length).toBe(3);
       });
     });
 
@@ -1705,7 +1705,7 @@
         })
       }, {
         FirstName: undefined
-      }, false);
+      }, true);
     });
 
     it('returns false when null specified', function () {
@@ -1715,7 +1715,7 @@
         })
       }, {
         FirstName: null
-      }, false);
+      }, true);
     });
 
     it('returns false when symbols more than the maxlength', function () {

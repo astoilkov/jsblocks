@@ -15,31 +15,17 @@ define([
     this._initialDataItem = blocks.clone(dataItem, true);
 
     blocks.each(Model.prototype, function (value, key) {
-      if (blocks.isFunction(value) && key.indexOf('_') != 0) {
+      if (blocks.isFunction(value) && key.indexOf('_') !== 0) {
         _this[key] = blocks.bind(value, _this);
       }
     });
     clonePrototype(prototype, this);
 
-    this.isValid = blocks.observable(true);
+    this.valid = blocks.observable(true);
 
     this.isLoading = blocks.observable(false);
 
-    this.validationErrors = blocks.observable(function () {
-      var properties = _this._properties;
-      var result = [];
-      var value;
-      var key;
-
-      for (key in properties) {
-        value = _this[key];
-        if (value.errorMessages) {
-          result.push.apply(result, value.errorMessages());
-        }
-      }
-
-      return result;
-    });
+    this.validationErrors = blocks.observable([]);
 
     this._isNew = false;
     this._dataItem = dataItem || {}; // for original values
@@ -142,8 +128,8 @@ define([
           isValid = false;
         }
       }
-      this.isValid(isValid);
-      this.validationErrors.update();
+      this.valid(isValid);
+      this._updateValidationErrors();
       return isValid;
     },
 
@@ -327,13 +313,13 @@ define([
           var isValid = true;
           var key;
           for (key in properties) {
-            if (!_this[key].isValid()) {
+            if (!_this[key].valid()) {
               isValid = false;
               break;
             }
           }
-          _this.validationErrors.update();
-          _this.isValid(isValid);
+          _this._updateValidationErrors();
+          _this.valid(isValid);
         });
 
       if (!this._collection) {
@@ -345,6 +331,22 @@ define([
     _onDataSourceChange: function () {
       var dataItem = blocks.unwrapObservable(this._dataSource.view())[0];
       this._ensurePropertiesCreated(dataItem);
+    },
+
+    _updateValidationErrors: function () {
+      var properties = this._properties;
+      var result = [];
+      var value;
+      var key;
+
+      for (key in properties) {
+        value = this[key];
+        if (value.errorMessages) {
+          result.push.apply(result, value.errorMessages());
+        }
+      }
+
+      this.validationErrors.reset(result);
     }
   };
 

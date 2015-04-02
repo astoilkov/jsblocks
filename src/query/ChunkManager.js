@@ -7,7 +7,7 @@ define([
     this.observable = observable;
     this.chunkLengths = {};
     this.dispose();
-  };
+  }
 
   ChunkManager.prototype = {
     dispose: function () {

@@ -37,7 +37,7 @@
       return a.priority > b.priority ? 1 : -1;
     });
 
-    this.isValid = blocks.observable(true);
+    this.valid = blocks.observable(true);
 
     this.validate = function () {
       var value = _this.__value__;
@@ -85,7 +85,7 @@
       }
 
       validationComplete(this, options, isValid);
-      this.isValid(isValid);
+      this.valid(isValid);
       Events.trigger(this, 'validate');
       return isValid;
     };
@@ -110,6 +110,6 @@
       errorMessage(options.errorMessage || errorMessages()[0] || '');
     }
 
-    observable.isValid(isValid);
+    observable.valid(isValid);
   }
 });

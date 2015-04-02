@@ -29,7 +29,7 @@ define([
       priority: 29,
       validate: function (value, options, option) {
         if (value === undefined || value === null) {
-          return false;
+          return true;
         }
         return value.length <= parseInt(option, 10);
       }

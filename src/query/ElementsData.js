@@ -33,7 +33,7 @@
       },
 
       collectGarbage: function () {
-        blocks.each(data, function (value, key) {
+        blocks.each(data, function (value) {
           if (value && value.dom && !document.body.contains(value.dom)) {
             ElementsData.clear(value.virtual, true);
           }

@@ -37,7 +37,7 @@
     return value;
   };
 
-  blocks.version = '0.8.0';
+  blocks.version = '@version';
   blocks.core = core;
 
   /**
@@ -3976,7 +3976,7 @@ return result;
       },
 
       collectGarbage: function () {
-        blocks.each(data, function (value, key) {
+        blocks.each(data, function (value) {
           if (value && value.dom && !document.body.contains(value.dom)) {
             ElementsData.clear(value.virtual, true);
           }
@@ -4540,11 +4540,10 @@ return result;
 
     html: function (html) {
       if (arguments.length > 0) {
-        if (html != null) {
-          this._innerHTML = html;
-          this._children = [];
-          this._el.html(html);
-        }
+        html = html == null ? '' : html;
+        this._innerHTML = html;
+        this._children = [];
+        this._el.html(html);
         return this;
       }
       return this._innerHTML || '';
@@ -4622,7 +4621,7 @@ return result;
           attributeValue = attributeValue ? 'disabled' : null;
         }
 
-        if (tagName == 'textarea' && attributeName == 'value') {
+        if (tagName == 'textarea' && attributeName == 'value' && this._el == HtmlElement.Empty()) {
           this.html(attributeValue);
         } else if (attributeName == 'value' && tagName == 'select') {
           this._values = keys(blocks.toArray(attributeValue));
@@ -6040,6 +6039,7 @@ return result;
      */
     template: {
       passDomQuery: true,
+      passRawValues: true,
 
       preprocess: function (domQuery, template, value) {
         var html;
@@ -6784,7 +6784,7 @@ return result;
     this.observable = observable;
     this.chunkLengths = {};
     this.dispose();
-  };
+  }
 
   ChunkManager.prototype = {
     dispose: function () {
@@ -7782,7 +7782,7 @@ return result;
       filter: options
     });
 
-    observable.on('add', function (args) {
+    observable.on('add', function () {
       if (observable.view._initialized) {
         observable.view._connections = {};
         observable.view.reset();
@@ -7790,7 +7790,7 @@ return result;
       }
     });
 
-    observable.on('remove', function (args) {
+    observable.on('remove', function () {
       if (observable.view._initialized) {
         observable.view._connections = {};
         observable.view.reset();
@@ -7901,7 +7901,6 @@ return result;
 
   function executeOperations(observable) {
     var chunk = [];
-    var executedAtLeastOnce = false;
     var observed = observable.view._observed;
     var updateObservable = observable.view._updateObservable;
 
@@ -7919,38 +7918,31 @@ return result;
         observable.view._connections = {};
         if (chunk.length) {
           executeOperationsChunk(observable, chunk);
-          executedAtLeastOnce = true;
         }
         operation.step.call(observable.__context__);
         observable.view = view;
-      }
-      if (operation.type == 'sort') {
-        if (chunk.length) {
-          executeOperationsChunk(observable, chunk);
-          executedAtLeastOnce = true;
-        }
-        if (blocks.isString(operation.sort)) {
-          if (!executedAtLeastOnce) {
-            observable.view.addMany(observable.__value__);
-          }
-          observable.view.sort(function (valueA, valueB) {
-            return valueA[operation.sort] - valueB[operation.sort];
-          });
-        } else if (blocks.isFunction(operation.sort)) {
-          if (!executedAtLeastOnce) {
-            observable.view.addMany(observable.__value__);
-          }
-          observable.view.sort(operation.sort);
-        } else {
-          if (!executedAtLeastOnce) {
-            observable.view.addMany(observable.__value__);
-          }
-          observable.view.sort();
-        }
         chunk = [];
-      } else {
-        chunk.push(operation);
       }
+      //if (operation.type == 'sort') {
+      //  if (chunk.length) {
+      //    executeOperationsChunk(observable, chunk);
+      //  } else {
+      //    executeOperationsChunk(observable, [{ type: 'filter', filter: function () { return true; }}]);
+      //  }
+      //  if (blocks.isString(operation.sort)) {
+      //    observable.view.sort(function (valueA, valueB) {
+      //      return valueA[operation.sort] - valueB[operation.sort];
+      //    });
+      //  } else if (blocks.isFunction(operation.sort)) {
+      //    observable.view.sort(operation.sort);
+      //  } else {
+      //    observable.view.sort();
+      //  }
+      //  chunk = [];
+      //} else {
+      //  chunk.push(operation);
+      //}
+      chunk.push(operation);
     });
 
     if (chunk.length) {
@@ -7992,6 +7984,19 @@ return result;
           take = take.call(observable.__context__);
         }
         take = blocks.unwrap(take);
+      } else if (operation.type == 'sort') {
+        if (blocks.isString(operation.sort)) {
+          collection = blocks.clone(collection).sort(function (valueA, valueB) {
+            return valueA[operation.sort] - valueB[operation.sort];
+          });
+        } else if (blocks.isFunction(operation.sort)) {
+          collection = blocks.clone(collection).sort(operation.sort);
+        } else {
+          collection = blocks.clone(collection).sort();
+        }
+        if (operations.length == 1) {
+          operations.push({ type: 'filter', filter: function () { return true; }});
+        }
       }
     });
 
@@ -8385,7 +8390,7 @@ return result;
       priority: 29,
       validate: function (value, options, option) {
         if (value === undefined || value === null) {
-          return false;
+          return true;
         }
         return value.length <= parseInt(option, 10);
       }
@@ -8555,7 +8560,7 @@ return result;
       return a.priority > b.priority ? 1 : -1;
     });
 
-    this.isValid = blocks.observable(true);
+    this.valid = blocks.observable(true);
 
     this.validate = function () {
       var value = _this.__value__;
@@ -8603,7 +8608,7 @@ return result;
       }
 
       validationComplete(this, options, isValid);
-      this.isValid(isValid);
+      this.valid(isValid);
       Events.trigger(this, 'validate');
       return isValid;
     };
@@ -8628,7 +8633,7 @@ return result;
       errorMessage(options.errorMessage || errorMessages()[0] || '');
     }
 
-    observable.isValid(isValid);
+    observable.valid(isValid);
   }
 
 
@@ -10041,31 +10046,17 @@ return result;
     this._initialDataItem = blocks.clone(dataItem, true);
 
     blocks.each(Model.prototype, function (value, key) {
-      if (blocks.isFunction(value) && key.indexOf('_') != 0) {
+      if (blocks.isFunction(value) && key.indexOf('_') !== 0) {
         _this[key] = blocks.bind(value, _this);
       }
     });
     clonePrototype(prototype, this);
 
-    this.isValid = blocks.observable(true);
+    this.valid = blocks.observable(true);
 
     this.isLoading = blocks.observable(false);
 
-    this.validationErrors = blocks.observable(function () {
-      var properties = _this._properties;
-      var result = [];
-      var value;
-      var key;
-
-      for (key in properties) {
-        value = _this[key];
-        if (value.errorMessages) {
-          result.push.apply(result, value.errorMessages());
-        }
-      }
-
-      return result;
-    });
+    this.validationErrors = blocks.observable([]);
 
     this._isNew = false;
     this._dataItem = dataItem || {}; // for original values
@@ -10168,8 +10159,8 @@ return result;
           isValid = false;
         }
       }
-      this.isValid(isValid);
-      this.validationErrors.update();
+      this.valid(isValid);
+      this._updateValidationErrors();
       return isValid;
     },
 
@@ -10353,13 +10344,13 @@ return result;
           var isValid = true;
           var key;
           for (key in properties) {
-            if (!_this[key].isValid()) {
+            if (!_this[key].valid()) {
               isValid = false;
               break;
             }
           }
-          _this.validationErrors.update();
-          _this.isValid(isValid);
+          _this._updateValidationErrors();
+          _this.valid(isValid);
         });
 
       if (!this._collection) {
@@ -10371,6 +10362,22 @@ return result;
     _onDataSourceChange: function () {
       var dataItem = blocks.unwrapObservable(this._dataSource.view())[0];
       this._ensurePropertiesCreated(dataItem);
+    },
+
+    _updateValidationErrors: function () {
+      var properties = this._properties;
+      var result = [];
+      var value;
+      var key;
+
+      for (key in properties) {
+        value = this[key];
+        if (value.errorMessages) {
+          result.push.apply(result, value.errorMessages());
+        }
+      }
+
+      this.validationErrors.reset(result);
     }
   };
 
@@ -10403,7 +10410,7 @@ return result;
 
     observable._baseUpdate = observable.update;
     blocks.each(blocks.observable.fn.collection, function (value, key) {
-      if (blocks.isFunction(value) && key.indexOf('_') != 0) {
+      if (blocks.isFunction(value) && key.indexOf('_') !== 0) {
         observable[key] = blocks.bind(observable[key], observable);
       }
     });

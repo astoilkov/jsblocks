@@ -1,7 +1,7 @@
 module.exports = function (grunt) {
   var packageJSON = {
-    name: 'jsblocks',
-    version: '0.1.0',
+    name: 'blocks',
+    version: grunt.config.get('version'),
     main: 'blocks.js',
     keywords: []
   };

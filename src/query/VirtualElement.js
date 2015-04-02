@@ -50,11 +50,10 @@ define([
 
     html: function (html) {
       if (arguments.length > 0) {
-        if (html != null) {
-          this._innerHTML = html;
-          this._children = [];
-          this._el.html(html);
-        }
+        html = html == null ? '' : html;
+        this._innerHTML = html;
+        this._children = [];
+        this._el.html(html);
         return this;
       }
       return this._innerHTML || '';
@@ -132,7 +131,7 @@ define([
           attributeValue = attributeValue ? 'disabled' : null;
         }
 
-        if (tagName == 'textarea' && attributeName == 'value') {
+        if (tagName == 'textarea' && attributeName == 'value' && this._el == HtmlElement.Empty()) {
           this.html(attributeValue);
         } else if (attributeName == 'value' && tagName == 'select') {
           this._values = keys(blocks.toArray(attributeValue));
