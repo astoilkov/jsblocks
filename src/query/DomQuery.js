@@ -156,7 +156,7 @@ define([
         method = blocks.queries[methods[i].name];
         parameters = methods[i].params;
         executedParameters = method.passDomQuery ? [this] : [];
-        if (VirtualElement.Is(element) && !method.call && !method.preprocess && method.update) {
+        if (VirtualElement.Is(element) && !method.call && !method.preprocess && (method.update || method.ready)) {
           elementData.haveData = true;
           if (!elementData.execute) {
             elementData.execute = [];
@@ -252,6 +252,8 @@ define([
             executedParameters.unshift(method.prefix || methods[i].name);
             virtual[method.call].apply(virtual, executedParameters);
           }
+        } else if (elementData && elementData.preprocess && method.ready) {
+          method.ready.apply(element, executedParameters);
         } else if (method.update) {
           method.update.apply(element, executedParameters);
         }

@@ -1,7 +1,7 @@
 module.exports = function (grunt) {
 
   grunt.registerTask('combine', function () {
-    var core = grunt.file.read('lib/blocks/blocks-core.js');
+    var core = grunt.file.read('lib/blocks/blocks-core.js').replace('@version', grunt.config.get('version'));
     var jsvalue = grunt.file.read('lib/blocks/value-nocore.js');
     var mvc = grunt.file.read('dist/blocks-mvc.js');
     var query = grunt.file.read('dist/blocks-query.js');

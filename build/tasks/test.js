@@ -107,7 +107,11 @@ module.exports = function (grunt) {
 
   grunt.config.set('karma', karmaConfig);
 
-  grunt.registerTask('test', function () {
-    grunt.task.run('karma:test');
+  grunt.registerTask('test', function (browser) {
+    if (browser) {
+      grunt.task.run('karma:' + browser);
+    } else {
+      grunt.task.run('karma:test');
+    }
   });
 };

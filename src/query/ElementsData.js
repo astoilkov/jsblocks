@@ -32,6 +32,14 @@
         return getDataId(element);
       },
 
+      /* @if SERVER */
+      reset: function () {
+        data = {};
+        globalId = 1;
+        freeIds = [];
+      },
+      /* @endif */
+
       collectGarbage: function () {
         blocks.each(data, function (value) {
           if (value && value.dom && !document.body.contains(value.dom)) {

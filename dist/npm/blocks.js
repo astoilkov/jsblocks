@@ -37,7 +37,7 @@
     return value;
   };
 
-  blocks.version = '@version';
+  blocks.version = '0.1.4';
   blocks.core = core;
 
   /**
@@ -3975,6 +3975,12 @@ return result;
         return getDataId(element);
       },
 
+      //reset: function () {
+      //  data = {};
+      //  globalId = 1;
+      //  freeIds = [];
+      //},
+
       collectGarbage: function () {
         blocks.each(data, function (value) {
           if (value && value.dom && !document.body.contains(value.dom)) {
@@ -5748,7 +5754,7 @@ return result;
         method = blocks.queries[methods[i].name];
         parameters = methods[i].params;
         executedParameters = method.passDomQuery ? [this] : [];
-        if (VirtualElement.Is(element) && !method.call && !method.preprocess && method.update) {
+        if (VirtualElement.Is(element) && !method.call && !method.preprocess && (method.update || method.ready)) {
           elementData.haveData = true;
           if (!elementData.execute) {
             elementData.execute = [];
@@ -5829,6 +5835,8 @@ return result;
             executedParameters.unshift(method.prefix || methods[i].name);
             virtual[method.call].apply(virtual, executedParameters);
           }
+        } else if (elementData && elementData.preprocess && method.ready) {
+          method.ready.apply(element, executedParameters);
         } else if (method.update) {
           method.update.apply(element, executedParameters);
         }
@@ -6013,7 +6021,8 @@ return result;
      * Queries and sets the inner html of the element from the template specified
      *
      * @memberof blocks.queries
-     * @param {(HTMLElement|string)} template - The template that will be rendered.
+     * @param {(HTMLElement|string)} template - The template that will be rendered
+     * @param {*} value - The value that will used in the template
      * The value could be an element id (the element innerHTML property will be taken), string (the template) or
      * an element (again the element innerHTML property will be taken)
      *
@@ -6121,7 +6130,7 @@ return result;
      *
      * @memberof blocks.queries
      * @param {*} value - The new context
-     * @param {string} [name] - Optional name of the new context.
+     * @param {string} [name] - Optional name of the new context
      * This way the context will also available under the name not only under the $this context property
      *
      * @example {html}
@@ -6735,7 +6744,7 @@ return result;
      * the callback function after the event arguments
      */
     on: {
-      update: function (events, callbacks, args) {
+      ready: function (events, callbacks, args) {
         if (!events || !callbacks) {
           return;
         }
@@ -6771,8 +6780,8 @@ return result;
     blocks.queries[eventName] = {
       passRawValues: true,
 
-      update: function (callback, data) {
-        blocks.queries.on.update.call(this, eventName, callback, data);
+      ready: function (callback, data) {
+        blocks.queries.on.ready.call(this, eventName, callback, data);
       }
     };
   });
@@ -9029,6 +9038,8 @@ return result;
       root: '/'
     }, options);
 
+    this._tryFixOrigin();
+
     this._location = window.location;
     this._history = window.history;
     this._root = ('/' + this._options.root + '/').replace(rootStripper, '/');
@@ -9097,9 +9108,12 @@ return result;
       var use = this._use;
       var onUrlChanged = blocks.bind(this._onUrlChanged, this);
 
+      if (this._wants == PUSH_STATE) {
+        addListener(document, 'click', blocks.bind(this._onDocumentClick, this));
+      }
+
       if (use == PUSH_STATE) {
         addListener(window, 'popstate', onUrlChanged);
-        addListener(document, 'click', blocks.bind(this._onDocumentClick, this));
       } else if (use == HASH && !oldIE && ('onhashchange' in window)) {
         addListener(window, 'hashchange', onUrlChanged);
       } else if (use == HASH) {
@@ -9206,6 +9220,13 @@ return result;
       iframe.tabIndex = -1;
       document.body.appendChild(iframe);
       this._iframe = iframe.contentWindow;
+    },
+
+    _tryFixOrigin: function () {
+      var location = window.location;
+      if (!location.origin) {
+        location.origin = location.protocol + "//" + location.hostname + (location.port ? ':' + location.port: '');
+      }
     }
   };
 
@@ -11584,8 +11605,8 @@ return result;
 
   function parseToVirtual(html) {
     var skip = 0;
-    var root;
-    var parent;
+    var root = VirtualElement('root');
+    var parent = root;
     // TODO: Implement doctype
     var doctypeName;
     var parser = new parse5.SimpleApiParser({
@@ -11622,10 +11643,6 @@ return result;
 
         if (!selfClosing) {
           parent = element;
-        }
-
-        if (!root) {
-          root = element;
         }
 
         if (skip) {
@@ -11673,7 +11690,7 @@ return result;
 
     parser.parse(html);
 
-    return root;
+    return root.children();
   }
 
   // TODO: Refactor this because it is duplicate from query/createVirtual.js file
@@ -11699,12 +11716,19 @@ return result;
   }
 
   function findPageScripts(html, callback) {
-    var virtual = parseToVirtual(html);
+    var children = parseToVirtual(html);
     var scripts = [];
-    findPageScriptsRecurse(virtual, scripts, true, 0, callback);
+    var args = {
+      filesPending: 0,
+      callback: callback
+    };
+    findPageScriptsRecurse(children[0], scripts, args);
+    if (args.filesPending === 0) {
+      args.callback([]);
+    }
   }
 
-  function findPageScriptsRecurse(virtual, scripts, isInitial, filesPending, callback) {
+  function findPageScriptsRecurse(virtual, scripts, args) {
     blocks.each(virtual.children(), function (child) {
       if (!VirtualElement.Is(child)) {
         return;
@@ -11715,9 +11739,8 @@ return result;
         src = child.attr('src');
         if (src) {
           src = getScriptPath(src);
-          if (blocks.contains(src, 'blocks.js') ||
-            (blocks.contains(src, 'blocks-') && blocks.endsWith(src, '.js'))) {
-            src = 'blocks-node.js';
+          if (blocks.contains(src, 'blocks') && blocks.endsWith(src, '.js')) {
+            src = 'node_modules/blocks/blocks.js';
           }
           scripts.push({
             type: 'external',
@@ -11725,11 +11748,11 @@ return result;
             code: ''
           });
 
-          filesPending++;
+          args.filesPending += 1;
           populateScript(scripts[scripts.length - 1], function () {
-            filesPending--;
-            if (filesPending === 0) {
-              callback(scripts);
+            args.filesPending -= 1;
+            if (args.filesPending === 0) {
+              args.callback(scripts);
             }
           });
         } else {
@@ -11739,12 +11762,8 @@ return result;
           });
         }
       }
-      findPageScriptsRecurse(child, scripts, false, filesPending, callback);
+      findPageScriptsRecurse(child, scripts, args);
     });
-
-    //if (filesPending === 0 && isInitial) {
-    //  callback(scripts);
-    //}
   }
 
   function populateScript(script, callback) {
@@ -11771,6 +11790,32 @@ return result;
     return executeCode(browserEnv, html, code);
   }
 
+  var funcs = {};
+  function executeCode(browserEnv, html, code) {
+    blocks.extend(this, browserEnv.getObject(), {
+      server: {
+        html: html,
+        data: {},
+        rendered: '',
+        applications: []
+      }
+    });
+
+    blocks.core.applications.Default = null;
+    ElementsData.reset();
+
+    if (!funcs[code]) {
+      funcs[code] = new Function('blocks', 'document', 'window', 'require', code);
+    }
+
+    funcs[code].call(this, blocks, this.document, this.window, require);
+    blocks.each(this.server.applications, function (application) {
+      application.start();
+    });
+
+    return this.server.rendered;
+  }
+
 
   function executeCode(browserEnv, html, code) {
     var context = vm.createContext(browserEnv.getObject());
@@ -11792,7 +11837,7 @@ return result;
       application.start();
     });
 
-    return context.server.rendered;
+    return context.server.rendered || html;
   }
 
   var fs = require('fs');
@@ -11837,6 +11882,7 @@ return result;
       var browserEnv = this._createBrowserEnv();
       var callback = this._callback;
       var cache = this._cache;
+
 
       findPageScripts(contents, function (scripts) {
         var htmlResult = executePageScripts(browserEnv, contents, scripts);
@@ -11894,11 +11940,11 @@ return result;
 
   blocks.query = function (model) {
     var domQuery = new DomQuery(model);
-    var virtual = parseToVirtual(server.html);
+    var children = parseToVirtual(server.html);
 
     domQuery.pushContext(model);
 
-    blocks.each(virtual.children(), function (child) {
+    blocks.each(children[0], function (child) {
       if (VirtualElement.Is(child)) {
         if (child.tagName() == 'body') {
           child._parent = null;
@@ -11930,6 +11976,36 @@ return result;
 
   Application.prototype._prepare = function () {
     server.applications.push(this);
+  };
+
+  var viewQuery = blocks.queries.view.preprocess;
+
+  blocks.queries.view.preprocess = function (domQuery, view) {
+    viewQuery.call(this, domQuery, view);
+    if (view._html) {
+      this._children = parseToVirtual(view._html);
+    }
+  };
+
+
+  var http = require('http');
+  var fs = require('fs');
+  Request.prototype.execute = function () {
+    var url = this.options.url;
+
+    if (blocks.startsWith(url, 'http') || blocks.startsWith(url, 'www')) {
+
+    } else {
+      this.callSuccess(fs.readFileSync(url, { encoding: 'utf-8'} ));
+    }
+  };
+
+  Request.prototype._handleFileCallback = function (err, contents) {
+    if (err) {
+      this.callError(err);
+    } else {
+      this.callSuccess(contents);
+    }
   };
 
   //var createExpression =

@@ -511,6 +511,14 @@
         return getDataId(element);
       },
 
+      /* @if SERVER */
+      reset: function () {
+        data = {};
+        globalId = 1;
+        freeIds = [];
+      },
+      /* @endif */
+
       collectGarbage: function () {
         blocks.each(data, function (value) {
           if (value && value.dom && !document.body.contains(value.dom)) {
@@ -2297,7 +2305,7 @@
         method = blocks.queries[methods[i].name];
         parameters = methods[i].params;
         executedParameters = method.passDomQuery ? [this] : [];
-        if (VirtualElement.Is(element) && !method.call && !method.preprocess && method.update) {
+        if (VirtualElement.Is(element) && !method.call && !method.preprocess && (method.update || method.ready)) {
           elementData.haveData = true;
           if (!elementData.execute) {
             elementData.execute = [];
@@ -2393,6 +2401,8 @@
             executedParameters.unshift(method.prefix || methods[i].name);
             virtual[method.call].apply(virtual, executedParameters);
           }
+        } else if (elementData && elementData.preprocess && method.ready) {
+          method.ready.apply(element, executedParameters);
         } else if (method.update) {
           method.update.apply(element, executedParameters);
         }
@@ -2577,7 +2587,8 @@
      * Queries and sets the inner html of the element from the template specified
      *
      * @memberof blocks.queries
-     * @param {(HTMLElement|string)} template - The template that will be rendered.
+     * @param {(HTMLElement|string)} template - The template that will be rendered
+     * @param {*} value - The value that will used in the template
      * The value could be an element id (the element innerHTML property will be taken), string (the template) or
      * an element (again the element innerHTML property will be taken)
      *
@@ -2685,7 +2696,7 @@
      *
      * @memberof blocks.queries
      * @param {*} value - The new context
-     * @param {string} [name] - Optional name of the new context.
+     * @param {string} [name] - Optional name of the new context
      * This way the context will also available under the name not only under the $this context property
      *
      * @example {html}
@@ -3299,7 +3310,7 @@
      * the callback function after the event arguments
      */
     on: {
-      update: function (events, callbacks, args) {
+      ready: function (events, callbacks, args) {
         if (!events || !callbacks) {
           return;
         }
@@ -3335,8 +3346,8 @@
     blocks.queries[eventName] = {
       passRawValues: true,
 
-      update: function (callback, data) {
-        blocks.queries.on.update.call(this, eventName, callback, data);
+      ready: function (callback, data) {
+        blocks.queries.on.ready.call(this, eventName, callback, data);
       }
     };
   });
@@ -5593,6 +5604,8 @@
       root: '/'
     }, options);
 
+    this._tryFixOrigin();
+
     this._location = window.location;
     this._history = window.history;
     this._root = ('/' + this._options.root + '/').replace(rootStripper, '/');
@@ -5661,9 +5674,12 @@
       var use = this._use;
       var onUrlChanged = blocks.bind(this._onUrlChanged, this);
 
+      if (this._wants == PUSH_STATE) {
+        addListener(document, 'click', blocks.bind(this._onDocumentClick, this));
+      }
+
       if (use == PUSH_STATE) {
         addListener(window, 'popstate', onUrlChanged);
-        addListener(document, 'click', blocks.bind(this._onDocumentClick, this));
       } else if (use == HASH && !oldIE && ('onhashchange' in window)) {
         addListener(window, 'hashchange', onUrlChanged);
       } else if (use == HASH) {
@@ -5770,6 +5786,13 @@
       iframe.tabIndex = -1;
       document.body.appendChild(iframe);
       this._iframe = iframe.contentWindow;
+    },
+
+    _tryFixOrigin: function () {
+      var location = window.location;
+      if (!location.origin) {
+        location.origin = location.protocol + "//" + location.hostname + (location.port ? ':' + location.port: '');
+      }
     }
   };
 

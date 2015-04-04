@@ -35,17 +35,30 @@ module.exports = function (grunt) {
         dest: 'dist/blocks-debug.js',
         options: {
           context: {
-            DEBUG: true
+            DEBUG: true,
+            SERVER: false
           }
         }
       },
 
-      production: {
-        src: ['dist/blocks.js', 'dist/blocks-node.js'],
+      client: {
+        src: 'dist/blocks.js',
         options: {
           inline: true,
           context: {
-            DEBUG: false
+            DEBUG: false,
+            SERVER: false
+          }
+        }
+      },
+
+      server: {
+        src: 'dist/blocks-node.js',
+        options: {
+          inline: true,
+          context: {
+            DEBUG: false,
+            SERVER: true
           }
         }
       }
@@ -81,7 +94,7 @@ module.exports = function (grunt) {
   });
 
   grunt.loadTasks('build/tasks');
-
+  
   grunt.registerTask('compile', ['build', 'combine', 'preprocess', 'debug', 'notify:build', 'build-tests-definitions']);
   grunt.registerTask('live-compile', ['compile', 'watch:compile']);
   grunt.registerTask('full-build', ['jshint', 'compile', 'uglify', 'test', 'npm', 'bower']);

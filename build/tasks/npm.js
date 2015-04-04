@@ -23,7 +23,8 @@ module.exports = function (grunt) {
       email: 'support@jsblocks.com'
     },
     homepage: 'https://github.com/astoilkov/jsblocks',
-    devDependencies: {
+    dependencies: {
+      express: "4.10.6",
       parse5: "1.4.1"
     }
   };

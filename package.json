@@ -1,7 +1,16 @@
 {
   "name": "jsblocks",
-  "version": "0.1.3",
-  "description": "So cool",
+  "version": "0.1.4",
+  "description": "Better MV-ish Framework",
+  "author": {
+    "name": "Antonio Stoilkov",
+    "email": "antonio.stoilkov@gmail.com",
+    "url": "http://jsblocks.com"
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "grunt test:firefox"
+  },
   "devDependencies": {
     "grunt": "^0.4.5",
     "grunt-contrib-jshint": "^0.11.0",

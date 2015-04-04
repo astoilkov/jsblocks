@@ -64,7 +64,8 @@ define([
      * Queries and sets the inner html of the element from the template specified
      *
      * @memberof blocks.queries
-     * @param {(HTMLElement|string)} template - The template that will be rendered.
+     * @param {(HTMLElement|string)} template - The template that will be rendered
+     * @param {*} value - The value that will used in the template
      * The value could be an element id (the element innerHTML property will be taken), string (the template) or
      * an element (again the element innerHTML property will be taken)
      *
@@ -172,7 +173,7 @@ define([
      *
      * @memberof blocks.queries
      * @param {*} value - The new context
-     * @param {string} [name] - Optional name of the new context.
+     * @param {string} [name] - Optional name of the new context
      * This way the context will also available under the name not only under the $this context property
      *
      * @example {html}
@@ -786,7 +787,7 @@ define([
      * the callback function after the event arguments
      */
     on: {
-      update: function (events, callbacks, args) {
+      ready: function (events, callbacks, args) {
         if (!events || !callbacks) {
           return;
         }
@@ -822,8 +823,8 @@ define([
     blocks.queries[eventName] = {
       passRawValues: true,
 
-      update: function (callback, data) {
-        blocks.queries.on.update.call(this, eventName, callback, data);
+      ready: function (callback, data) {
+        blocks.queries.on.ready.call(this, eventName, callback, data);
       }
     };
   });

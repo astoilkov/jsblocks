@@ -17,6 +17,8 @@ define([
       root: '/'
     }, options);
 
+    this._tryFixOrigin();
+
     this._location = window.location;
     this._history = window.history;
     this._root = ('/' + this._options.root + '/').replace(rootStripper, '/');
@@ -85,9 +87,12 @@ define([
       var use = this._use;
       var onUrlChanged = blocks.bind(this._onUrlChanged, this);
 
+      if (this._wants == PUSH_STATE) {
+        addListener(document, 'click', blocks.bind(this._onDocumentClick, this));
+      }
+
       if (use == PUSH_STATE) {
         addListener(window, 'popstate', onUrlChanged);
-        addListener(document, 'click', blocks.bind(this._onDocumentClick, this));
       } else if (use == HASH && !oldIE && ('onhashchange' in window)) {
         addListener(window, 'hashchange', onUrlChanged);
       } else if (use == HASH) {
@@ -194,6 +199,13 @@ define([
       iframe.tabIndex = -1;
       document.body.appendChild(iframe);
       this._iframe = iframe.contentWindow;
+    },
+
+    _tryFixOrigin: function () {
+      var location = window.location;
+      if (!location.origin) {
+        location.origin = location.protocol + "//" + location.hostname + (location.port ? ':' + location.port: '');
+      }
     }
   };
 

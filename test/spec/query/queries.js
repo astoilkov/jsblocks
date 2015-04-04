@@ -1094,7 +1094,8 @@
 
       it('blocks.queries.' + eventName + ' is defined', function () {
         expect(blocks.queries[eventName].preprocess == null).toBe(true);
-        expect(blocks.queries[eventName].update).toBeDefined();
+        expect(blocks.queries[eventName].update == null).toBe(true);
+        expect(blocks.queries[eventName].ready).toBeDefined();
       });
 
       it('blocks.queries.' + eventName + ' does not throw exception', function () {

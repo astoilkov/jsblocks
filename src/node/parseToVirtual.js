@@ -24,8 +24,8 @@ define([
 
   function parseToVirtual(html) {
     var skip = 0;
-    var root;
-    var parent;
+    var root = VirtualElement('root');
+    var parent = root;
     // TODO: Implement doctype
     var doctypeName;
     var parser = new parse5.SimpleApiParser({
@@ -62,10 +62,6 @@ define([
 
         if (!selfClosing) {
           parent = element;
-        }
-
-        if (!root) {
-          root = element;
         }
 
         if (skip) {
@@ -113,7 +109,7 @@ define([
 
     parser.parse(html);
 
-    return root;
+    return root.children();
   }
 
   // TODO: Refactor this because it is duplicate from query/createVirtual.js file

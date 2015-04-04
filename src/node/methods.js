@@ -1,21 +1,12 @@
 define([
   '../core',
   './ServerApplication',
-  './Engine'
-], function (blocks, ServerApplication, Engine) {
+], function (blocks, ServerApplication) {
   blocks.serverApplication = function (options) {
     return new ServerApplication(options);
   };
 
-  blocks.createEngine = function (options) {
-    return Engine.Create(options);
-  };
+  blocks.middleware = function () {
 
-  blocks.render = function (contents, callback) {
-    Engine.RenderContents(contents, callback);
-  };
-
-  blocks.renderFile = function (filePath, callback) {
-    Engine.RenderFile(filePath, callback);
   };
 });

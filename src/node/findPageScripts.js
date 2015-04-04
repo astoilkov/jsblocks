@@ -2,13 +2,25 @@ define([
   '../core',
   './parseToVirtual'
 ], function (blocks, parseToVirtual) {
-  function findPageScripts(html, callback) {
-    var virtual = parseToVirtual(html);
+  var path = require('path');
+
+  function findPageScripts(html, staticFolder, callback) {
+    var virtual = blocks.first(parseToVirtual(html), function (child) {
+      return VirtualElement.Is(child);
+    });
     var scripts = [];
-    findPageScriptsRecurse(virtual, scripts, true, 0, callback);
+    var args = {
+      filesPending: 0,
+      callback: callback,
+      staticFolder: staticFolder
+    };
+    findPageScriptsRecurse(virtual, scripts, args);
+    if (args.filesPending === 0) {
+      args.callback([]);
+    }
   }
 
-  function findPageScriptsRecurse(virtual, scripts, isInitial, filesPending, callback) {
+  function findPageScriptsRecurse(virtual, scripts, args) {
     blocks.each(virtual.children(), function (child) {
       if (!VirtualElement.Is(child)) {
         return;
@@ -18,10 +30,9 @@ define([
       if (child.tagName() == 'script') {
         src = child.attr('src');
         if (src) {
-          src = getScriptPath(src);
-          if (blocks.contains(src, 'blocks.js') ||
-            (blocks.contains(src, 'blocks-') && blocks.endsWith(src, '.js'))) {
-            src = 'blocks-node.js';
+          src = path.join(args.staticFolder, src);
+          if (blocks.contains(src, 'blocks') && blocks.endsWith(src, '.js')) {
+            src = 'node_modules/blocks/blocks.js';
           }
           scripts.push({
             type: 'external',
@@ -29,11 +40,11 @@ define([
             code: ''
           });
 
-          filesPending++;
+          args.filesPending += 1;
           populateScript(scripts[scripts.length - 1], function () {
-            filesPending--;
-            if (filesPending === 0) {
-              callback(scripts);
+            args.filesPending -= 1;
+            if (args.filesPending === 0) {
+              args.callback(scripts);
             }
           });
         } else {
@@ -43,12 +54,8 @@ define([
           });
         }
       }
-      findPageScriptsRecurse(child, scripts, false, filesPending, callback);
+      findPageScriptsRecurse(child, scripts, args);
     });
-
-    //if (filesPending === 0 && isInitial) {
-    //  callback(scripts);
-    //}
   }
 
   function populateScript(script, callback) {
@@ -56,10 +63,6 @@ define([
       script.code = code;
       callback();
     });
-  }
-
-  function getScriptPath(url) {
-    return 'public/' + url;
   }
 
   return findPageScripts;

@@ -37,8 +37,6 @@ module.exports = function (grunt) {
           .replace(/define\(\[[^\]]+\]\)[\W\n]+$/, '');
       }
 
-      contents = contents.replace('@version', grunt.config.get('version'));
-
       return contents;
     }
   };
