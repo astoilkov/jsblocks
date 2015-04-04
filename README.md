@@ -1,4 +1,4 @@
-# jsblocks
+# jsblocks [![Build Status](https://travis-ci.org/astoilkov/jsblocks.svg?branch=master)](https://travis-ci.org/astoilkov/jsblocks)
 
 Better MV-ish Framework
 
