@@ -104,7 +104,7 @@ define([
       for (; i < domElements.length; i++) {
         var data = domElements[i];
         if (!data.element) {
-          data.element = ElementsData.rawData[data.elementId].dom;
+          data.element = ElementsData.data(data.elementId).dom;
         }
         this.setup(data.element, callback);
       }

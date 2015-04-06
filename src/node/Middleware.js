@@ -2,8 +2,10 @@ define([
   '../core',
   './findPageScripts',
   './executePageScripts',
+  './getElementsById',
+  './parseToVirtual',
   './BrowserEnv'
-], function (blocks, findPageScripts, executePageScripts, BrowserEnv) {
+], function (blocks, findPageScripts, executePageScripts, getElementsById, parseToVirtual, BrowserEnv) {
   var fs = require('fs');
   var path = require('path');
 
@@ -53,10 +55,14 @@ define([
 
     _setContents: function (contents) {
       var _this = this;
+      var virtual = blocks.first(parseToVirtual(contents), function (child) {
+        return VirtualElement.Is(child);
+      });
 
       this._contents = contents;
+      this._elementsById = getElementsById(virtual.children());
 
-      findPageScripts(contents, this._options.staticFolder, function (scripts) {
+      findPageScripts(virtual, this._options.staticFolder, function (scripts) {
         _this._scripts = scripts;
         _this._initialized = true;
       });
@@ -73,7 +79,7 @@ define([
         callback(null, cache[location]);
       } else {
         env = this._createEnv(req);
-        executePageScripts(env, this._scripts, this._pageExecuted.bind(this, callback, env.location));
+        executePageScripts(env, this._scripts, this._pageExecuted.bind(this, callback, env.location.href));
       }
     },
 
@@ -100,6 +106,7 @@ define([
       var browserEnv = BrowserEnv.Create();
 
       browserEnv.fillLocation(this._getLocation(req));
+      browserEnv.addElementsById(this._elementsById);
 
       return browserEnv.getObject();
     },

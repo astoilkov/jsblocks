@@ -78,6 +78,13 @@ define([
       return newContext;
     },
 
+    contextBubble: function (context, callback) {
+      var currentContext = this._context;
+      this._context = context;
+      callback();
+      this._context = currentContext;
+    },
+
     addProperty: function (name, value) {
       this._contextProperties[name] = value;
       this.applyDefinedContextProperties();

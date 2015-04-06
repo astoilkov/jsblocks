@@ -125,7 +125,7 @@
       };
 
       script.onerror = this.scriptError;
-      script.async = true;
+      script.async = options.async;
       script.src = options.url;
       document.head.appendChild(script);
     },

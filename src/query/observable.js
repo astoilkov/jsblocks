@@ -29,11 +29,13 @@ define([
       }
 
       var currentValue = getObservableValue(observable);
+      var update = observable.update;
 
       if (arguments.length === 0) {
         Observer.registerObservable(observable);
         return currentValue;
       } else if (!blocks.equals(value, currentValue, false) && Events.trigger(observable, 'changing', value, currentValue) !== false) {
+        observable.update = blocks.noop;
         if (!observable._dependencyType) {
           if (blocks.isArray(currentValue) && blocks.isArray(value) && observable.removeAll && observable.addMany) {
             observable.removeAll();
@@ -45,6 +47,7 @@ define([
           observable.__value__.set.call(observable.__context__, value);
         }
 
+        observable.update = update;
         observable.update();
 
         Events.trigger(observable, 'change', value, currentValue);
@@ -163,7 +166,7 @@ define([
             context = expression.context;
 
             if (!element) {
-              element = expression.element = ElementsData.rawData[expression.elementId].dom;
+              element = expression.element = ElementsData.data(expression.elementId).dom;
             }
 
             try {
@@ -192,17 +195,17 @@ define([
           for (var i = 0; i < elements.length; i++) {
             value = elements[i];
             element = value.element;
-            if (!element && ElementsData.rawData[value.elementId]) {
-              element = value.element = ElementsData.rawData[value.elementId].dom;
+            if (!element && ElementsData.data(value.elementId)) {
+              element = value.element = ElementsData.data(value.elementId).dom;
               if (!element) {
-                element = ElementsData.rawData[value.elementId].virtual;
+                element = ElementsData.data(value.elementId).virtual;
               }
             }
             if (document.body.contains(element) || VirtualElement.Is(element)) {
               domQuery = blocks.domQuery(element);
-              domQuery.context(value.context);
-              domQuery.executeMethods(element, value.cache);
-              domQuery.popContext();
+              domQuery.contextBubble(value.context, function () {
+                domQuery.executeMethods(element, value.cache);
+              });
             } else {
               elements.splice(i, 1);
               i -= 1;
@@ -783,17 +786,17 @@ define([
               var i = 0;
 
               var domQuery = blocks.domQuery(domElement);
-              domQuery.context(blocks.context(domElement));
-
-              for (; i < length; i++) {
-                // TODO: Should be refactored in a method because
-                // the same logic is used in the each method
-                domQuery.dataIndex(blocks.observable.getIndex(_this, index + i, true));
-                domQuery.pushContext(addItems[i]);
-                html += virtualElement.renderChildren(domQuery);
-                domQuery.popContext();
-                domQuery.dataIndex(undefined);
-              }
+              domQuery.contextBubble(blocks.context(domElement), function () {
+                for (; i < length; i++) {
+                  // TODO: Should be refactored in a method because
+                  // the same logic is used in the each method
+                  domQuery.dataIndex(blocks.observable.getIndex(_this, index + i, true));
+                  domQuery.pushContext(addItems[i]);
+                  html += virtualElement.renderChildren(domQuery);
+                  domQuery.popContext();
+                  domQuery.dataIndex(undefined);
+                }
+              });
 
               if (domElement.childNodes.length === 0) {
                 (new HtmlElement(domElement)).html(html);

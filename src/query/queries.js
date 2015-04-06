@@ -110,10 +110,12 @@ define([
           if (value) {
             blocks.queries['with'].preprocess.call(this, domQuery, value, '$template');
           }
-          this.html(html);
-          if (!this._each) {
-            this._children = createVirtual(this._el._element.childNodes[0], this);
-            this._innerHTML = null;
+          if (!domQuery._serverData) {
+            this.html(html);
+            if (!this._each) {
+              this._children = createVirtual(this._el._element.childNodes[0], this);
+              this._innerHTML = null;
+            }
           }
         }
       }
@@ -203,13 +205,11 @@ define([
       preprocess: function (domQuery, value, name) {
         if (this._renderMode != VirtualElement.RenderMode.None) {
           var renderEndTag = this.renderEndTag;
+
           if (name) {
             domQuery.addProperty(name, value);
           }
-
           domQuery.pushContext(value);
-
-          //domQuery.applyContextToElement(this);
 
           this.renderEndTag = function () {
             if (name) {
@@ -323,11 +323,12 @@ define([
         this._childrenEach = true;
 
         if (domQuery._serverData) {
-          elementData = domQuery._serverData[ElementsData.data(element).id];
+          elementData = domQuery._serverData[ElementsData.id(element)];
+          domQuery._serverData[ElementsData.id(element)] = undefined;
           if (elementData) {
             var div = document.createElement('div');
             div.innerHTML = elementData;
-            element._template = element._children = createVirtual(div.childNodes[0]);
+            element._template = element._children = createVirtual(div.childNodes[0], element);
           }
         }
 

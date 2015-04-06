@@ -168,7 +168,8 @@ define([
         }
         operation.step.call(observable.__context__);
         observable.view = view;
-        chunk = [];
+      } else {
+        chunk.push(operation);
       }
       //if (operation.type == 'sort') {
       //  if (chunk.length) {
@@ -189,7 +190,6 @@ define([
       //} else {
       //  chunk.push(operation);
       //}
-      chunk.push(operation);
     });
 
     if (chunk.length) {

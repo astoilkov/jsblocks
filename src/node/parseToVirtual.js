@@ -26,11 +26,9 @@ define([
     var skip = 0;
     var root = VirtualElement('root');
     var parent = root;
-    // TODO: Implement doctype
-    var doctypeName;
     var parser = new parse5.SimpleApiParser({
       doctype: function(name, publicId, systemId /*, [location] */) {
-        doctypeName = name;
+        root.children().push('<!DOCTYPE ' + name + '>');
       },
 
       startTag: function(tagName, attrsArray, selfClosing /*, [location] */) {
@@ -44,7 +42,9 @@ define([
         selfClosing = selfClosing || selfClosingTags[tagName];
 
         var element = VirtualElement(tagName);
-        element._parent = parent;
+        if (parent !== root) {
+          element._parent = parent;
+        }
         element._attributes = attrs;
         element._isSelfClosing = selfClosing;
         element._haveAttributes = true;
@@ -71,7 +71,7 @@ define([
           }
         }
 
-        if (element.hasClass('bl-skip') && !selfClosing) {
+        if (!selfClosing && (tagName == 'script' || tagName == 'style' || tagName == 'code' || element.hasClass('bl-skip'))) {
           skip += 1;
         }
       },

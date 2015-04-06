@@ -10,8 +10,11 @@ define([
   var eachQuery = blocks.queries.each.preprocess;
 
   blocks.queries.each.preprocess = function (domQuery, collection) {
-    removeDataIds(this);
-    server.data[this._attributes[dataIdAttr]] = this.renderChildren();
+    if (!server.data[this._attributes[dataIdAttr]]) {
+      removeDataIds(this);
+      server.data[this._attributes[dataIdAttr]] = this.renderChildren();
+    }
+
     eachQuery.call(this, domQuery, collection);
   };
 
@@ -27,25 +30,30 @@ define([
 
   blocks.query = function (model) {
     var domQuery = new DomQuery(model);
-    var virtual = blocks.first(parseToVirtual(server.html), function (child) {
-      return VirtualElement.Is(child);
-    });
+    var children = parseToVirtual(server.html);
 
     domQuery.pushContext(model);
 
-    blocks.each(virtual.children(), function (child) {
+    renderChildren(children, domQuery);
+  };
+
+  function renderChildren(children, domQuery) {
+    blocks.each(children, function (child) {
       if (VirtualElement.Is(child)) {
         if (child.tagName() == 'body') {
           child._parent = null;
-          server.rendered += child.render(domQuery) + VirtualElement('script').html('window.__blocksServerData__ = ' + JSON.stringify(server.data)).render();
+          child.render(domQuery);
+          server.rendered += child.render() + VirtualElement('script').html('window.__blocksServerData__ = ' + JSON.stringify(server.data)).render();
         } else {
-          server.rendered += child.render();
+          server.rendered += child.renderBeginTag();
+          renderChildren(child.children(), domQuery);
+          server.rendered += child.renderEndTag();
         }
       } else {
         server.rendered += child;
       }
     });
-  };
+  }
 
   var executeExpressionValue = Expression.Execute;
 
@@ -73,6 +81,19 @@ define([
     viewQuery.call(this, domQuery, view);
     if (view._html) {
       this._children = parseToVirtual(view._html);
+    }
+  };
+
+  blocks.queries.template.preprocess = function (domQuery, virtual, value) {
+    if (virtual) {
+      if (value) {
+        blocks.queries['with'].preprocess.call(this, domQuery, value, '$template');
+      }
+      this.html(virtual.html());
+      if (!this._each) {
+        this._children = parseToVirtual(this.html());
+        this._innerHTML = null;
+      }
     }
   };
 

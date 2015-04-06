@@ -19,6 +19,7 @@ define([
 
     this._tryFixOrigin();
 
+    this._initial = true;
     this._location = window.location;
     this._history = window.history;
     this._root = ('/' + this._options.root + '/').replace(rootStripper, '/');
@@ -104,8 +105,11 @@ define([
       this._fragment = fragment = this._getFragment(fragment);
 
       Events.trigger(this, 'urlChange', {
-        url: fragment
+        url: fragment,
+        initial: this._initial
       });
+
+      this._initial = false;
     },
 
     _getHash: function (window) {
@@ -204,7 +208,7 @@ define([
     _tryFixOrigin: function () {
       var location = window.location;
       if (!location.origin) {
-        location.origin = location.protocol + "//" + location.hostname + (location.port ? ':' + location.port: '');
+        location.origin = location.protocol + '//' + location.hostname + (location.port ? ':' + location.port: '');
       }
     }
   };

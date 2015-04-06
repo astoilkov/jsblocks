@@ -4018,8 +4018,6 @@ return result;
     }
 
     return {
-      rawData: data,
-
       id: function (element) {
         return getDataId(element);
       },
@@ -4062,7 +4060,7 @@ return result;
       },
 
       data: function (element, name, value) {
-        var result = data[getDataId(element)];
+        var result = data[getDataId(element) || element];
         if (!result) {
           return;
         }
@@ -4088,7 +4086,9 @@ return result;
             }
           });
           data[id] = undefined;
-          //freeIds.push(id);
+          //if (!force) {
+          //  freeIds.push(id);
+          //}
           if (VirtualElement.Is(element)) {
             element.attr(dataIdAttr, null);
           } else if (element.nodeType == 1) {
@@ -4952,11 +4952,12 @@ return result;
     _createAttributeExpressions: function (serverData) {
       var attributeExpressions = this._attributeExpressions;
       var dataId = this._attributes[dataIdAttr];
+      var each = this._each;
       var expression;
 
       blocks.each(this._attributes, function (attributeValue, attributeName) {
-        if (serverData) {
-          expression = Expression.Create(serverData[dataId + attributeName] || '', attributeName);
+        if (!each && serverData && serverData[dataId + attributeName]) {
+          expression = Expression.Create(serverData[dataId + attributeName], attributeName);
         } else {
           expression = Expression.Create(attributeValue, attributeName);
         }
@@ -5467,6 +5468,9 @@ return result;
         element = new VirtualElement(htmlElement);
         element._tagName = tagName;
         element._parent = parentElement;
+        if (parentElement) {
+          element._each = parentElement._each || parentElement._childrenEach;
+        }
         element._haveAttributes = false;
         htmlAttributes = htmlElement.attributes;
         elementAttributes = {};
@@ -5722,6 +5726,13 @@ return result;
       this.applyDefinedContextProperties();
 
       return newContext;
+    },
+
+    contextBubble: function (context, callback) {
+      var currentContext = this._context;
+      this._context = context;
+      callback();
+      this._context = currentContext;
     },
 
     addProperty: function (name, value) {
@@ -6110,10 +6121,12 @@ return result;
           if (value) {
             blocks.queries['with'].preprocess.call(this, domQuery, value, '$template');
           }
-          this.html(html);
-          if (!this._each) {
-            this._children = createVirtual(this._el._element.childNodes[0], this);
-            this._innerHTML = null;
+          if (!domQuery._serverData) {
+            this.html(html);
+            if (!this._each) {
+              this._children = createVirtual(this._el._element.childNodes[0], this);
+              this._innerHTML = null;
+            }
           }
         }
       }
@@ -6203,13 +6216,11 @@ return result;
       preprocess: function (domQuery, value, name) {
         if (this._renderMode != VirtualElement.RenderMode.None) {
           var renderEndTag = this.renderEndTag;
+
           if (name) {
             domQuery.addProperty(name, value);
           }
-
           domQuery.pushContext(value);
-
-          //domQuery.applyContextToElement(this);
 
           this.renderEndTag = function () {
             if (name) {
@@ -6323,11 +6334,12 @@ return result;
         this._childrenEach = true;
 
         if (domQuery._serverData) {
-          elementData = domQuery._serverData[ElementsData.data(element).id];
+          elementData = domQuery._serverData[ElementsData.id(element)];
+          domQuery._serverData[ElementsData.id(element)] = undefined;
           if (elementData) {
             var div = document.createElement('div');
             div.innerHTML = elementData;
-            element._template = element._children = createVirtual(div.childNodes[0]);
+            element._template = element._children = createVirtual(div.childNodes[0], element);
           }
         }
 
@@ -6933,7 +6945,7 @@ return result;
       for (; i < domElements.length; i++) {
         var data = domElements[i];
         if (!data.element) {
-          data.element = ElementsData.rawData[data.elementId].dom;
+          data.element = ElementsData.data(data.elementId).dom;
         }
         this.setup(data.element, callback);
       }
@@ -7000,11 +7012,13 @@ return result;
       }
 
       var currentValue = getObservableValue(observable);
+      var update = observable.update;
 
       if (arguments.length === 0) {
         Observer.registerObservable(observable);
         return currentValue;
       } else if (!blocks.equals(value, currentValue, false) && Events.trigger(observable, 'changing', value, currentValue) !== false) {
+        observable.update = blocks.noop;
         if (!observable._dependencyType) {
           if (blocks.isArray(currentValue) && blocks.isArray(value) && observable.removeAll && observable.addMany) {
             observable.removeAll();
@@ -7016,6 +7030,7 @@ return result;
           observable.__value__.set.call(observable.__context__, value);
         }
 
+        observable.update = update;
         observable.update();
 
         Events.trigger(observable, 'change', value, currentValue);
@@ -7134,7 +7149,7 @@ return result;
             context = expression.context;
 
             if (!element) {
-              element = expression.element = ElementsData.rawData[expression.elementId].dom;
+              element = expression.element = ElementsData.data(expression.elementId).dom;
             }
 
             try {
@@ -7163,17 +7178,17 @@ return result;
           for (var i = 0; i < elements.length; i++) {
             value = elements[i];
             element = value.element;
-            if (!element && ElementsData.rawData[value.elementId]) {
-              element = value.element = ElementsData.rawData[value.elementId].dom;
+            if (!element && ElementsData.data(value.elementId)) {
+              element = value.element = ElementsData.data(value.elementId).dom;
               if (!element) {
-                element = ElementsData.rawData[value.elementId].virtual;
+                element = ElementsData.data(value.elementId).virtual;
               }
             }
             if (document.body.contains(element) || VirtualElement.Is(element)) {
               domQuery = blocks.domQuery(element);
-              domQuery.context(value.context);
-              domQuery.executeMethods(element, value.cache);
-              domQuery.popContext();
+              domQuery.contextBubble(value.context, function () {
+                domQuery.executeMethods(element, value.cache);
+              });
             } else {
               elements.splice(i, 1);
               i -= 1;
@@ -7754,17 +7769,17 @@ return result;
               var i = 0;
 
               var domQuery = blocks.domQuery(domElement);
-              domQuery.context(blocks.context(domElement));
-
-              for (; i < length; i++) {
-                // TODO: Should be refactored in a method because
-                // the same logic is used in the each method
-                domQuery.dataIndex(blocks.observable.getIndex(_this, index + i, true));
-                domQuery.pushContext(addItems[i]);
-                html += virtualElement.renderChildren(domQuery);
-                domQuery.popContext();
-                domQuery.dataIndex(undefined);
-              }
+              domQuery.contextBubble(blocks.context(domElement), function () {
+                for (; i < length; i++) {
+                  // TODO: Should be refactored in a method because
+                  // the same logic is used in the each method
+                  domQuery.dataIndex(blocks.observable.getIndex(_this, index + i, true));
+                  domQuery.pushContext(addItems[i]);
+                  html += virtualElement.renderChildren(domQuery);
+                  domQuery.popContext();
+                  domQuery.dataIndex(undefined);
+                }
+              });
 
               if (domElement.childNodes.length === 0) {
                 (new HtmlElement(domElement)).html(html);
@@ -7973,7 +7988,8 @@ return result;
         }
         operation.step.call(observable.__context__);
         observable.view = view;
-        chunk = [];
+      } else {
+        chunk.push(operation);
       }
       //if (operation.type == 'sort') {
       //  if (chunk.length) {
@@ -7994,7 +8010,6 @@ return result;
       //} else {
       //  chunk.push(operation);
       //}
-      chunk.push(operation);
     });
 
     if (chunk.length) {
@@ -9083,6 +9098,7 @@ return result;
 
     this._tryFixOrigin();
 
+    this._initial = true;
     this._location = window.location;
     this._history = window.history;
     this._root = ('/' + this._options.root + '/').replace(rootStripper, '/');
@@ -9168,8 +9184,11 @@ return result;
       this._fragment = fragment = this._getFragment(fragment);
 
       Events.trigger(this, 'urlChange', {
-        url: fragment
+        url: fragment,
+        initial: this._initial
       });
+
+      this._initial = false;
     },
 
     _getHash: function (window) {
@@ -9268,7 +9287,7 @@ return result;
     _tryFixOrigin: function () {
       var location = window.location;
       if (!location.origin) {
-        location.origin = location.protocol + "//" + location.hostname + (location.port ? ':' + location.port: '');
+        location.origin = location.protocol + '//' + location.hostname + (location.port ? ':' + location.port: '');
       }
     }
   };
@@ -9405,7 +9424,7 @@ return result;
       };
 
       script.onerror = this.scriptError;
-      script.async = true;
+      script.async = options.async;
       script.src = options.url;
       document.head.appendChild(script);
     },
@@ -10901,6 +10920,7 @@ return result;
     this._views = {};
     this._currentRoutedView = undefined;
     this._started = false;
+    this._serverData = window.__blocksServerData__;
 
     this._setDefaults();
 
@@ -11222,7 +11242,7 @@ return result;
       blocks.each(routes, function (route) {
         blocks.each(_this._views, function (view) {
           if (view.options.routeName == route.id) {
-            if (!currentView && view.options.initialPreload) {
+            if (!currentView && (view.options.initialPreload || (data.initial && this._serverData))) {
               view.options.url = undefined;
             }
             if (currentView && currentView != view) {

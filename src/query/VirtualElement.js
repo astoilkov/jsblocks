@@ -413,11 +413,12 @@ define([
     _createAttributeExpressions: function (serverData) {
       var attributeExpressions = this._attributeExpressions;
       var dataId = this._attributes[dataIdAttr];
+      var each = this._each;
       var expression;
 
       blocks.each(this._attributes, function (attributeValue, attributeName) {
-        if (serverData) {
-          expression = Expression.Create(serverData[dataId + attributeName] || '', attributeName);
+        if (!each && serverData && serverData[dataId + attributeName]) {
+          expression = Expression.Create(serverData[dataId + attributeName], attributeName);
         } else {
           expression = Expression.Create(attributeValue, attributeName);
         }

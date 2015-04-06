@@ -19,6 +19,10 @@ define(function () {
 
       createElement: function (tagName) {
         return createElementMock(tagName);
+      },
+
+      getElementById: function () {
+        return null;
       }
     });
   }

@@ -4,10 +4,7 @@ define([
 ], function (blocks, parseToVirtual) {
   var path = require('path');
 
-  function findPageScripts(html, staticFolder, callback) {
-    var virtual = blocks.first(parseToVirtual(html), function (child) {
-      return VirtualElement.Is(child);
-    });
+  function findPageScripts(virtual, staticFolder, callback) {
     var scripts = [];
     var args = {
       filesPending: 0,
@@ -27,7 +24,7 @@ define([
       }
       var src;
 
-      if (child.tagName() == 'script') {
+      if (child.tagName() == 'script' && (!child.attr('type') || child.attr('type') == 'text/javascript')) {
         src = child.attr('src');
         if (src) {
           src = path.join(args.staticFolder, src);

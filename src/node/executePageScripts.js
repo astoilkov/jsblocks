@@ -22,6 +22,8 @@ define([
     ElementsData.reset();
 
     if (!funcs[code]) {
+      // jshint -W054
+      // Disable JSHint error: The Function constructor is a form of eval
       funcs[code] = new Function('blocks', 'document', 'window', 'require', code);
     }
 

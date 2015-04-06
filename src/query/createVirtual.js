@@ -28,6 +28,9 @@ define([
         element = new VirtualElement(htmlElement);
         element._tagName = tagName;
         element._parent = parentElement;
+        if (parentElement) {
+          element._each = parentElement._each || parentElement._childrenEach;
+        }
         element._haveAttributes = false;
         htmlAttributes = htmlElement.attributes;
         elementAttributes = {};

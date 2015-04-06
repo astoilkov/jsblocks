@@ -26,8 +26,6 @@
     }
 
     return {
-      rawData: data,
-
       id: function (element) {
         return getDataId(element);
       },
@@ -78,7 +76,7 @@
       },
 
       data: function (element, name, value) {
-        var result = data[getDataId(element)];
+        var result = data[getDataId(element) || element];
         if (!result) {
           return;
         }
@@ -104,7 +102,9 @@
             }
           });
           data[id] = undefined;
-          //freeIds.push(id);
+          //if (!force) {
+          //  freeIds.push(id);
+          //}
           if (VirtualElement.Is(element)) {
             element.attr(dataIdAttr, null);
           } else if (element.nodeType == 1) {

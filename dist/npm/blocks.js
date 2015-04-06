@@ -1602,13 +1602,15 @@
 
 
 var CollectionDescriptors = {
-contains: function anonymous(index,type,expression,tillExpressions,skipTake) {
+contains: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 return {
 boolResult: false,
 args: ['searchValue'],
 beforeLoop: 'result' + index + '=false;',
 inLoop: 'if (value===searchValue' + index + '){result' + index + '=true;break ;};'}
-},each: function anonymous(index,type,expression,tillExpressions,skipTake) {
+},each: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 var prepareValues = 'callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');';
 return {
 args: ['callback', 'thisArg'],
@@ -1617,7 +1619,8 @@ inLoop: 'callback' + index + '(value,indexOrKey,collection);',
 prepareValues: prepareValues}
 },
 // Objects with different constructors are not equivalent, but `Object`s
-equals: function anonymous(index,type,expression,tillExpressions,skipTake) {
+equals: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 var prepareValues = 'deepEqual' + index + '=deepEqual' + index + '===false?false:true;';
 return {
 boolResult: true,
@@ -1626,7 +1629,8 @@ beforeLoop: (index === ''?'' + prepareValues + '':'')+'var index' + index + '=0;
 inLoop: (type == 'array'?'if (!resultResolved' + index + '){if (deepEqual' + index + '?!blocks.equals(value,compareValue' + index + '[size' + index + '],true):value!==compareValue' + index + '[size' + index + ']){result' + index + '=false;break;}size' + index + '+=1;};':'')+(type == 'object'?'if (!resultResolved' + index + '){if (blocks.has(collection,indexOrKey)){if (!blocks.has(compareValue' + index + ',indexOrKey)||(deepEqual' + index + '?!blocks.equals(value,compareValue' + index + '[indexOrKey],true):value!==compareValue' + index + '[indexOrKey])){result' + index + '=false;break;}size' + index + '+=1;}};':''),
 afterLoop: (type == 'array'?'if (!compareValue' + index + '||size' + index + '!==compareValue' + index + '.length){result' + index + '=false;resultResolved' + index + '=true;};':'')+(type == 'object'?'if (!resultResolved' + index + '&&result' + index + '){for (key' + index + ' in compareValue' + index + '){if (blocks.has(compareValue' + index + ',key' + index + ')&&!size' + index + '--){break ;}}result' + index + '=!size' + index + ';};':''),
 prepareValues: prepareValues}
-},every: function anonymous(index,type,expression,tillExpressions,skipTake) {
+},every: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 var prepareValues = 'callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');';
 return {
 boolResult: true,
@@ -1634,14 +1638,16 @@ args: ['callback', 'thisArg'],
 beforeLoop: 'result' + index + '=true;'+(index === ''?'' + prepareValues + '':''),
 inLoop: 'if (callback' + index + '){if (!callback' + index + '(value,indexOrKey,collection)){result' + index + '=false;break ;}}else if (!value){result' + index + '=false;break ;};',
 prepareValues: prepareValues}
-},filter: function anonymous(index,type,expression,tillExpressions,skipTake) {
+},filter: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 var prepareValues = 'callback' + index + '=blocks.core.filterPrepare(callback' + index + ',thisArg' + index + ');';
 return {
 args: ['callback', 'thisArg'],
 beforeLoop: (index === ''?'' + prepareValues + '':'')+(index === '' || tillExpressions.length === 0?''+(type == 'array'?'result' + index + '=[];':'')+(type == 'object'?'result' + index + '={};':''):''),
 inLoop: 'if (!callback' + index + '(value,indexOrKey,collection)){continue ;};' + skipTake + ';'+(index === '' || tillExpressions.length === 0?''+(type == 'array'?'result' + index + '.push(value);':'')+(type == 'object'?'result' + index + '[indexOrKey]=value;':''):''),
 prepareValues: prepareValues}
-},first: function anonymous(index,type,expression,tillExpressions,skipTake) {
+},first: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 var prepareValues = 'if (callback' + index + '){callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');};';
 return {
 args: ['callback', 'thisArg'],
@@ -1649,7 +1655,8 @@ beforeLoop: 'var isNumber' + index + '=blocks.isNumber(callback' + index + ');va
 inLoop: 'if (callback' + index + '){if (callback' + index + '(value,indexOrKey,collection)){current' + index + '=value;}else {continue ;}}else {current' + index + '=value;};if (isNumber' + index + '){if (size' + index + '++>=count' + index + '){break ;}result' + index + '.push(current' + index + ');}else {result' + index + '=current' + index + ';break ;};',
 prepareValues: prepareValues,
 everything: true}
-},has: function anonymous(index,type,expression,tillExpressions,skipTake) {
+},has: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 return {
 boolResult: false,
 args: ['key'],
@@ -1657,17 +1664,20 @@ beforeLoop: 'result' + index + '=false;',
 afterLoop: 'result' + index + '=blocks.has(collection,key' + index + ');'}
 },
 // TODO: ifNeedsResult could be removed and automatically detect if you need to include the this.result in the descriptor string
-invoke: function anonymous(index,type,expression,tillExpressions,skipTake) {
+invoke: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 return {
 args: ['method', 'args'],
 beforeLoop: 'var isFunc' + index + '=blocks.isFunction(method' + index + ');'+(index === '' || tillExpressions.length === 0?''+(type == 'array'?'result' + index + '=[];':'')+(type == 'object'?'result' + index + '={};':''):'')+(index === ''?'args' + index + '=Array.prototype.slice.call(arguments,2);':''),
 inLoop: 'value=(isFunc' + index + '?method' + index + ':value[method' + index + ']).apply(value,args' + index + '||[]);'+(index === '' || tillExpressions.length === 0?''+(type == 'array'?'result' + index + '.push(value);':'')+(type == 'object'?'result' + index + '[indexOrKey]=value;':''):'')}
-},isEmpty: function anonymous(index,type,expression,tillExpressions,skipTake) {
+},isEmpty: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 return {
 boolResult: true,
 beforeLoop: 'result' + index + '=true;',
 inLoop: 'result' + index + '=false;'}
-},join: function anonymous(index,type,expression,tillExpressions,skipTake) {
+},join: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 return {
 args: ['separator'],
 beforeLoop: 'separator' + index + '=typeof separator' + index + '=="undefined"?",":separator' + index + ';result' + index + '="";',
@@ -1675,14 +1685,16 @@ inLoop: 'result' + index + '+=value+separator' + index + ';',
 afterLoop: 'result' + index + '=result' + index + '.substring(0,result' + index + '.length-separator' + index + '.length);'}
 },
 // NOTE: The code could be minified using UglifyJS.
-map: function anonymous(index,type,expression,tillExpressions,skipTake) {
+map: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 var prepareValues = 'callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');';
 return {
 args: ['callback', 'thisArg'],
 beforeLoop: (index === ''?'' + prepareValues + '':'')+(index === ''?''+(type == 'array'?'result' + index + '=Array(collection.length);':'')+(type == 'object'?'result' + index + '=[];':''):'')+(index !== '' && tillExpressions.length === 0?'result' + index + '=[];':''),
 inLoop: 'value=callback' + index + '(value,indexOrKey,collection);'+(index === ''?''+(type == 'array'?'result' + index + '[indexOrKey]=value;':'')+(type == 'object'?'result' + index + '.push(value);':''):'')+(index !== '' && tillExpressions.length === 0?'result' + index + '.push(value);':''),
 prepareValues: prepareValues}
-},max: function anonymous(index,type,expression,tillExpressions,skipTake) {
+},max: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 var prepareValues = 'callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');';
 return {
 args: ['callback', 'thisArg'],
@@ -1690,7 +1702,8 @@ beforeLoop: 'var max' + index + '=-Infinity;result' + index + '=max' + index + '
 inLoop: 'max' + index + '=callback' + index + '?callback' + index + '(value,indexOrKey,collection):value;result' + index + '=max' + index + '>result' + index + '?max' + index + ':result' + index + ';',
 prepareValues: prepareValues,
 type: 'NumberExpression'}
-},min: function anonymous(index,type,expression,tillExpressions,skipTake) {
+},min: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 var prepareValues = 'callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');';
 return {
 args: ['callback', 'thisArg'],
@@ -1698,7 +1711,8 @@ beforeLoop: 'var min' + index + '=Infinity;result' + index + '=min' + index + ';
 inLoop: 'min' + index + '=callback' + index + '?callback' + index + '(value,indexOrKey,collection):value;result' + index + '=min' + index + '<result' + index + '?min' + index + ':result' + index + ';',
 prepareValues: prepareValues,
 type: 'NumberExpression'}
-},reduce: function anonymous(index,type,expression,tillExpressions,skipTake) {
+},reduce: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 var prepareValues = 'callback' + index + '=blocks.core.reducePrepare(callback' + index + ',memo' + index + ',thisArg' + index + ');';
 return {
 args: ['callback', 'memo', 'thisArg'],
@@ -1706,12 +1720,14 @@ beforeLoop: 'var hasMemo' + index + '=memo' + index + '!=null;result' + index + 
 inLoop: 'if (hasMemo' + index + '){result' + index + '=callback' + index + '(result' + index + ',value,indexOrKey,collection);}else {result' + index + '=collection[indexOrKey];hasMemo' + index + '=true;};',
 prepareValues: prepareValues,
 everything: true}
-},size: function anonymous(index,type,expression,tillExpressions,skipTake) {
+},size: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 return {
 beforeLoop: (index === ''?''+(type == 'array'?'return collection.length;':''):'')+'result' + index + '=0;',
 inLoop: 'result' + index + '++;',
 type: 'NumberExpression'}
-},some: function anonymous(index,type,expression,tillExpressions,skipTake) {
+},some: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 var prepareValues = 'callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');';
 return {
 boolResult: false,
@@ -1737,7 +1753,8 @@ var ArrayDescriptors = {
  * blocks.at(['fred', 'barney', 'pebbles'], 0, 2);
  * // → ['fred', 'pebbles']
  */
-at: function anonymous(index,type,expression,tillExpressions,skipTake) {
+at: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 return {
 args: ['position', 'count'],
 beforeLoop: 'var isArray' + index + '=blocks.isNumber(count' + index + ');var size' + index + '=0;indexOrKey=position' + index + '-1;if (isArray' + index + '){result' + index + '=[];};',
@@ -1770,7 +1787,8 @@ inLoop: 'if (isArray' + index + '){if (size' + index + '++>=count' + index + '){
  * blocks.flatten(characters, 'pets');
  * // → ['hoppy', 'baby puss', 'dino']
  */
-flatten: function anonymous(index,type,expression,tillExpressions,skipTake) {
+flatten: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 return {
 args: ['shallow'],
 beforeLoop: 'var flatten' + index + '=blocks.core.flatten;result' + index + '=[];',
@@ -1795,7 +1813,8 @@ inLoop: 'flatten' + index + '(shallow' + index + ',value,result' + index + ');'}
  * blocks.indexOf([1, 1, 2, 2, 3, 3], 2, true);
  * // → 2
  */
-indexOf: function anonymous(index,type,expression,tillExpressions,skipTake) {
+indexOf: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 return {
 args: ['searchValue', 'fromIndex'],
 beforeLoop: 'result' + index + '=-1;if (blocks.isNumber(fromIndex' + index + ')){indexOrKey=fromIndex' + index + ';};',
@@ -1839,7 +1858,8 @@ type: 'NumberExpression'}
  * blocks.last(characters, { 'employer': 'na' });
  * // → [{ 'name': 'pebbles', 'blocked': true, 'employer': 'na' }]
  */
-last: function anonymous(index,type,expression,tillExpressions,skipTake) {
+last: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 var prepareValues = 'if (callback' + index + '){callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');};';
 return {
 reverse: true,
@@ -1868,7 +1888,8 @@ everything: true}
  * blocks.lastIndexOf([1, 2, 3, 1, 2, 3], 2, 3);
  * // → 1
  */
-lastIndexOf: function anonymous(index,type,expression,tillExpressions,skipTake) {
+lastIndexOf: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 return {
 reverse: true,
 args: ['searchValue', 'fromIndex'],
@@ -1905,21 +1926,24 @@ type: 'NumberExpression'}
 ﻿ * blocks.range(0);
 ﻿ * // → []
 ﻿ */
-range: function anonymous(index,type,expression,tillExpressions,skipTake) {
+range: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 return {
 args: ['start', 'end', 'step'],
 beforeLoop: 'length=Math.max(Math.ceil((end' + index + '-start' + index + ')/step' + index + '),0);result' + index + '=Array(length);',
 inLoop: 'value=start' + index + ';start' + index + '+=step' + index + ';'+(index === '' || tillExpressions.length === 0?'result' + index + '[indexOrKey]=value;':'')}
 },
 // TODO: reduceRight and lastIndexOf are equal to code as reduce and indexOf respectivly
-reduceRight: function anonymous(index,type,expression,tillExpressions,skipTake) {
+reduceRight: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 return {
 reverse: true,
 args: ['callback', 'memo', 'thisArg'],
 beforeLoop: 'var hasMemo' + index + '=memo' + index + '!=null;result' + index + '=memo' + index + ';'+(index === ''?'callback' + index + '=blocks.core.reducePrepare(callback' + index + ',memo' + index + ',thisArg' + index + ');':''),
 inLoop: 'if (hasMemo' + index + '){result' + index + '=callback' + index + '(result' + index + ',value,indexOrKey,collection);}else {result' + index + '=collection[indexOrKey];hasMemo' + index + '=true;};',
 everything: true}
-},unique: function anonymous(index,type,expression,tillExpressions,skipTake) {
+},unique: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 var prepareValues = 'callback' + index + '=blocks.core.uniquePrepare(callback' + index + ',thisArg' + index + ');';
 return {
 args: ['callback', 'thisArg'],
@@ -1930,26 +1954,31 @@ prepareValues: prepareValues}
 };for (var key in ArrayDescriptors) {ArrayDescriptors[key].identity = key;ArrayDescriptors[key].parent = ArrayDescriptors;}
 
 var ObjectDescriptors = {
-get: function anonymous(index,type,expression,tillExpressions,skipTake) {
+get: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 var prepareValues = (index === ''?'keys' + index + '=blocks.flatten(Array.prototype.slice.call(arguments,1));':'')+(index !== ''?'keys' + index + '=blocks.flatten(Array.prototype.slice.call(arguments,0));':'');
 return {
 args: ['keys'],
 beforeLoop: (index === ''?'' + prepareValues + '':'')+'var singleKey' + index + '=keys' + index + '.length<2;keys' + index + '=blocks.toObject(keys' + index + ');result' + index + '={};',
 inLoop: 'if (keys' + index + '.hasOwnProperty(indexOrKey)){if (singleKey' + index + '){result' + index + '=value;}else {result' + index + '[indexOrKey]=value;}};',
 prepareValues: prepareValues}
-},invert: function anonymous(index,type,expression,tillExpressions,skipTake) {
+},invert: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 return {
 beforeLoop: 'var temp' + index + ';result' + index + '={};',
 inLoop: 'temp' + index + '=value;value=indexOrKey;indexOrKey=temp' + index + ';'+(index === '' || tillExpressions.length === 0?'result' + index + '[indexOrKey]=value;':'')}
-},keys: function anonymous(index,type,expression,tillExpressions,skipTake) {
+},keys: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 return {
 beforeLoop: 'result' + index + '=[];',
 inLoop: 'value=indexOrKey;'+(index === '' || tillExpressions.length === 0?'result' + index + '.push(value);':'')}
-},pairs: function anonymous(index,type,expression,tillExpressions,skipTake) {
+},pairs: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 return {
 beforeLoop: 'result' + index + '=[];',
 inLoop: 'result' + index + '.push({key:indexOrKey,value:value});'}
-},values: function anonymous(index,type,expression,tillExpressions,skipTake) {
+},values: function anonymous(index,type,expression,tillExpressions,skipTake
+/**/) {
 return {
 beforeLoop: 'result' + index + '=[];',
 inLoop: 'result' + index + '.push(value);'}
@@ -1957,7 +1986,8 @@ inLoop: 'result' + index + '.push(value);'}
 };for (var key in ObjectDescriptors) {ObjectDescriptors[key].identity = key;ObjectDescriptors[key].parent = ObjectDescriptors;}
 
 var LoopDescriptors = {
-chainExpression: function anonymous(context) {
+chainExpression: function anonymous(context
+/**/) {
 var context2;
 var context1;
 var result = '';
@@ -2041,7 +2071,8 @@ result += ' ' + context1 + ' ';
 });
 result += ' ' + (context.afterLoopConditions ? ' ' + context.afterLoopConditions + ' ' : '') + ' ' + (!context.conditions ? ' ' + context.result + ' = ' + context.result + context.resultIndex + '; ' : '') + ' return ' + context.result + '; ';
 return result;
-},conditions: function anonymous(context) {
+},conditions: function anonymous(context
+/**/) {
 var context1;
 var result = '';
 var last1;
@@ -2060,7 +2091,8 @@ result += context1;
 });
 result += ') { ' + context.result + ' = true; ' + (context.inLoop ? ' break; ' : '') + ' } ';
 return result;
-},expressions: function anonymous(context) {
+},expressions: function anonymous(context
+/**/) {
 var context2;
 var context1;
 var result = '';
@@ -2134,7 +2166,8 @@ result += ' ' + key1 + ' : ' + context1 + ', ';
 });
 result += ' reverse: function () { var type = expressions.' + context.path + 'reverse; if (!type) { type = (expressions.' + context.path + 'reverse = generateExpression("' + context.path + 'reverse", "' + context.path + 'reverse", "reverse", ' + context.type + ')); } var expression = new type(this); return expression; }, each: function (callback, thisArg) { var type = expressions.' + context.path + 'each; if (!type) { type = (expressions.' + context.path + 'each = generateExpression("' + context.path + 'each", "' + context.path + 'each", "each", ' + context.type + ')); } callback = PrepareValues.parseCallback(callback, thisArg); var expression = new type(callback, thisArg, this); expression._loop(); return expression; }, value: function () { if (this._parent && this._computedValue === undefined) { this._execute(true); this._computedValue = blocks.isBoolean(this._result) ? this._parent._value : this._result; } return this._computedValue === undefined ? this._value : this._computedValue; }, result: function () { if (this._result === true || this._result === false) { return this._result; } if (this._parent) { this._execute(); } return this._result; }, _loop: function () { var func = cache.' + context.path + ' || (cache.' + context.path + ' = createExpression(this)); func(this); }, _execute: function (skipConditions) { var func = cache.' + context.path + ' || (cache.' + context.path + ' = createExpression(this, skipConditions)); if (func) { this._setResult(func(this)); } else { this._result = this._findValue(); } }, _hasConditions: function () { var name = this._name; return name.indexOf("and") != -1 || name.indexOf("or") != -1; }, _setLastCondition: function () { var name = this._name; var andIndex = name.lastIndexOf("and"); var orIndex = name.lastIndexOf("or"); this._lastCondition = andIndex > orIndex ? "and" : "or"; }, _findValue: function () { var parent = this._parent; while (parent) { if (parent._value) { return parent._value; } parent = parent._parent; } } }); return ' + context.name + 'Expression; ';
 return result;
-},singleExpression: function anonymous(context) {
+},singleExpression: function anonymous(context
+/**/) {
 var context1;
 var result = '';
 var last1;
@@ -2213,11 +2246,13 @@ result += ' ' + context1 + ' ';
 });
 result += ' } return ' + context.result + '; ';
 return result;
-},skip: function anonymous(context) {
+},skip: function anonymous(context
+/**/) {
 var result = '';
 result += 'if (skip' + context.index + '-- > 0) { continue; }';
 return result;
-},take: function anonymous(context) {
+},take: function anonymous(context
+/**/) {
 var result = '';
 result += 'if (take' + context.index + '-- <= 0) { break; }';
 return result;
@@ -3280,6 +3315,7 @@ return result;
     var skipTake = '';
     var onlySkipTake = true;
     var descriptorData;
+    var func;
 
     while (expression._parent) {
       blocks.each(types, function (type, typesIndex) {
@@ -3372,6 +3408,13 @@ return result;
           context.isArrayCheck = false;
           break;
       }
+
+      if (typeof module === 'object' && typeof module.exports === 'object') {
+        func = new Function(['blocks', 'collection'].concat(context.args[0]), expression._loopDescriptor(context));
+        return function () {
+          return func.apply(this, [blocks].concat(blocks.toArray(arguments)));
+        };
+      }
       return new Function(['collection'].concat(context.args[0]), expression._loopDescriptor(context));
     } else {
       conditionsCreator.end(context);
@@ -3382,6 +3425,12 @@ return result;
       }
       if (disregardResultIndex) {
         context.resultIndex = 0;
+      }
+      if (typeof module === 'object' && typeof module.exports === 'object') {
+        func = new Function(['blocks', context.expression], expression._loopDescriptor(context));
+        return function (collection) {
+          return func(blocks, collection);
+        };
       }
       return new Function(context.expression, expression._loopDescriptor(context));
     }
@@ -3969,18 +4018,15 @@ return result;
     }
 
     return {
-      rawData: data,
-
       id: function (element) {
         return getDataId(element);
       },
 
-      //reset: function () {
-      //  data = {};
-      //  globalId = 1;
-      //  freeIds = [];
-      //},
-
+      reset: function () {
+        data = {};
+        globalId = 1;
+        freeIds = [];
+      },
       collectGarbage: function () {
         blocks.each(data, function (value) {
           if (value && value.dom && !document.body.contains(value.dom)) {
@@ -4019,7 +4065,7 @@ return result;
       },
 
       data: function (element, name, value) {
-        var result = data[getDataId(element)];
+        var result = data[getDataId(element) || element];
         if (!result) {
           return;
         }
@@ -4045,7 +4091,9 @@ return result;
             }
           });
           data[id] = undefined;
-          //freeIds.push(id);
+          //if (!force) {
+          //  freeIds.push(id);
+          //}
           if (VirtualElement.Is(element)) {
             element.attr(dataIdAttr, null);
           } else if (element.nodeType == 1) {
@@ -4909,11 +4957,12 @@ return result;
     _createAttributeExpressions: function (serverData) {
       var attributeExpressions = this._attributeExpressions;
       var dataId = this._attributes[dataIdAttr];
+      var each = this._each;
       var expression;
 
       blocks.each(this._attributes, function (attributeValue, attributeName) {
-        if (serverData) {
-          expression = Expression.Create(serverData[dataId + attributeName] || '', attributeName);
+        if (!each && serverData && serverData[dataId + attributeName]) {
+          expression = Expression.Create(serverData[dataId + attributeName], attributeName);
         } else {
           expression = Expression.Create(attributeValue, attributeName);
         }
@@ -5424,6 +5473,9 @@ return result;
         element = new VirtualElement(htmlElement);
         element._tagName = tagName;
         element._parent = parentElement;
+        if (parentElement) {
+          element._each = parentElement._each || parentElement._childrenEach;
+        }
         element._haveAttributes = false;
         htmlAttributes = htmlElement.attributes;
         elementAttributes = {};
@@ -5679,6 +5731,13 @@ return result;
       this.applyDefinedContextProperties();
 
       return newContext;
+    },
+
+    contextBubble: function (context, callback) {
+      var currentContext = this._context;
+      this._context = context;
+      callback();
+      this._context = currentContext;
     },
 
     addProperty: function (name, value) {
@@ -6067,10 +6126,12 @@ return result;
           if (value) {
             blocks.queries['with'].preprocess.call(this, domQuery, value, '$template');
           }
-          this.html(html);
-          if (!this._each) {
-            this._children = createVirtual(this._el._element.childNodes[0], this);
-            this._innerHTML = null;
+          if (!domQuery._serverData) {
+            this.html(html);
+            if (!this._each) {
+              this._children = createVirtual(this._el._element.childNodes[0], this);
+              this._innerHTML = null;
+            }
           }
         }
       }
@@ -6160,13 +6221,11 @@ return result;
       preprocess: function (domQuery, value, name) {
         if (this._renderMode != VirtualElement.RenderMode.None) {
           var renderEndTag = this.renderEndTag;
+
           if (name) {
             domQuery.addProperty(name, value);
           }
-
           domQuery.pushContext(value);
-
-          //domQuery.applyContextToElement(this);
 
           this.renderEndTag = function () {
             if (name) {
@@ -6280,11 +6339,12 @@ return result;
         this._childrenEach = true;
 
         if (domQuery._serverData) {
-          elementData = domQuery._serverData[ElementsData.data(element).id];
+          elementData = domQuery._serverData[ElementsData.id(element)];
+          domQuery._serverData[ElementsData.id(element)] = undefined;
           if (elementData) {
             var div = document.createElement('div');
             div.innerHTML = elementData;
-            element._template = element._children = createVirtual(div.childNodes[0]);
+            element._template = element._children = createVirtual(div.childNodes[0], element);
           }
         }
 
@@ -6890,7 +6950,7 @@ return result;
       for (; i < domElements.length; i++) {
         var data = domElements[i];
         if (!data.element) {
-          data.element = ElementsData.rawData[data.elementId].dom;
+          data.element = ElementsData.data(data.elementId).dom;
         }
         this.setup(data.element, callback);
       }
@@ -6957,11 +7017,13 @@ return result;
       }
 
       var currentValue = getObservableValue(observable);
+      var update = observable.update;
 
       if (arguments.length === 0) {
         Observer.registerObservable(observable);
         return currentValue;
       } else if (!blocks.equals(value, currentValue, false) && Events.trigger(observable, 'changing', value, currentValue) !== false) {
+        observable.update = blocks.noop;
         if (!observable._dependencyType) {
           if (blocks.isArray(currentValue) && blocks.isArray(value) && observable.removeAll && observable.addMany) {
             observable.removeAll();
@@ -6973,6 +7035,7 @@ return result;
           observable.__value__.set.call(observable.__context__, value);
         }
 
+        observable.update = update;
         observable.update();
 
         Events.trigger(observable, 'change', value, currentValue);
@@ -7091,7 +7154,7 @@ return result;
             context = expression.context;
 
             if (!element) {
-              element = expression.element = ElementsData.rawData[expression.elementId].dom;
+              element = expression.element = ElementsData.data(expression.elementId).dom;
             }
 
             try {
@@ -7120,17 +7183,17 @@ return result;
           for (var i = 0; i < elements.length; i++) {
             value = elements[i];
             element = value.element;
-            if (!element && ElementsData.rawData[value.elementId]) {
-              element = value.element = ElementsData.rawData[value.elementId].dom;
+            if (!element && ElementsData.data(value.elementId)) {
+              element = value.element = ElementsData.data(value.elementId).dom;
               if (!element) {
-                element = ElementsData.rawData[value.elementId].virtual;
+                element = ElementsData.data(value.elementId).virtual;
               }
             }
             if (document.body.contains(element) || VirtualElement.Is(element)) {
               domQuery = blocks.domQuery(element);
-              domQuery.context(value.context);
-              domQuery.executeMethods(element, value.cache);
-              domQuery.popContext();
+              domQuery.contextBubble(value.context, function () {
+                domQuery.executeMethods(element, value.cache);
+              });
             } else {
               elements.splice(i, 1);
               i -= 1;
@@ -7711,17 +7774,17 @@ return result;
               var i = 0;
 
               var domQuery = blocks.domQuery(domElement);
-              domQuery.context(blocks.context(domElement));
-
-              for (; i < length; i++) {
-                // TODO: Should be refactored in a method because
-                // the same logic is used in the each method
-                domQuery.dataIndex(blocks.observable.getIndex(_this, index + i, true));
-                domQuery.pushContext(addItems[i]);
-                html += virtualElement.renderChildren(domQuery);
-                domQuery.popContext();
-                domQuery.dataIndex(undefined);
-              }
+              domQuery.contextBubble(blocks.context(domElement), function () {
+                for (; i < length; i++) {
+                  // TODO: Should be refactored in a method because
+                  // the same logic is used in the each method
+                  domQuery.dataIndex(blocks.observable.getIndex(_this, index + i, true));
+                  domQuery.pushContext(addItems[i]);
+                  html += virtualElement.renderChildren(domQuery);
+                  domQuery.popContext();
+                  domQuery.dataIndex(undefined);
+                }
+              });
 
               if (domElement.childNodes.length === 0) {
                 (new HtmlElement(domElement)).html(html);
@@ -7930,7 +7993,8 @@ return result;
         }
         operation.step.call(observable.__context__);
         observable.view = view;
-        chunk = [];
+      } else {
+        chunk.push(operation);
       }
       //if (operation.type == 'sort') {
       //  if (chunk.length) {
@@ -7951,7 +8015,6 @@ return result;
       //} else {
       //  chunk.push(operation);
       //}
-      chunk.push(operation);
     });
 
     if (chunk.length) {
@@ -9040,6 +9103,7 @@ return result;
 
     this._tryFixOrigin();
 
+    this._initial = true;
     this._location = window.location;
     this._history = window.history;
     this._root = ('/' + this._options.root + '/').replace(rootStripper, '/');
@@ -9125,8 +9189,11 @@ return result;
       this._fragment = fragment = this._getFragment(fragment);
 
       Events.trigger(this, 'urlChange', {
-        url: fragment
+        url: fragment,
+        initial: this._initial
       });
+
+      this._initial = false;
     },
 
     _getHash: function (window) {
@@ -9225,7 +9292,7 @@ return result;
     _tryFixOrigin: function () {
       var location = window.location;
       if (!location.origin) {
-        location.origin = location.protocol + "//" + location.hostname + (location.port ? ':' + location.port: '');
+        location.origin = location.protocol + '//' + location.hostname + (location.port ? ':' + location.port: '');
       }
     }
   };
@@ -9362,7 +9429,7 @@ return result;
       };
 
       script.onerror = this.scriptError;
-      script.async = true;
+      script.async = options.async;
       script.src = options.url;
       document.head.appendChild(script);
     },
@@ -10858,6 +10925,7 @@ return result;
     this._views = {};
     this._currentRoutedView = undefined;
     this._started = false;
+    this._serverData = window.__blocksServerData__;
 
     this._setDefaults();
 
@@ -11179,7 +11247,7 @@ return result;
       blocks.each(routes, function (route) {
         blocks.each(_this._views, function (view) {
           if (view.options.routeName == route.id) {
-            if (!currentView && view.options.initialPreload) {
+            if (!currentView && (view.options.initialPreload || (data.initial && this._serverData))) {
               view.options.url = undefined;
             }
             if (currentView && currentView != view) {
@@ -11334,6 +11402,291 @@ return result;
 
 
 
+  var parse5 = require('parse5');
+
+  var selfClosingTags = {
+    area: true,
+    base: true,
+    br: true,
+    col: true,
+    embed: true,
+    hr: true,
+    img: true,
+    input: true,
+    keygen: true,
+    link: true,
+    menuitem: true,
+    meta: true,
+    param: true,
+    source: true,
+    track: true,
+    wbr: true
+  };
+
+  function parseToVirtual(html) {
+    var skip = 0;
+    var root = VirtualElement('root');
+    var parent = root;
+    var parser = new parse5.SimpleApiParser({
+      doctype: function(name, publicId, systemId /*, [location] */) {
+        root.children().push('<!DOCTYPE ' + name + '>');
+      },
+
+      startTag: function(tagName, attrsArray, selfClosing /*, [location] */) {
+        var attrs = {};
+        var length = attrsArray.length;
+        var index = -1;
+        while (++index < length) {
+          attrs[attrsArray[index].name] = attrsArray[index].value;
+        }
+
+        selfClosing = selfClosing || selfClosingTags[tagName];
+
+        var element = VirtualElement(tagName);
+        if (parent !== root) {
+          element._parent = parent;
+        }
+        element._attributes = attrs;
+        element._isSelfClosing = selfClosing;
+        element._haveAttributes = true;
+        element._createAttributeExpressions();
+
+        if (attrs.style) {
+          element._style = generateStyleObject(attrs.style);
+          element._haveStyle = true;
+          attrs.style = null;
+        }
+
+        if (parent) {
+          parent._children.push(element);
+        }
+
+        if (!selfClosing) {
+          parent = element;
+        }
+
+        if (skip) {
+          attrs['data-query'] = null;
+          if (!selfClosing) {
+            skip += 1;
+          }
+        }
+
+        if (!selfClosing && (tagName == 'script' || tagName == 'style' || tagName == 'code' || element.hasClass('bl-skip'))) {
+          skip += 1;
+        }
+      },
+
+      endTag: function(tagName /*, [location] */) {
+        var newParent = parent._parent;
+
+        if (skip) {
+          skip -= 1;
+          if (skip === 0 && newParent) {
+            parent._innerHTML = parent.renderChildren();
+          }
+        }
+        if (parent && newParent) {
+          parent = newParent;
+        }
+      },
+
+      text: function(text /*, [location] */) {
+        if (parent) {
+          if (skip === 0) {
+            parent._children.push(Expression.Create(text) || text);
+          } else {
+            parent._children.push(text);
+          }
+        }
+      },
+
+      comment: function(text /*, [location] */) {
+        //Handle comments here
+      }
+    }, {
+      decodeHtmlEntities: false
+    });
+
+    parser.parse(html);
+
+    return root.children();
+  }
+
+  // TODO: Refactor this because it is duplicate from query/createVirtual.js file
+  function generateStyleObject(styleString) {
+    var styles = styleString.split(';');
+    var styleObject = {};
+    var index;
+    var style;
+    var values;
+
+    for (var i = 0; i < styles.length; i++) {
+      style = styles[i];
+      if (style) {
+        index = style.indexOf(':');
+        if (index != -1) {
+          values = [style.substring(0, index), style.substring(index + 1)];
+          styleObject[values[0].toLowerCase().replace(trimRegExp, '')] = values[1].replace(trimRegExp, '');
+        }
+      }
+    }
+
+    return styleObject;
+  }
+
+  var path = require('path');
+
+  function findPageScripts(virtual, staticFolder, callback) {
+    var scripts = [];
+    var args = {
+      filesPending: 0,
+      callback: callback,
+      staticFolder: staticFolder
+    };
+    findPageScriptsRecurse(virtual, scripts, args);
+    if (args.filesPending === 0) {
+      args.callback([]);
+    }
+  }
+
+  function findPageScriptsRecurse(virtual, scripts, args) {
+    blocks.each(virtual.children(), function (child) {
+      if (!VirtualElement.Is(child)) {
+        return;
+      }
+      var src;
+
+      if (child.tagName() == 'script' && (!child.attr('type') || child.attr('type') == 'text/javascript')) {
+        src = child.attr('src');
+        if (src) {
+          src = path.join(args.staticFolder, src);
+          if (blocks.contains(src, 'blocks') && blocks.endsWith(src, '.js')) {
+            src = 'node_modules/blocks/blocks.js';
+          }
+          scripts.push({
+            type: 'external',
+            url: src,
+            code: ''
+          });
+
+          args.filesPending += 1;
+          populateScript(scripts[scripts.length - 1], function () {
+            args.filesPending -= 1;
+            if (args.filesPending === 0) {
+              args.callback(scripts);
+            }
+          });
+        } else {
+          scripts.push({
+            type: 'page',
+            code: child.renderChildren()
+          });
+        }
+      }
+      findPageScriptsRecurse(child, scripts, args);
+    });
+  }
+
+  function populateScript(script, callback) {
+    fs.readFile(script.url, { encoding: 'utf-8' }, function (err, code) {
+      script.code = code;
+      callback();
+    });
+  }
+
+  var vm = require('vm');
+  var fs = require('fs');
+
+  function executePageScripts(env, scripts, callback) {
+    var code = '';
+
+    blocks.each(scripts, function (script) {
+      code += script.code + ';';
+    });
+
+    executeCode(env, code, callback);
+  }
+
+  var funcs = {};
+  function executeCode(env, code, callback) {
+    blocks.extend(this, env);
+
+    blocks.core.applications.Default = null;
+    ElementsData.reset();
+
+    if (!funcs[code]) {
+      // jshint -W054
+      // Disable JSHint error: The Function constructor is a form of eval
+      funcs[code] = new Function('blocks', 'document', 'window', 'require', code);
+    }
+
+    funcs[code].call(this, blocks, env.document, env.window, require);
+
+    var hasRoute = false;
+    var hasActive = false;
+    blocks.each(env.server.applications, function (application) {
+      application.start();
+      blocks.each(application._views, function (view) {
+        if (blocks.has(view.options, 'route')) {
+          hasRoute = true;
+        }
+        if (view.isActive()) {
+          hasActive = true;
+        }
+      });
+    });
+
+    if (hasRoute && !hasActive) {
+      callback('not found', null);
+    }
+
+    if (env.server.rendered) {
+      callback(null, env.server.rendered);
+    } else {
+      callback('no query', env.server.html);
+    }
+  }
+
+
+  //function executeCode(browserEnv, html, code) {
+  //  var context = vm.createContext(browserEnv.getObject());
+  //  var script = vm.createScript(code);
+  //
+  //  blocks.extend(context, {
+  //    server: {
+  //      html: html,
+  //      data: {},
+  //      rendered: '',
+  //      applications: []
+  //    },
+  //    require: require
+  //  });
+  //
+  //  script.runInContext(context);
+  //
+  //  blocks.each(context.server.applications, function (application) {
+  //    application.start();
+  //  });
+  //
+  //  return context.server.rendered || html;
+  //}
+
+  function getElementsById(elements, result) {
+    result = result || {};
+
+    blocks.each(elements, function (child) {
+      if (VirtualElement.Is(child)) {
+        if (child.attr('id')) {
+          result[child.attr('id')] = child;
+        }
+        getElementsById(child.children(), result);
+      }
+    });
+
+    return result;
+  }
+
   function createBrowserEnvObject() {
     var windowObj = createWindowContext();
 
@@ -11354,6 +11707,10 @@ return result;
 
       createElement: function (tagName) {
         return createElementMock(tagName);
+      },
+
+      getElementById: function () {
+        return null;
       }
     });
   }
@@ -11463,7 +11820,10 @@ return result;
   var url = require('url');
 
   function BrowserEnv() {
-    this._object = createBrowserEnvObject();
+    var env = createBrowserEnvObject();
+    this._env = env;
+
+    this._initialize();
   }
 
   BrowserEnv.Create = function () {
@@ -11472,17 +11832,145 @@ return result;
 
   BrowserEnv.prototype = {
     getObject: function () {
-      return this._object;
+      return this._env;
     },
 
     fillLocation: function (fullUrl) {
       var props = url.parse(fullUrl);
       var copy = 'host hostname href pathname protocol'.split(' ');
-      var location = this._object.window.location;
+      var location = this._env.window.location;
 
       blocks.each(copy, function (name) {
         location[name] = props[name];
       });
+    },
+
+    addElementsById: function (elementsById) {
+      var env = this._env;
+      env.document.__elementsById__ = elementsById;
+      blocks.each(elementsById, function (element, id) {
+        env[id] = element;
+      });
+    },
+
+    _initialize: function () {
+      var env = this._env;
+      var document = env.document;
+
+      document.getElementById = function (id) {
+        return (document.__elementsById__ || {})[id] || null;
+      };
+    }
+  };
+
+
+  var fs = require('fs');
+  var path = require('path');
+
+  function Middleware(options) {
+    if (blocks.isString(options)) {
+      options = {
+        staticFolder: options
+      };
+    }
+
+    this._options = blocks.extend({}, Middleware.Defaults, options);
+    this._contents = '';
+    this._scripts = [];
+    this._cache = {};
+    this._initialized = false;
+
+    this._initialize();
+  }
+
+  Middleware.Defaults = {
+    staticFolder: 'app',
+    blocksPath: 'node_modues/blocks/blocks.js',
+    cache: true
+  };
+
+  Middleware.prototype = {
+    tryServePage: function (req, res, next) {
+      this._renderContents(req, function (err, contents) {
+        if (err && (err != 'no query' || req.url != '/')) {
+          next();
+        } else {
+          res.send(contents);
+        }
+      });
+    },
+
+    _initialize: function () {
+      var _this = this;
+      var url = path.join(this._options.staticFolder, '/index.html');
+
+      fs.readFile(url, { encoding: 'utf-8' }, function (err, contents) {
+        if (!err) {
+          _this._setContents(contents);
+        }
+      });
+    },
+
+    _setContents: function (contents) {
+      var _this = this;
+      var virtual = blocks.first(parseToVirtual(contents), function (child) {
+        return VirtualElement.Is(child);
+      });
+
+      this._contents = contents;
+      this._elementsById = getElementsById(virtual.children());
+
+      findPageScripts(virtual, this._options.staticFolder, function (scripts) {
+        _this._scripts = scripts;
+        _this._initialized = true;
+      });
+    },
+
+    _renderContents: function (req, callback) {
+      var cache = this._cache;
+      var location = this._getLocation(req);
+      var env;
+
+      if (!this._initialized) {
+        callback('not initialized', null);
+      } else if (this._options.cache && cache[location]) {
+        callback(null, cache[location]);
+      } else {
+        env = this._createEnv(req);
+        executePageScripts(env, this._scripts, this._pageExecuted.bind(this, callback, env.location.href));
+      }
+    },
+
+    _pageExecuted: function (callback, location, err, contents) {
+      if (!err && this._options.cache) {
+        this._cache[location] = contents;
+      }
+      callback(err, contents);
+    },
+
+    _createEnv: function (req) {
+      var server = {
+        options: this._options,
+        html: this._contents,
+        data: {},
+        rendered: '',
+        applications: []
+      };
+
+      return blocks.extend({ server: server }, this._createBrowserEnv(req));
+    },
+
+    _createBrowserEnv: function (req) {
+      var browserEnv = BrowserEnv.Create();
+
+      browserEnv.fillLocation(this._getLocation(req));
+      browserEnv.addElementsById(this._elementsById);
+
+      return browserEnv.getObject();
+    },
+
+    _getLocation: function (req) {
+      return req.protocol + '://' + req.get('host') + req.url;
     }
   };
 
@@ -11494,17 +11982,14 @@ return result;
   function ServerApplication(options) {
     this._options = blocks.extend({}, ServerApplication.Defaults, options);
     this._app = express();
+    this._middleware = new Middleware(options);
 
     this._init();
   }
 
-  ServerApplication.Defaults = {
-    port: 3000,
-    staticFolder: 'public',
-    blocksPath: 'auto-include', // 'auto-find'
-    pages: 'auto',
-    cache: 'smart'
-  };
+  ServerApplication.Defaults = blocks.extend({}, Middleware.Defaults, {
+    port: 3000
+  });
 
   ServerApplication.prototype = {
     expressApp: function () {
@@ -11514,417 +11999,38 @@ return result;
     _init: function () {
       var options = this._options;
       var app = this._app;
-      var pages = [];
-      var engine = this._engine = blocks.createEngine({
-        staticFolder: options.staticFolder,
-        blocksPath: options.blocksPath,
-        cache: options.cache
-      });
+      var middleware = this._middleware;
 
       app.listen(options.port);
 
-      app.engine('html', engine);
+      app.use(express.static(path.resolve(options.staticFolder), {
+        index: false
+      }));
 
-      app.set('view engine', 'html');
-
-      app.use(express.static(path.join(__dirname, options.staticFolder)));
-
-      this._initPages();
-    },
-
-    _initPages: function () {
-      var pages = this._options.pages;
-      var routes = this._options.routes;
-      var app = this._app;
-
-      if (pages == 'auto') {
-        pages = this._findPages();
-      }
-
-      blocks.each(pages, function (page, index) {
-        pages[index] = page = page.replace(/.html$/, '');
-        var route = page;
-
-        if (page == 'index') {
-          route = '';
-        }
-
-        app.get('/' + route, function (req, res) {
-          res.render(page, {
-            req: req,
-            res: res
-          });
-        });
+      app.get('/*', function (req, res, next) {
+        middleware.tryServePage(req, res, next);
       });
-
-      blocks.each(routes, function (route, page) {
-        app.get(route, function (req, res) {
-          res.render(page, {
-            req: req,
-            res: res
-          });
-        });
-      });
-    },
-
-    _findPages: function () {
-      var views = fs.readdirSync('views');
-      var pages = [];
-
-      blocks.each(views, function (fileName) {
-        if (blocks.endsWith(fileName, '.html')) {
-          pages.push(fileName);
-        }
-      });
-
-      return pages;
     }
   };
 
-
-  var parse5 = require('parse5');
-
-  var selfClosingTags = {
-    area: true,
-    base: true,
-    br: true,
-    col: true,
-    embed: true,
-    hr: true,
-    img: true,
-    input: true,
-    keygen: true,
-    link: true,
-    menuitem: true,
-    meta: true,
-    param: true,
-    source: true,
-    track: true,
-    wbr: true
-  };
-
-  function parseToVirtual(html) {
-    var skip = 0;
-    var root = VirtualElement('root');
-    var parent = root;
-    // TODO: Implement doctype
-    var doctypeName;
-    var parser = new parse5.SimpleApiParser({
-      doctype: function(name, publicId, systemId /*, [location] */) {
-        doctypeName = name;
-      },
-
-      startTag: function(tagName, attrsArray, selfClosing /*, [location] */) {
-        var attrs = {};
-        var length = attrsArray.length;
-        var index = -1;
-        while (++index < length) {
-          attrs[attrsArray[index].name] = attrsArray[index].value;
-        }
-
-        selfClosing = selfClosing || selfClosingTags[tagName];
-
-        var element = VirtualElement(tagName);
-        element._parent = parent;
-        element._attributes = attrs;
-        element._isSelfClosing = selfClosing;
-        element._haveAttributes = true;
-        element._createAttributeExpressions();
-
-        if (attrs.style) {
-          element._style = generateStyleObject(attrs.style);
-          element._haveStyle = true;
-          attrs.style = null;
-        }
-
-        if (parent) {
-          parent._children.push(element);
-        }
-
-        if (!selfClosing) {
-          parent = element;
-        }
-
-        if (skip) {
-          attrs['data-query'] = null;
-          if (!selfClosing) {
-            skip += 1;
-          }
-        }
-
-        if (element.hasClass('bl-skip') && !selfClosing) {
-          skip += 1;
-        }
-      },
-
-      endTag: function(tagName /*, [location] */) {
-        var newParent = parent._parent;
-
-        if (skip) {
-          skip -= 1;
-          if (skip === 0 && newParent) {
-            parent._innerHTML = parent.renderChildren();
-          }
-        }
-        if (parent && newParent) {
-          parent = newParent;
-        }
-      },
-
-      text: function(text /*, [location] */) {
-        if (parent) {
-          if (skip === 0) {
-            parent._children.push(Expression.Create(text) || text);
-          } else {
-            parent._children.push(text);
-          }
-        }
-      },
-
-      comment: function(text /*, [location] */) {
-        //Handle comments here
-      }
-    }, {
-      decodeHtmlEntities: false
-    });
-
-    parser.parse(html);
-
-    return root.children();
-  }
-
-  // TODO: Refactor this because it is duplicate from query/createVirtual.js file
-  function generateStyleObject(styleString) {
-    var styles = styleString.split(';');
-    var styleObject = {};
-    var index;
-    var style;
-    var values;
-
-    for (var i = 0; i < styles.length; i++) {
-      style = styles[i];
-      if (style) {
-        index = style.indexOf(':');
-        if (index != -1) {
-          values = [style.substring(0, index), style.substring(index + 1)];
-          styleObject[values[0].toLowerCase().replace(trimRegExp, '')] = values[1].replace(trimRegExp, '');
-        }
-      }
-    }
-
-    return styleObject;
-  }
-
-  function findPageScripts(html, callback) {
-    var children = parseToVirtual(html);
-    var scripts = [];
-    var args = {
-      filesPending: 0,
-      callback: callback
-    };
-    findPageScriptsRecurse(children[0], scripts, args);
-    if (args.filesPending === 0) {
-      args.callback([]);
-    }
-  }
-
-  function findPageScriptsRecurse(virtual, scripts, args) {
-    blocks.each(virtual.children(), function (child) {
-      if (!VirtualElement.Is(child)) {
-        return;
-      }
-      var src;
-
-      if (child.tagName() == 'script') {
-        src = child.attr('src');
-        if (src) {
-          src = getScriptPath(src);
-          if (blocks.contains(src, 'blocks') && blocks.endsWith(src, '.js')) {
-            src = 'node_modules/blocks/blocks.js';
-          }
-          scripts.push({
-            type: 'external',
-            url: src,
-            code: ''
-          });
-
-          args.filesPending += 1;
-          populateScript(scripts[scripts.length - 1], function () {
-            args.filesPending -= 1;
-            if (args.filesPending === 0) {
-              args.callback(scripts);
-            }
-          });
-        } else {
-          scripts.push({
-            type: 'page',
-            code: child.renderChildren()
-          });
-        }
-      }
-      findPageScriptsRecurse(child, scripts, args);
-    });
-  }
-
-  function populateScript(script, callback) {
-    fs.readFile(script.url, { encoding: 'utf-8' }, function (err, code) {
-      script.code = code;
-      callback();
-    });
-  }
-
-  function getScriptPath(url) {
-    return 'public/' + url;
-  }
-
-  var vm = require('vm');
-  var fs = require('fs');
-
-  function executePageScripts(browserEnv, html, scripts) {
-    var code = '';
-
-    blocks.each(scripts, function (script) {
-      code += script.code + ';';
-    });
-
-    return executeCode(browserEnv, html, code);
-  }
-
-  var funcs = {};
-  function executeCode(browserEnv, html, code) {
-    blocks.extend(this, browserEnv.getObject(), {
-      server: {
-        html: html,
-        data: {},
-        rendered: '',
-        applications: []
-      }
-    });
-
-    blocks.core.applications.Default = null;
-    ElementsData.reset();
-
-    if (!funcs[code]) {
-      funcs[code] = new Function('blocks', 'document', 'window', 'require', code);
-    }
-
-    funcs[code].call(this, blocks, this.document, this.window, require);
-    blocks.each(this.server.applications, function (application) {
-      application.start();
-    });
-
-    return this.server.rendered;
-  }
-
-
-  function executeCode(browserEnv, html, code) {
-    var context = vm.createContext(browserEnv.getObject());
-    var script = vm.createScript(code);
-
-    blocks.extend(context, {
-      server: {
-        html: html,
-        data: {},
-        rendered: '',
-        applications: []
-      },
-      require: require
-    });
-
-    script.runInContext(context);
-
-    blocks.each(context.server.applications, function (application) {
-      application.start();
-    });
-
-    return context.server.rendered || html;
-  }
-
-  var fs = require('fs');
-  var url = require('url');
-
-  function Engine(options) {
-    this._options = options;
-    this._cache = {};
-    this._callback = null;
-    this._locals = null;
-  }
-
-  Engine.Create = function (options) {
-    var engine = new Engine(options);
-    return function (filePath, options, callback) {
-      engine.render(filePath, options, callback);
-    };
-  };
-
-  Engine.prototype = {
-    render: function (filePath, options, callback) {
-      var cachedPage = this._cache[filePath];
-
-      this._renderOptions = options;
-      this._callback = callback;
-
-      if (this._options.cache && cachedPage) {
-        callback(null, cachedPage);
-      } else {
-        this._renderFile(filePath);
-      }
-    },
-
-    _renderFile: function (filePath) {
-      var _this = this;
-      fs.readFile(filePath, { encoding: 'utf-8' }, function (err, contents) {
-        _this._renderContents(contents);
-      });
-    },
-
-    _renderContents: function (contents, filePath) {
-      var browserEnv = this._createBrowserEnv();
-      var callback = this._callback;
-      var cache = this._cache;
-
-
-      findPageScripts(contents, function (scripts) {
-        var htmlResult = executePageScripts(browserEnv, contents, scripts);
-        callback(null, htmlResult);
-        if (filePath) {
-          cache[filePath] = htmlResult;
-        }
-      });
-    },
-
-    _createBrowserEnv: function () {
-      var browserEnv = BrowserEnv.Create();
-      var req = this._renderOptions.req;
-
-      browserEnv.fillLocation(req.protocol + '://' + req.get('host') + req.url);
-
-      return browserEnv;
-    }
-  };
 
   blocks.serverApplication = function (options) {
     return new ServerApplication(options);
   };
 
-  blocks.createEngine = function (options) {
-    return Engine.Create(options);
-  };
+  blocks.middleware = function () {
 
-  blocks.render = function (contents, callback) {
-    Engine.RenderContents(contents, callback);
-  };
-
-  blocks.renderFile = function (filePath, callback) {
-    Engine.RenderFile(filePath, callback);
   };
 
 
   var eachQuery = blocks.queries.each.preprocess;
 
   blocks.queries.each.preprocess = function (domQuery, collection) {
-    removeDataIds(this);
-    server.data[this._attributes[dataIdAttr]] = this.renderChildren();
+    if (!server.data[this._attributes[dataIdAttr]]) {
+      removeDataIds(this);
+      server.data[this._attributes[dataIdAttr]] = this.renderChildren();
+    }
+
     eachQuery.call(this, domQuery, collection);
   };
 
@@ -11944,19 +12050,26 @@ return result;
 
     domQuery.pushContext(model);
 
-    blocks.each(children[0], function (child) {
+    renderChildren(children, domQuery);
+  };
+
+  function renderChildren(children, domQuery) {
+    blocks.each(children, function (child) {
       if (VirtualElement.Is(child)) {
         if (child.tagName() == 'body') {
           child._parent = null;
-          server.rendered += child.render(domQuery) + VirtualElement('script').html('window.__blocksServerData__ = ' + JSON.stringify(server.data)).render();
+          child.render(domQuery);
+          server.rendered += child.render() + VirtualElement('script').html('window.__blocksServerData__ = ' + JSON.stringify(server.data)).render();
         } else {
-          server.rendered += child.render();
+          server.rendered += child.renderBeginTag();
+          renderChildren(child.children(), domQuery);
+          server.rendered += child.renderEndTag();
         }
       } else {
         server.rendered += child;
       }
     });
-  };
+  }
 
   var executeExpressionValue = Expression.Execute;
 
@@ -11987,16 +12100,30 @@ return result;
     }
   };
 
+  blocks.queries.template.preprocess = function (domQuery, virtual, value) {
+    if (virtual) {
+      if (value) {
+        blocks.queries['with'].preprocess.call(this, domQuery, value, '$template');
+      }
+      this.html(virtual.html());
+      if (!this._each) {
+        this._children = parseToVirtual(this.html());
+        this._innerHTML = null;
+      }
+    }
+  };
+
 
   var http = require('http');
   var fs = require('fs');
+  var path = require('path');
   Request.prototype.execute = function () {
     var url = this.options.url;
 
     if (blocks.startsWith(url, 'http') || blocks.startsWith(url, 'www')) {
 
     } else {
-      this.callSuccess(fs.readFileSync(url, { encoding: 'utf-8'} ));
+      this.callSuccess(fs.readFileSync(path.join(server.options.staticFolder, url), { encoding: 'utf-8'} ));
     }
   };
 

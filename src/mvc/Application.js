@@ -27,6 +27,7 @@ define([
     this._views = {};
     this._currentRoutedView = undefined;
     this._started = false;
+    this._serverData = window.__blocksServerData__;
 
     this._setDefaults();
 
@@ -348,7 +349,7 @@ define([
       blocks.each(routes, function (route) {
         blocks.each(_this._views, function (view) {
           if (view.options.routeName == route.id) {
-            if (!currentView && view.options.initialPreload) {
+            if (!currentView && (view.options.initialPreload || (data.initial && this._serverData))) {
               view.options.url = undefined;
             }
             if (currentView && currentView != view) {
