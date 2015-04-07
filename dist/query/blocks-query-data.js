@@ -37,7 +37,7 @@
     return value;
   };
 
-  blocks.version = '0.1.4';
+  blocks.version = '0.1.5';
   blocks.core = core;
 
   /**
@@ -4033,7 +4033,7 @@ return result;
       collectGarbage: function () {
         blocks.each(data, function (value) {
           if (value && value.dom && !document.body.contains(value.dom)) {
-            ElementsData.clear(value.virtual, true);
+            ElementsData.clear(value.id, true);
           }
         });
       },
@@ -4081,7 +4081,7 @@ return result;
       },
 
       clear: function (element, force) {
-        var id = getDataId(element);
+        var id = getDataId(element) || element;
         var currentData = data[id];
 
         if (currentData && (!currentData.haveData || force)) {
@@ -4928,13 +4928,16 @@ return result;
     },
 
     _execute: function (domQuery) {
+      if (!domQuery) {
+        return;
+      }
       if (this._each) {
         this._revertChanges();
         this._trackChanges();
         this._el = HtmlElement.Empty();
       }
 
-      if (this._renderMode != VirtualElement.RenderMode.None && domQuery) {
+      if (this._renderMode != VirtualElement.RenderMode.None) {
         ElementsData.createIfNotExists(this);
         domQuery.applyContextToElement(this);
         this._executeAttributeExpressions(domQuery._context);

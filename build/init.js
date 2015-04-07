@@ -70,7 +70,7 @@ module.exports = function (grunt) {
           sourceMap: true
         },
         files: {
-          'dist/blocks.min.js': ['dist/blocks.js'],
+          'dist/blocks.min.js': ['dist/blocks-source.js'],
           'dist/mvc/blocks-mvc.min.js': ['dist/mvc/blocks-mvc.js'],
           'dist/query/blocks-query.min.js': ['dist/query/blocks-query.js'],
           'dist/query/blocks-query-data.min.js': ['dist/query/blocks-query-data.js']
@@ -99,12 +99,7 @@ module.exports = function (grunt) {
 
   grunt.loadTasks('build/tasks');
 
-  grunt.registerTask('copy-to-fullstack', function () {
-    grunt.file.write('../jsblocks-fullstack-example/node_modules/blocks/blocks.js', grunt.file.read('dist/node/blocks-node.js'));
-    grunt.file.write('../jsblocks-fullstack-example/app/js/blocks.js', grunt.file.read('dist/blocks.js'));
-  });
-
-  grunt.registerTask('compile', ['build', 'combine', 'preprocess', 'debug', 'notify:build', 'build-tests-definitions', 'copy-to-fullstack']);
+  grunt.registerTask('compile', ['build', 'combine', 'preprocess', 'debug', 'notify:build', 'build-tests-definitions']);
   grunt.registerTask('live-compile', ['compile', 'watch:compile']);
   grunt.registerTask('full-build', ['jshint', 'compile', 'uglify', 'test', 'npm', 'bower']);
   grunt.registerTask('default', []);
