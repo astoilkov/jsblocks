@@ -5784,7 +5784,6 @@ return result;
 
           if (method) {
             // TODO: Think of a way to remove this approach
-            // TODO: Think about the blocks.queries.with query
             if (methodName == 'attr' || methodName == 'val') {
               cache.unshift(methodObj);
             } else {
@@ -6572,7 +6571,7 @@ return result;
     *
     * @memberof blocks.queries
     * @param {string|Array} className - The class string (or array of strings) that will be added or removed from the element.
-    * @param {boolean} [condition=true] - Optional value indicating if the class name will be added or removed. true - add, false - remove.
+    * @param {boolean|undefined} [condition=true] - Optional value indicating if the class name will be added or removed. true - add, false - remove.
     *
     * @example {html}
     * <div data-query="setClass('header')"></div>
@@ -6682,7 +6681,7 @@ return result;
     * Sets the value attribute on an element.
     *
     * @memberof blocks.queries
-    * @param {(string|number|Array|falsy)} value - The new value for the element.
+    * @param {(string|number|Array|undefined)} value - The new value for the element.
     * @param {boolean} [condition=true] - Determines if the value will be set or not.
     *
     * @example {html}
@@ -6708,7 +6707,7 @@ return result;
     * Sets the checked attribute on an element
     *
     * @memberof blocks.queries
-    * @param {boolean} [condition=true] - Determines if the element will be checked or not
+    * @param {boolean|undefined} [condition=true] - Determines if the element will be checked or not
     *
     * @example {html}
     * <input type="checkbox" data-query="checked(true)" />
@@ -6728,7 +6727,7 @@ return result;
     * Sets the disabled attribute on an element
     *
     * @memberof blocks.queries
-    * @param {boolean} [condition=true] - Determines if the element will be disabled or not
+    * @param {boolean|undefined} [condition=true] - Determines if the element will be disabled or not
     */
     disabled: {
       passRawValues: true,
@@ -6741,9 +6740,8 @@ return result;
       * Passing only the first parameter will return the CSS propertyName value.
       *
       * @memberof blocks.queries
-      * @param {string} name - The name of the CSS property that will be get, set or removed.
-      * @param {string} value - The value of the of the attribute. It will be set if condition is true.
-      * @param {boolean} [condition=true] - Condition indicating if the attribute will be set or removed.
+      * @param {string} name - The name of the CSS property that will be get, set or removed
+      * @param {string} value - The value of the of the attribute. It will be set if condition is true
       *
       * @example {html}
       * <script>
@@ -6767,7 +6765,6 @@ return result;
       *
       * @memberof blocks.queries
       * @param {(number|string)} value - The new width of the element
-      * @param {boolean} [condition=true] - Value indicating if the width property will be updated
       */
     width: {
       call: 'css'
@@ -6778,7 +6775,6 @@ return result;
       *
       * @memberof blocks.queries
       * @param {number|string} value - The new height of the element
-      * @param {boolean} [condition=true] - Value indicating if the height property will be updated
       */
     height: {
       call: 'css'
@@ -11988,7 +11984,7 @@ return result;
   }
 
   ServerApplication.Defaults = blocks.extend({}, Middleware.Defaults, {
-    port: 3000
+    port: 8000
   });
 
   ServerApplication.prototype = {

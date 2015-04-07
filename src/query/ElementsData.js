@@ -41,7 +41,7 @@
       collectGarbage: function () {
         blocks.each(data, function (value) {
           if (value && value.dom && !document.body.contains(value.dom)) {
-            ElementsData.clear(value.virtual, true);
+            ElementsData.clear(value.id, true);
           }
         });
       },
@@ -89,7 +89,7 @@
       },
 
       clear: function (element, force) {
-        var id = getDataId(element);
+        var id = getDataId(element) || element;
         var currentData = data[id];
 
         if (currentData && (!currentData.haveData || force)) {

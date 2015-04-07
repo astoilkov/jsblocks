@@ -3,7 +3,7 @@ module.exports = function (grunt) {
     name: 'blocks',
     version: grunt.config.get('version'),
     description: 'jsblocks - Better MV-ish Framework',
-    main: 'blocks.js',
+    main: 'node/blocks-node.js',
     keyword: ['MVC', 'MVVM', 'MVW', 'server rendering', 'filtering', 'sorting', 'paging', 'framework'],
     scripts: {
       'test': 'echo \'Error: no test specified\' && exit 1'
@@ -30,7 +30,12 @@ module.exports = function (grunt) {
   };
 
   grunt.registerTask('npm', function () {
+    grunt.file.recurse('dist', function (abspath, rootdir, subdir, filename) {
+      var subFolder = subdir ? subdir + '/' : '';
+      if (subdir != 'npm') {
+        grunt.file.write('dist/npm/' + subFolder + filename, grunt.file.read(abspath));
+      }
+    })
     grunt.file.write('dist/npm/package.json', JSON.stringify(packageJSON, null, 4));
-    grunt.file.write('dist/npm/blocks.js', grunt.file.read('dist/blocks-node.js'));
   });
 };

@@ -3,11 +3,11 @@ module.exports = function (grunt) {
   var escodegen = require('escodegen');
   var parse5 = require('parse5');
   var hljs = require('highlight.js');
-  var blocks = require('../../dist/blocks');
+  var blocks = require('blocks');
   var API = require('../blocks-api-parser');
 
   grunt.registerTask('debug', function () {
-    var code = grunt.file.read('dist/blocks-debug.js');
+    var code = grunt.file.read('dist/blocks.js');
     var queries = {};
     var parsed = API().parse(code, {
       onparse: function (data, node) {
@@ -78,12 +78,10 @@ module.exports = function (grunt) {
     //  comment: true
     //});
 
-    var code = grunt.file.read('dist/blocks-debug.js');
-
     code = insertSourceCode(code, grunt.file.read('lib/blocks/jsdebug.js'));
     code = insertSourceCode(code, 'blocks.debug.queries = ' + toValueString(queries));
 
-    grunt.file.write('dist/blocks-debug.js', code);
+    grunt.file.write('dist/blocks.js', code);
   });
 
   function insertSourceCode(baseCode, insertCode) {

@@ -16,7 +16,7 @@
   }
 
   // Pass this if window is not defined yet
-}(typeof window !== 'undefined' && !window.__mock__ ? window : this, function(global, noGlobal) {
+}(typeof window !== 'undefined' ? window : this, function(global, noGlobal) {
   var toString = Object.prototype.toString;
   var slice = Array.prototype.slice;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -4022,11 +4022,6 @@ return result;
         return getDataId(element);
       },
 
-      reset: function () {
-        data = {};
-        globalId = 1;
-        freeIds = [];
-      },
       collectGarbage: function () {
         blocks.each(data, function (value) {
           if (value && value.dom && !document.body.contains(value.dom)) {
@@ -5784,7 +5779,6 @@ return result;
 
           if (method) {
             // TODO: Think of a way to remove this approach
-            // TODO: Think about the blocks.queries.with query
             if (methodName == 'attr' || methodName == 'val') {
               cache.unshift(methodObj);
             } else {
@@ -6572,7 +6566,7 @@ return result;
     *
     * @memberof blocks.queries
     * @param {string|Array} className - The class string (or array of strings) that will be added or removed from the element.
-    * @param {boolean} [condition=true] - Optional value indicating if the class name will be added or removed. true - add, false - remove.
+    * @param {boolean|undefined} [condition=true] - Optional value indicating if the class name will be added or removed. true - add, false - remove.
     *
     * @example {html}
     * <div data-query="setClass('header')"></div>
@@ -6682,7 +6676,7 @@ return result;
     * Sets the value attribute on an element.
     *
     * @memberof blocks.queries
-    * @param {(string|number|Array|falsy)} value - The new value for the element.
+    * @param {(string|number|Array|undefined)} value - The new value for the element.
     * @param {boolean} [condition=true] - Determines if the value will be set or not.
     *
     * @example {html}
@@ -6708,7 +6702,7 @@ return result;
     * Sets the checked attribute on an element
     *
     * @memberof blocks.queries
-    * @param {boolean} [condition=true] - Determines if the element will be checked or not
+    * @param {boolean|undefined} [condition=true] - Determines if the element will be checked or not
     *
     * @example {html}
     * <input type="checkbox" data-query="checked(true)" />
@@ -6728,7 +6722,7 @@ return result;
     * Sets the disabled attribute on an element
     *
     * @memberof blocks.queries
-    * @param {boolean} [condition=true] - Determines if the element will be disabled or not
+    * @param {boolean|undefined} [condition=true] - Determines if the element will be disabled or not
     */
     disabled: {
       passRawValues: true,
@@ -6741,9 +6735,8 @@ return result;
       * Passing only the first parameter will return the CSS propertyName value.
       *
       * @memberof blocks.queries
-      * @param {string} name - The name of the CSS property that will be get, set or removed.
-      * @param {string} value - The value of the of the attribute. It will be set if condition is true.
-      * @param {boolean} [condition=true] - Condition indicating if the attribute will be set or removed.
+      * @param {string} name - The name of the CSS property that will be get, set or removed
+      * @param {string} value - The value of the of the attribute. It will be set if condition is true
       *
       * @example {html}
       * <script>
@@ -6767,7 +6760,6 @@ return result;
       *
       * @memberof blocks.queries
       * @param {(number|string)} value - The new width of the element
-      * @param {boolean} [condition=true] - Value indicating if the width property will be updated
       */
     width: {
       call: 'css'
@@ -6778,7 +6770,6 @@ return result;
       *
       * @memberof blocks.queries
       * @param {number|string} value - The new height of the element
-      * @param {boolean} [condition=true] - Value indicating if the height property will be updated
       */
     height: {
       call: 'css'
@@ -11397,745 +11388,6 @@ return result;
     name = name || 'Default';
     blocks.core.applications[name] = undefined;
   };
-
-
-
-
-
-  var parse5 = require('parse5');
-
-  var selfClosingTags = {
-    area: true,
-    base: true,
-    br: true,
-    col: true,
-    embed: true,
-    hr: true,
-    img: true,
-    input: true,
-    keygen: true,
-    link: true,
-    menuitem: true,
-    meta: true,
-    param: true,
-    source: true,
-    track: true,
-    wbr: true
-  };
-
-  function parseToVirtual(html) {
-    var skip = 0;
-    var root = VirtualElement('root');
-    var parent = root;
-    var parser = new parse5.SimpleApiParser({
-      doctype: function(name, publicId, systemId /*, [location] */) {
-        root.children().push('<!DOCTYPE ' + name + '>');
-      },
-
-      startTag: function(tagName, attrsArray, selfClosing /*, [location] */) {
-        var attrs = {};
-        var length = attrsArray.length;
-        var index = -1;
-        while (++index < length) {
-          attrs[attrsArray[index].name] = attrsArray[index].value;
-        }
-
-        selfClosing = selfClosing || selfClosingTags[tagName];
-
-        var element = VirtualElement(tagName);
-        if (parent !== root) {
-          element._parent = parent;
-        }
-        element._attributes = attrs;
-        element._isSelfClosing = selfClosing;
-        element._haveAttributes = true;
-        element._createAttributeExpressions();
-
-        if (attrs.style) {
-          element._style = generateStyleObject(attrs.style);
-          element._haveStyle = true;
-          attrs.style = null;
-        }
-
-        if (parent) {
-          parent._children.push(element);
-        }
-
-        if (!selfClosing) {
-          parent = element;
-        }
-
-        if (skip) {
-          attrs['data-query'] = null;
-          if (!selfClosing) {
-            skip += 1;
-          }
-        }
-
-        if (!selfClosing && (tagName == 'script' || tagName == 'style' || tagName == 'code' || element.hasClass('bl-skip'))) {
-          skip += 1;
-        }
-      },
-
-      endTag: function(tagName /*, [location] */) {
-        var newParent = parent._parent;
-
-        if (skip) {
-          skip -= 1;
-          if (skip === 0 && newParent) {
-            parent._innerHTML = parent.renderChildren();
-          }
-        }
-        if (parent && newParent) {
-          parent = newParent;
-        }
-      },
-
-      text: function(text /*, [location] */) {
-        if (parent) {
-          if (skip === 0) {
-            parent._children.push(Expression.Create(text) || text);
-          } else {
-            parent._children.push(text);
-          }
-        }
-      },
-
-      comment: function(text /*, [location] */) {
-        //Handle comments here
-      }
-    }, {
-      decodeHtmlEntities: false
-    });
-
-    parser.parse(html);
-
-    return root.children();
-  }
-
-  // TODO: Refactor this because it is duplicate from query/createVirtual.js file
-  function generateStyleObject(styleString) {
-    var styles = styleString.split(';');
-    var styleObject = {};
-    var index;
-    var style;
-    var values;
-
-    for (var i = 0; i < styles.length; i++) {
-      style = styles[i];
-      if (style) {
-        index = style.indexOf(':');
-        if (index != -1) {
-          values = [style.substring(0, index), style.substring(index + 1)];
-          styleObject[values[0].toLowerCase().replace(trimRegExp, '')] = values[1].replace(trimRegExp, '');
-        }
-      }
-    }
-
-    return styleObject;
-  }
-
-  var path = require('path');
-
-  function findPageScripts(virtual, staticFolder, callback) {
-    var scripts = [];
-    var args = {
-      filesPending: 0,
-      callback: callback,
-      staticFolder: staticFolder
-    };
-    findPageScriptsRecurse(virtual, scripts, args);
-    if (args.filesPending === 0) {
-      args.callback([]);
-    }
-  }
-
-  function findPageScriptsRecurse(virtual, scripts, args) {
-    blocks.each(virtual.children(), function (child) {
-      if (!VirtualElement.Is(child)) {
-        return;
-      }
-      var src;
-
-      if (child.tagName() == 'script' && (!child.attr('type') || child.attr('type') == 'text/javascript')) {
-        src = child.attr('src');
-        if (src) {
-          src = path.join(args.staticFolder, src);
-          if (blocks.contains(src, 'blocks') && blocks.endsWith(src, '.js')) {
-            src = 'node_modules/blocks/blocks.js';
-          }
-          scripts.push({
-            type: 'external',
-            url: src,
-            code: ''
-          });
-
-          args.filesPending += 1;
-          populateScript(scripts[scripts.length - 1], function () {
-            args.filesPending -= 1;
-            if (args.filesPending === 0) {
-              args.callback(scripts);
-            }
-          });
-        } else {
-          scripts.push({
-            type: 'page',
-            code: child.renderChildren()
-          });
-        }
-      }
-      findPageScriptsRecurse(child, scripts, args);
-    });
-  }
-
-  function populateScript(script, callback) {
-    fs.readFile(script.url, { encoding: 'utf-8' }, function (err, code) {
-      script.code = code;
-      callback();
-    });
-  }
-
-  var vm = require('vm');
-  var fs = require('fs');
-
-  function executePageScripts(env, scripts, callback) {
-    var code = '';
-
-    blocks.each(scripts, function (script) {
-      code += script.code + ';';
-    });
-
-    executeCode(env, code, callback);
-  }
-
-  var funcs = {};
-  function executeCode(env, code, callback) {
-    blocks.extend(this, env);
-
-    blocks.core.applications.Default = null;
-    ElementsData.reset();
-
-    if (!funcs[code]) {
-      // jshint -W054
-      // Disable JSHint error: The Function constructor is a form of eval
-      funcs[code] = new Function('blocks', 'document', 'window', 'require', code);
-    }
-
-    funcs[code].call(this, blocks, env.document, env.window, require);
-
-    var hasRoute = false;
-    var hasActive = false;
-    blocks.each(env.server.applications, function (application) {
-      application.start();
-      blocks.each(application._views, function (view) {
-        if (blocks.has(view.options, 'route')) {
-          hasRoute = true;
-        }
-        if (view.isActive()) {
-          hasActive = true;
-        }
-      });
-    });
-
-    if (hasRoute && !hasActive) {
-      callback('not found', null);
-    }
-
-    if (env.server.rendered) {
-      callback(null, env.server.rendered);
-    } else {
-      callback('no query', env.server.html);
-    }
-  }
-
-
-  //function executeCode(browserEnv, html, code) {
-  //  var context = vm.createContext(browserEnv.getObject());
-  //  var script = vm.createScript(code);
-  //
-  //  blocks.extend(context, {
-  //    server: {
-  //      html: html,
-  //      data: {},
-  //      rendered: '',
-  //      applications: []
-  //    },
-  //    require: require
-  //  });
-  //
-  //  script.runInContext(context);
-  //
-  //  blocks.each(context.server.applications, function (application) {
-  //    application.start();
-  //  });
-  //
-  //  return context.server.rendered || html;
-  //}
-
-  function getElementsById(elements, result) {
-    result = result || {};
-
-    blocks.each(elements, function (child) {
-      if (VirtualElement.Is(child)) {
-        if (child.attr('id')) {
-          result[child.attr('id')] = child;
-        }
-        getElementsById(child.children(), result);
-      }
-    });
-
-    return result;
-  }
-
-  function createBrowserEnvObject() {
-    var windowObj = createWindowContext();
-
-    return blocks.extend(windowObj, {
-      document: createDocumentContext()
-    });
-  }
-
-  function createDocumentContext() {
-    var base = createElementMock();
-
-    return blocks.extend(base, {
-      __mock__: true,
-
-      doctype: createElementMock(),
-
-      body: createElementMock(),
-
-      createElement: function (tagName) {
-        return createElementMock(tagName);
-      },
-
-      getElementById: function () {
-        return null;
-      }
-    });
-  }
-
-  function createWindowContext() {
-    var timeoutId = 0;
-    var windowObj = {
-      __mock__: true,
-
-      console: createConsoleMock(),
-
-      history: {
-        length: 1,
-        state: null,
-        back: blocks.noop,
-        forward: blocks.noop,
-        go: blocks.noop,
-        pushState: blocks.noop,
-        replaceState: blocks.noop
-      },
-
-      location: {
-        ancestorOrigins: [],
-        assign: blocks.noop,
-        hash: '',
-        host: '',
-        hostname: '',
-        href: '',
-        origin: '',
-        pathname: '',
-        protocol: '',
-        reload: blocks.noop,
-        replace: blocks.noop,
-        search: ''
-      },
-
-      navigator: {
-        appCodeName: 'Mozilla',
-        appName: 'Netscape',
-        appVersion: '5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.115 Safari/537.36',
-        cookieEnabled: true,
-        doNotTrack: null,
-        //geolocation: {},
-        hardwareConcurrency: 8,
-        language: 'en-us',
-        languages: ['en-US', 'en'],
-        maxTouchPoints: 0,
-        mimeTypes: [],
-        onLine: true,
-        platform: 'Win32',
-        plugins: [],
-        product: 'Gecko',
-        productSub: '20030107',
-        serviceWorker: {},
-        userAgent: 'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.115 Safari/537.36',
-        vendor: 'Google Inc.',
-        vendorSub: ''
-        // webkitPersistentStorage: {},
-        // webkitTemporaryStorage: {}
-      },
-
-      addEventListener: blocks.noop,
-      removeEventListener: blocks.noop,
-
-      setTimeout: function () {
-        timeoutId += 1;
-        return timeoutId;
-      },
-      clearTimeout: blocks.noop,
-
-      setInterval: function () {
-        timeoutId += 1;
-        return timeoutId;
-      },
-      clearInterval: blocks.noop
-    };
-
-    windowObj.window = windowObj;
-
-    return windowObj;
-  }
-
-  function createElementMock(tagName) {
-    return {
-      accessKey: '',
-      tagName: String(tagName).toLowerCase(),
-      getElementsByClassName: function () {
-        return [];
-      },
-      getElementsByTagName: function () {
-        return [];
-      },
-      addEventListener: blocks.noop,
-      removeEventListener: blocks.noop,
-      contains: function () {
-        return true;
-      }
-    };
-  }
-
-  function createConsoleMock() {
-    return {
-      log: blocks.noop
-    };
-  }
-
-  var url = require('url');
-
-  function BrowserEnv() {
-    var env = createBrowserEnvObject();
-    this._env = env;
-
-    this._initialize();
-  }
-
-  BrowserEnv.Create = function () {
-    return new BrowserEnv();
-  };
-
-  BrowserEnv.prototype = {
-    getObject: function () {
-      return this._env;
-    },
-
-    fillLocation: function (fullUrl) {
-      var props = url.parse(fullUrl);
-      var copy = 'host hostname href pathname protocol'.split(' ');
-      var location = this._env.window.location;
-
-      blocks.each(copy, function (name) {
-        location[name] = props[name];
-      });
-    },
-
-    addElementsById: function (elementsById) {
-      var env = this._env;
-      env.document.__elementsById__ = elementsById;
-      blocks.each(elementsById, function (element, id) {
-        env[id] = element;
-      });
-    },
-
-    _initialize: function () {
-      var env = this._env;
-      var document = env.document;
-
-      document.getElementById = function (id) {
-        return (document.__elementsById__ || {})[id] || null;
-      };
-    }
-  };
-
-
-  var fs = require('fs');
-  var path = require('path');
-
-  function Middleware(options) {
-    if (blocks.isString(options)) {
-      options = {
-        staticFolder: options
-      };
-    }
-
-    this._options = blocks.extend({}, Middleware.Defaults, options);
-    this._contents = '';
-    this._scripts = [];
-    this._cache = {};
-    this._initialized = false;
-
-    this._initialize();
-  }
-
-  Middleware.Defaults = {
-    staticFolder: 'app',
-    blocksPath: 'node_modues/blocks/blocks.js',
-    cache: true
-  };
-
-  Middleware.prototype = {
-    tryServePage: function (req, res, next) {
-      this._renderContents(req, function (err, contents) {
-        if (err && (err != 'no query' || req.url != '/')) {
-          next();
-        } else {
-          res.send(contents);
-        }
-      });
-    },
-
-    _initialize: function () {
-      var _this = this;
-      var url = path.join(this._options.staticFolder, '/index.html');
-
-      fs.readFile(url, { encoding: 'utf-8' }, function (err, contents) {
-        if (!err) {
-          _this._setContents(contents);
-        }
-      });
-    },
-
-    _setContents: function (contents) {
-      var _this = this;
-      var virtual = blocks.first(parseToVirtual(contents), function (child) {
-        return VirtualElement.Is(child);
-      });
-
-      this._contents = contents;
-      this._elementsById = getElementsById(virtual.children());
-
-      findPageScripts(virtual, this._options.staticFolder, function (scripts) {
-        _this._scripts = scripts;
-        _this._initialized = true;
-      });
-    },
-
-    _renderContents: function (req, callback) {
-      var cache = this._cache;
-      var location = this._getLocation(req);
-      var env;
-
-      if (!this._initialized) {
-        callback('not initialized', null);
-      } else if (this._options.cache && cache[location]) {
-        callback(null, cache[location]);
-      } else {
-        env = this._createEnv(req);
-        executePageScripts(env, this._scripts, this._pageExecuted.bind(this, callback, env.location.href));
-      }
-    },
-
-    _pageExecuted: function (callback, location, err, contents) {
-      if (!err && this._options.cache) {
-        this._cache[location] = contents;
-      }
-      callback(err, contents);
-    },
-
-    _createEnv: function (req) {
-      var server = {
-        options: this._options,
-        html: this._contents,
-        data: {},
-        rendered: '',
-        applications: []
-      };
-
-      return blocks.extend({ server: server }, this._createBrowserEnv(req));
-    },
-
-    _createBrowserEnv: function (req) {
-      var browserEnv = BrowserEnv.Create();
-
-      browserEnv.fillLocation(this._getLocation(req));
-      browserEnv.addElementsById(this._elementsById);
-
-      return browserEnv.getObject();
-    },
-
-    _getLocation: function (req) {
-      return req.protocol + '://' + req.get('host') + req.url;
-    }
-  };
-
-
-  var path = require('path');
-  var fs = require('fs');
-  var express = require('express');
-
-  function ServerApplication(options) {
-    this._options = blocks.extend({}, ServerApplication.Defaults, options);
-    this._app = express();
-    this._middleware = new Middleware(options);
-
-    this._init();
-  }
-
-  ServerApplication.Defaults = blocks.extend({}, Middleware.Defaults, {
-    port: 3000
-  });
-
-  ServerApplication.prototype = {
-    expressApp: function () {
-      return this._app;
-    },
-
-    _init: function () {
-      var options = this._options;
-      var app = this._app;
-      var middleware = this._middleware;
-
-      app.listen(options.port);
-
-      app.use(express.static(path.resolve(options.staticFolder), {
-        index: false
-      }));
-
-      app.get('/*', function (req, res, next) {
-        middleware.tryServePage(req, res, next);
-      });
-    }
-  };
-
-
-  blocks.serverApplication = function (options) {
-    return new ServerApplication(options);
-  };
-
-  blocks.middleware = function () {
-
-  };
-
-
-  var eachQuery = blocks.queries.each.preprocess;
-
-  blocks.queries.each.preprocess = function (domQuery, collection) {
-    if (!server.data[this._attributes[dataIdAttr]]) {
-      removeDataIds(this);
-      server.data[this._attributes[dataIdAttr]] = this.renderChildren();
-    }
-
-    eachQuery.call(this, domQuery, collection);
-  };
-
-  function removeDataIds(element) {
-    var children = element._template || element._children;
-    blocks.each(children, function (child) {
-      if (VirtualElement.Is(child)) {
-        child._attributes['data-id'] = null;
-        removeDataIds(child);
-      }
-    });
-  }
-
-  blocks.query = function (model) {
-    var domQuery = new DomQuery(model);
-    var children = parseToVirtual(server.html);
-
-    domQuery.pushContext(model);
-
-    renderChildren(children, domQuery);
-  };
-
-  function renderChildren(children, domQuery) {
-    blocks.each(children, function (child) {
-      if (VirtualElement.Is(child)) {
-        if (child.tagName() == 'body') {
-          child._parent = null;
-          child.render(domQuery);
-          server.rendered += child.render() + VirtualElement('script').html('window.__blocksServerData__ = ' + JSON.stringify(server.data)).render();
-        } else {
-          server.rendered += child.renderBeginTag();
-          renderChildren(child.children(), domQuery);
-          server.rendered += child.renderEndTag();
-        }
-      } else {
-        server.rendered += child;
-      }
-    });
-  }
-
-  var executeExpressionValue = Expression.Execute;
-
-  Expression.Execute = function (context, elementData, expressionData, entireExpression) {
-    var value = executeExpressionValue(context, elementData, expressionData, entireExpression);
-    elementData = value.elementData;
-    if (elementData) {
-      if (expressionData.attributeName) {
-        server.data[elementData.id + expressionData.attributeName] =  entireExpression.text;
-      } else {
-        server.data[elementData.id] = '{{' + expressionData.expression + '}}';
-      }
-    }
-
-    return value;
-  };
-
-  Application.prototype._prepare = function () {
-    server.applications.push(this);
-  };
-
-  var viewQuery = blocks.queries.view.preprocess;
-
-  blocks.queries.view.preprocess = function (domQuery, view) {
-    viewQuery.call(this, domQuery, view);
-    if (view._html) {
-      this._children = parseToVirtual(view._html);
-    }
-  };
-
-  blocks.queries.template.preprocess = function (domQuery, virtual, value) {
-    if (virtual) {
-      if (value) {
-        blocks.queries['with'].preprocess.call(this, domQuery, value, '$template');
-      }
-      this.html(virtual.html());
-      if (!this._each) {
-        this._children = parseToVirtual(this.html());
-        this._innerHTML = null;
-      }
-    }
-  };
-
-
-  var http = require('http');
-  var fs = require('fs');
-  var path = require('path');
-  Request.prototype.execute = function () {
-    var url = this.options.url;
-
-    if (blocks.startsWith(url, 'http') || blocks.startsWith(url, 'www')) {
-
-    } else {
-      this.callSuccess(fs.readFileSync(path.join(server.options.staticFolder, url), { encoding: 'utf-8'} ));
-    }
-  };
-
-  Request.prototype._handleFileCallback = function (err, contents) {
-    if (err) {
-      this.callError(err);
-    } else {
-      this.callSuccess(contents);
-    }
-  };
-
-  //var createExpression =
 
 
 

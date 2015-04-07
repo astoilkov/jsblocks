@@ -1,8 +1,9 @@
 module.exports = function (grunt) {
+  var blocks = require('blocks');
   var requirejsConfig = {};
   var requirejsOptions = {
     baseUrl: 'src',
-    out: 'dist/blocks-<%= name %>.js',
+    out: 'dist/<%= name %>/blocks-<%= name %>.js',
     include: ['<%= name %>.js'],
     optimize: 'none',
     skipSemiColonInsertion: true,
@@ -41,7 +42,6 @@ module.exports = function (grunt) {
     }
   };
 
-  // TODO: Remove if node is not created until released
   var names = ['query', 'mvc', 'node'];
   names.forEach(function (name) {
     grunt.config.set('name', name);
@@ -52,6 +52,10 @@ module.exports = function (grunt) {
   grunt.config.set('requirejs', requirejsConfig);
 
   grunt.registerTask('build', function () {
-    grunt.task.run('requirejs');
+    var tasks = [];
+    for (var i = 0; i < arguments.length; i++) {
+      tasks.push('requirejs:' + arguments[i])
+    }
+    grunt.task.run(tasks.length ? tasks : 'requirejs');
   });
 };

@@ -1,6 +1,8 @@
 ﻿# Folders
-/.idea
-/node_modules
+.idea
+node_modules
 /examples
+/dist/npm
 
 # Files
+.DS_Store

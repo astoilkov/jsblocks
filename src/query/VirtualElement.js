@@ -373,13 +373,16 @@ define([
     },
 
     _execute: function (domQuery) {
+      if (!domQuery) {
+        return;
+      }
       if (this._each) {
         this._revertChanges();
         this._trackChanges();
         this._el = HtmlElement.Empty();
       }
 
-      if (this._renderMode != VirtualElement.RenderMode.None && domQuery) {
+      if (this._renderMode != VirtualElement.RenderMode.None) {
         ElementsData.createIfNotExists(this);
         domQuery.applyContextToElement(this);
         this._executeAttributeExpressions(domQuery._context);

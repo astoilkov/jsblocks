@@ -129,7 +129,6 @@ define([
 
           if (method) {
             // TODO: Think of a way to remove this approach
-            // TODO: Think about the blocks.queries.with query
             if (methodName == 'attr' || methodName == 'val') {
               cache.unshift(methodObj);
             } else {

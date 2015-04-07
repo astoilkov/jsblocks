@@ -31,8 +31,8 @@ module.exports = function (grunt) {
 
     preprocess: {
       debug: {
-        src: ['dist/blocks.js'],
-        dest: 'dist/blocks-debug.js',
+        src: ['dist/blocks-source.js'],
+        dest: 'dist/blocks.js',
         options: {
           context: {
             DEBUG: true,
@@ -42,7 +42,7 @@ module.exports = function (grunt) {
       },
 
       client: {
-        src: 'dist/blocks.js',
+        src: 'dist/blocks-source.js',
         options: {
           inline: true,
           context: {
@@ -53,7 +53,7 @@ module.exports = function (grunt) {
       },
 
       server: {
-        src: 'dist/blocks-node.js',
+        src: 'dist/node/blocks-node.js',
         options: {
           inline: true,
           context: {
@@ -66,10 +66,14 @@ module.exports = function (grunt) {
 
     uglify: {
       build: {
+        options: {
+          sourceMap: true
+        },
         files: {
-          'dist/min/blocks.min.js': ['dist/blocks.js'],
-          'dist/min/blocks-mvc.min.js': ['dist/blocks-mvc.js'],
-          'dist/min/blocks-query.min.js': ['dist/blocks-query.js']
+          'dist/blocks.min.js': ['dist/blocks.js'],
+          'dist/mvc/blocks-mvc.min.js': ['dist/mvc/blocks-mvc.js'],
+          'dist/query/blocks-query.min.js': ['dist/query/blocks-query.js'],
+          'dist/query/blocks-query-data.min.js': ['dist/query/blocks-query-data.js']
         }
       }
     },
@@ -94,8 +98,13 @@ module.exports = function (grunt) {
   });
 
   grunt.loadTasks('build/tasks');
-  
-  grunt.registerTask('compile', ['build', 'combine', 'preprocess', 'debug', 'notify:build', 'build-tests-definitions']);
+
+  grunt.registerTask('copy-to-fullstack', function () {
+    grunt.file.write('../jsblocks-fullstack-example/node_modules/blocks/blocks.js', grunt.file.read('dist/node/blocks-node.js'));
+    grunt.file.write('../jsblocks-fullstack-example/app/js/blocks.js', grunt.file.read('dist/blocks.js'));
+  });
+
+  grunt.registerTask('compile', ['build', 'combine', 'preprocess', 'debug', 'notify:build', 'build-tests-definitions', 'copy-to-fullstack']);
   grunt.registerTask('live-compile', ['compile', 'watch:compile']);
   grunt.registerTask('full-build', ['jshint', 'compile', 'uglify', 'test', 'npm', 'bower']);
   grunt.registerTask('default', []);

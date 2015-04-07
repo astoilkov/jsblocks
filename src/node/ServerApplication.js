@@ -16,7 +16,7 @@ define([
   }
 
   ServerApplication.Defaults = blocks.extend({}, Middleware.Defaults, {
-    port: 3000
+    port: 8000
   });
 
   ServerApplication.prototype = {

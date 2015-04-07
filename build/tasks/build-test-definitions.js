@@ -21,7 +21,6 @@
   function placeInObject(current, fullPath, currentPath) {
     var parts = currentPath.split('/');
     var firstPart = parts[0];
-    var secondPart = parts[1];
     var obj;
 
     if (parts.length == 2) {
