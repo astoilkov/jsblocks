@@ -4,12 +4,12 @@ define([
 ], function (blocks, parseToVirtual) {
   var path = require('path');
 
-  function findPageScripts(virtual, staticFolder, callback) {
+  function findPageScripts(virtual, static, callback) {
     var scripts = [];
     var args = {
       filesPending: 0,
       callback: callback,
-      staticFolder: staticFolder
+      static: static
     };
     findPageScriptsRecurse(virtual, scripts, args);
     if (args.filesPending === 0) {
@@ -27,7 +27,7 @@ define([
       if (child.tagName() == 'script' && (!child.attr('type') || child.attr('type') == 'text/javascript')) {
         src = child.attr('src');
         if (src) {
-          src = path.join(args.staticFolder, src);
+          src = path.join(args.static, src);
           if (blocks.contains(src, 'blocks') && blocks.endsWith(src, '.js')) {
             src = 'node_modules/blocks/blocks.js';
           }

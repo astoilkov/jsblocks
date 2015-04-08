@@ -107,7 +107,7 @@ define([
     if (blocks.startsWith(url, 'http') || blocks.startsWith(url, 'www')) {
 
     } else {
-      this.callSuccess(fs.readFileSync(path.join(server.options.staticFolder, url), { encoding: 'utf-8'} ));
+      this.callSuccess(fs.readFileSync(path.join(server.options.static, url), { encoding: 'utf-8'} ));
     }
   };
 

@@ -1,1 +1,33 @@
-{"blocks.dataSource":["spec/dataSource/api.js","spec/dataSource/configuration.js","spec/dataSource/events.js"],"blocks.mvc":["spec/mvc/application.js","spec/mvc/collection.js","spec/mvc/history.js","spec/mvc/model.js","spec/mvc/property.js","spec/mvc/router.js","spec/mvc/validation.js","spec/mvc/view.js"],"blocks.query":["spec/query/attribute-queries.js","spec/query/contexts.js","spec/query/custom-queries.js","spec/query/element.js","spec/query/expressions.js","spec/query/extenders.js","spec/query/html-parsing.js","spec/query/observable.array.js","spec/query/observables.comments.js","spec/query/observables.dom.js","spec/query/observables.js","spec/query/public-methods.js","spec/query/queries.comments.js","spec/query/queries.js"]}
+{
+    "blocks.dataSource": [
+        "spec/dataSource/api.js",
+        "spec/dataSource/configuration.js",
+        "spec/dataSource/events.js"
+    ],
+    "blocks.mvc": [
+        "spec/mvc/application.js",
+        "spec/mvc/collection.js",
+        "spec/mvc/history.js",
+        "spec/mvc/model.js",
+        "spec/mvc/property.js",
+        "spec/mvc/router.js",
+        "spec/mvc/validation.js",
+        "spec/mvc/view.js"
+    ],
+    "blocks.query": [
+        "spec/query/attribute-queries.js",
+        "spec/query/contexts.js",
+        "spec/query/custom-queries.js",
+        "spec/query/element.js",
+        "spec/query/expressions.js",
+        "spec/query/extenders.js",
+        "spec/query/html-parsing.js",
+        "spec/query/observable.array.js",
+        "spec/query/observables.comments.js",
+        "spec/query/observables.dom.js",
+        "spec/query/observables.js",
+        "spec/query/public-methods.js",
+        "spec/query/queries.comments.js",
+        "spec/query/queries.js"
+    ]
+}

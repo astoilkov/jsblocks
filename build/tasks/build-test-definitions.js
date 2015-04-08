@@ -13,7 +13,7 @@
       delete tests[key];
     }
 
-    contents = JSON.stringify(tests);
+    contents = JSON.stringify(tests, null, 4);
 
     grunt.file.write('test/tests.json', contents);
   });

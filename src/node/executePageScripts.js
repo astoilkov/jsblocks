@@ -18,7 +18,7 @@ define([
   function executeCode(env, code, callback) {
     blocks.extend(this, env);
 
-    blocks.core.applications.Default = null;
+    blocks.core.deleteApplication();
     ElementsData.reset();
 
     if (!funcs[code]) {

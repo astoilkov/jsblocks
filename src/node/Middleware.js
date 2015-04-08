@@ -12,7 +12,7 @@ define([
   function Middleware(options) {
     if (blocks.isString(options)) {
       options = {
-        staticFolder: options
+        static: options
       };
     }
 
@@ -26,7 +26,7 @@ define([
   }
 
   Middleware.Defaults = {
-    staticFolder: 'app',
+    static: 'app',
     blocksPath: 'node_modues/blocks/blocks.js',
     cache: true
   };
@@ -44,7 +44,7 @@ define([
 
     _initialize: function () {
       var _this = this;
-      var url = path.join(this._options.staticFolder, '/index.html');
+      var url = path.join(this._options.static, '/index.html');
 
       fs.readFile(url, { encoding: 'utf-8' }, function (err, contents) {
         if (!err) {
@@ -62,7 +62,7 @@ define([
       this._contents = contents;
       this._elementsById = getElementsById(virtual.children());
 
-      findPageScripts(virtual, this._options.staticFolder, function (scripts) {
+      findPageScripts(virtual, this._options.static, function (scripts) {
         _this._scripts = scripts;
         _this._initialized = true;
       });

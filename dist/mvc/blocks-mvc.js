@@ -37,7 +37,7 @@
     return value;
   };
 
-  blocks.version = '0.1.5';
+  blocks.version = '0.1.6';
   blocks.core = core;
 
   /**
@@ -6709,217 +6709,6 @@
     }
   };
 
-  var routeStripper = /^[#\/]|\s+$/g;
-  var rootStripper = /^\/+|\/+$/g;
-  var isExplorer = /msie [\w.]+/;
-  var trailingSlash = /\/$/;
-  var pathStripper = /[?#].*$/;
-  var HASH = 'hash';
-  var PUSH_STATE = 'pushState';
-
-  function History(options) {
-    this._options = blocks.extend({
-      root: '/'
-    }, options);
-
-    this._tryFixOrigin();
-
-    this._initial = true;
-    this._location = window.location;
-    this._history = window.history;
-    this._root = ('/' + this._options.root + '/').replace(rootStripper, '/');
-    this._interval = 50;
-    this._fragment = this._getFragment();
-    this._wants = this._options.history === true ? HASH : this._options.history;
-    this._use = this._wants == PUSH_STATE && (this._history && this._history.pushState) ? PUSH_STATE : HASH;
-    this._hostRegEx = new RegExp(escapeRegEx(this._location.host));
-  }
-
-  History.prototype = {
-    start: function () {
-      var fragment = this._fragment;
-      var docMode = document.documentMode;
-      var oldIE = (isExplorer.exec(navigator.userAgent.toLowerCase()) && (!docMode || docMode <= 7));
-
-      if (this._use == HASH && oldIE) {
-        this._createIFrame();
-        this.navigate(fragment);
-      }
-
-      this._initEvents(oldIE);
-      if (!this._tryAdaptMechanism(fragment)) {
-        this._loadUrl();
-      }
-    },
-
-    navigate: function (fragment, options) {
-      if (!options || options === true) {
-        options = {
-          trigger: !!options
-        };
-      }
-      var url = this._root + (fragment = this._getFragment(fragment || ''));
-      var use = this._use;
-      var iframe = this._iframe;
-      var location = this._location;
-
-      fragment = fragment.replace(pathStripper, '');
-      if (this._fragment === fragment) {
-        return;
-      }
-      this._fragment = fragment;
-      if (fragment === '' && url !== '/') {
-        url = url.slice(0, -1);
-      }
-
-      if (this._wants == PUSH_STATE && use == PUSH_STATE) {
-        this._history[options.replace ? 'replaceState' : 'pushState']({}, document.title, url);
-      } else if (use == HASH) {
-        this._updateHash(location, fragment, options.replace);
-        if (iframe && (fragment !== this.getFragment(this._getHash(iframe)))) {
-          if (!options.replace) {
-            iframe.document.open().close();
-          }
-          this._updateHash(iframe.location, fragment, options.replace);
-        }
-      } else {
-        return location.assign(url);
-      }
-
-      this._loadUrl(fragment);
-    },
-
-    _initEvents: function (oldIE) {
-      var use = this._use;
-      var onUrlChanged = blocks.bind(this._onUrlChanged, this);
-
-      if (this._wants == PUSH_STATE) {
-        addListener(document, 'click', blocks.bind(this._onDocumentClick, this));
-      }
-
-      if (use == PUSH_STATE) {
-        addListener(window, 'popstate', onUrlChanged);
-      } else if (use == HASH && !oldIE && ('onhashchange' in window)) {
-        addListener(window, 'hashchange', onUrlChanged);
-      } else if (use == HASH) {
-        this._checkUrlInterval = setInterval(onUrlChanged, this._interval);
-      }
-    },
-
-    _loadUrl: function (fragment) {
-      this._fragment = fragment = this._getFragment(fragment);
-
-      Events.trigger(this, 'urlChange', {
-        url: fragment,
-        initial: this._initial
-      });
-
-      this._initial = false;
-    },
-
-    _getHash: function (window) {
-      var match = (window ? window.location : this._location).href.match(/#(.*)$/);
-      return match ? match[1] : '';
-    },
-
-    _getFragment: function (fragment) {
-      if (fragment == null) {
-        if (this._use == PUSH_STATE) {
-          var root = this._root.replace(trailingSlash, '');
-          fragment = this._location.pathname;
-          if (!fragment.indexOf(root)) {
-            fragment = fragment.slice(root.length);
-          }
-        } else {
-          fragment = this._getHash();
-        }
-      }
-      return fragment.replace(this._location.origin, '').replace(routeStripper, '');
-    },
-
-    _onUrlChanged: function () {
-      var current = this._getFragment();
-      if (current === this._fragment && this._iframe) {
-        current = this._getFragment(this._getHash(this._iframe));
-      }
-      if (current === this._fragment) {
-        return false;
-      }
-      if (this._iframe) {
-        this.navigate(current);
-      }
-      this._loadUrl();
-    },
-
-    _onDocumentClick: function (e) {
-      var target = e.target;
-
-      while (target) {
-        if (target && target.tagName && target.tagName.toLowerCase() == 'a') {
-          var download = target.getAttribute('download');
-
-          if (download !== '' && !download && this._hostRegEx.test(target.href) &&
-            !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.which !== 2) {
-
-            // handle click
-            this.navigate(target.href);
-            e.preventDefault();
-          }
-
-          break;
-        }
-        target = target.parentNode;
-      }
-    },
-
-    _tryAdaptMechanism: function (fragment) {
-      var root = this._root;
-      var use = this._use;
-      var location = this._location;
-      var atRoot = location.pathname.replace(/[^\/]$/, '$&/') === root;
-
-      this._fragment = fragment;
-      if (this._wants == PUSH_STATE) {
-        if (use != PUSH_STATE && !atRoot) {
-          fragment = this._fragment = this._getFragment(null, true);
-          location.replace(root + location.search + '#' + fragment);
-          return true;
-        } else if (use == PUSH_STATE && atRoot && location.hash) {
-          this._fragment = this._getHash().replace(routeStripper, '');
-          this._history.replaceState({}, document.title, root + fragment + location.search);
-        }
-      }
-    },
-
-    _updateHash: function (location, fragment, replace) {
-      if (replace) {
-        var href = location.href.replace(/(javascript:|#).*$/, '');
-        location.replace(href + '#' + fragment);
-      } else {
-        location.hash = '#' + fragment;
-      }
-    },
-
-    _createIFrame: function () {
-      /* jshint scripturl: true */
-      var iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = 'javascript:0';
-      iframe.tabIndex = -1;
-      document.body.appendChild(iframe);
-      this._iframe = iframe.contentWindow;
-    },
-
-    _tryFixOrigin: function () {
-      var location = window.location;
-      if (!location.origin) {
-        location.origin = location.protocol + '//' + location.hostname + (location.port ? ':' + location.port: '');
-      }
-    }
-  };
-
-  Events.register(History.prototype, ['on']);
-
   var uniqueId = (function () {
     var timeStamp = Date.now();
     return function () {
@@ -7705,45 +7494,6 @@
   };
 
 
-  function clonePrototype(prototype, object) {
-    var key;
-    var value;
-
-    if (prototype.__used__) {
-      for (key in prototype) {
-        value = prototype[key];
-        if (Property.Is(value)) {
-          continue;
-        }
-
-        if (blocks.isObservable(value)) {
-          // clone the observable and also its value by passing true to the clone method
-          object[key] = value.clone(true);
-        } else if (blocks.isFunction(value)) {
-          object[key] = blocks.bind(value, object);
-        } else if (Model.prototype.isPrototypeOf(value)) {
-          object[key] = value.clone(true);
-        } else if (blocks.isObject(value) && !blocks.isPlainObject(value)) {
-          object[key] = blocks.clone(value, true);
-        } else {
-          object[key] = blocks.clone(value, true);
-        }
-      }
-    } else {
-      for (key in prototype) {
-        value = prototype[key];
-        if (blocks.isObservable(value)) {
-          value.__context__ = object;
-        } else if (blocks.isFunction(value)) {
-          object[key] = blocks.bind(value, object);
-          object[key].unbound = value;
-        }
-      }
-    }
-
-    prototype.__used__ = true;
-  }
-
 
   /**
    * @namespace Model
@@ -8094,6 +7844,256 @@
     blocks.core.applyExpressions('object', Model.prototype);
   }
 
+
+  function clonePrototype(prototype, object) {
+    var key;
+    var value;
+
+    if (prototype.__used__) {
+      for (key in prototype) {
+        value = prototype[key];
+        if (Property.Is(value)) {
+          continue;
+        }
+
+        if (blocks.isObservable(value)) {
+          // clone the observable and also its value by passing true to the clone method
+          object[key] = value.clone(true);
+        } else if (blocks.isFunction(value)) {
+          object[key] = blocks.bind(value, object);
+        } else if (Model.prototype.isPrototypeOf(value)) {
+          object[key] = value.clone(true);
+        } else if (blocks.isObject(value) && !blocks.isPlainObject(value)) {
+          object[key] = blocks.clone(value, true);
+        } else {
+          object[key] = blocks.clone(value, true);
+        }
+      }
+    } else {
+      for (key in prototype) {
+        value = prototype[key];
+        if (blocks.isObservable(value)) {
+          value.__context__ = object;
+        } else if (blocks.isFunction(value)) {
+          object[key] = blocks.bind(value, object);
+          object[key].unbound = value;
+        }
+      }
+    }
+
+    prototype.__used__ = true;
+  }
+
+  var routeStripper = /^[#\/]|\s+$/g;
+  var rootStripper = /^\/+|\/+$/g;
+  var isExplorer = /msie [\w.]+/;
+  var trailingSlash = /\/$/;
+  var pathStripper = /[?#].*$/;
+  var HASH = 'hash';
+  var PUSH_STATE = 'pushState';
+
+  function History(options) {
+    this._options = blocks.extend({
+      root: '/'
+    }, options);
+
+    this._tryFixOrigin();
+
+    this._initial = true;
+    this._location = window.location;
+    this._history = window.history;
+    this._root = ('/' + this._options.root + '/').replace(rootStripper, '/');
+    this._interval = 50;
+    this._fragment = this._getFragment();
+    this._wants = this._options.history === true ? HASH : this._options.history;
+    this._use = this._wants == PUSH_STATE && (this._history && this._history.pushState) ? PUSH_STATE : HASH;
+    this._hostRegEx = new RegExp(escapeRegEx(this._location.host));
+  }
+
+  History.prototype = {
+    start: function () {
+      var fragment = this._fragment;
+      var docMode = document.documentMode;
+      var oldIE = (isExplorer.exec(navigator.userAgent.toLowerCase()) && (!docMode || docMode <= 7));
+
+      if (this._use == HASH && oldIE) {
+        this._createIFrame();
+        this.navigate(fragment);
+      }
+
+      this._initEvents(oldIE);
+      if (!this._tryAdaptMechanism(fragment)) {
+        this._loadUrl();
+      }
+    },
+
+    navigate: function (fragment, options) {
+      if (!options || options === true) {
+        options = {
+          trigger: !!options
+        };
+      }
+      var url = this._root + (fragment = this._getFragment(fragment || ''));
+      var use = this._use;
+      var iframe = this._iframe;
+      var location = this._location;
+
+      fragment = fragment.replace(pathStripper, '');
+      if (this._fragment === fragment) {
+        return;
+      }
+      this._fragment = fragment;
+      if (fragment === '' && url !== '/') {
+        url = url.slice(0, -1);
+      }
+
+      if (this._wants == PUSH_STATE && use == PUSH_STATE) {
+        this._history[options.replace ? 'replaceState' : 'pushState']({}, document.title, url);
+      } else if (use == HASH) {
+        this._updateHash(location, fragment, options.replace);
+        if (iframe && (fragment !== this.getFragment(this._getHash(iframe)))) {
+          if (!options.replace) {
+            iframe.document.open().close();
+          }
+          this._updateHash(iframe.location, fragment, options.replace);
+        }
+      } else {
+        return location.assign(url);
+      }
+
+      this._loadUrl(fragment);
+    },
+
+    _initEvents: function (oldIE) {
+      var use = this._use;
+      var onUrlChanged = blocks.bind(this._onUrlChanged, this);
+
+      if (this._wants == PUSH_STATE) {
+        addListener(document, 'click', blocks.bind(this._onDocumentClick, this));
+      }
+
+      if (use == PUSH_STATE) {
+        addListener(window, 'popstate', onUrlChanged);
+      } else if (use == HASH && !oldIE && ('onhashchange' in window)) {
+        addListener(window, 'hashchange', onUrlChanged);
+      } else if (use == HASH) {
+        this._checkUrlInterval = setInterval(onUrlChanged, this._interval);
+      }
+    },
+
+    _loadUrl: function (fragment) {
+      this._fragment = fragment = this._getFragment(fragment);
+
+      Events.trigger(this, 'urlChange', {
+        url: fragment,
+        initial: this._initial
+      });
+
+      this._initial = false;
+    },
+
+    _getHash: function (window) {
+      var match = (window ? window.location : this._location).href.match(/#(.*)$/);
+      return match ? match[1] : '';
+    },
+
+    _getFragment: function (fragment) {
+      if (fragment == null) {
+        if (this._use == PUSH_STATE) {
+          var root = this._root.replace(trailingSlash, '');
+          fragment = this._location.pathname;
+          if (!fragment.indexOf(root)) {
+            fragment = fragment.slice(root.length);
+          }
+        } else {
+          fragment = this._getHash();
+        }
+      }
+      return fragment.replace(this._location.origin, '').replace(routeStripper, '');
+    },
+
+    _onUrlChanged: function () {
+      var current = this._getFragment();
+      if (current === this._fragment && this._iframe) {
+        current = this._getFragment(this._getHash(this._iframe));
+      }
+      if (current === this._fragment) {
+        return false;
+      }
+      if (this._iframe) {
+        this.navigate(current);
+      }
+      this._loadUrl();
+    },
+
+    _onDocumentClick: function (e) {
+      var target = e.target;
+
+      while (target) {
+        if (target && target.tagName && target.tagName.toLowerCase() == 'a') {
+          var download = target.getAttribute('download');
+
+          if (download !== '' && !download && this._hostRegEx.test(target.href) &&
+            !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.which !== 2) {
+
+            // handle click
+            this.navigate(target.href);
+            e.preventDefault();
+          }
+
+          break;
+        }
+        target = target.parentNode;
+      }
+    },
+
+    _tryAdaptMechanism: function (fragment) {
+      var root = this._root;
+      var use = this._use;
+      var location = this._location;
+      var atRoot = location.pathname.replace(/[^\/]$/, '$&/') === root;
+
+      this._fragment = fragment;
+      if (this._wants == PUSH_STATE) {
+        if (use != PUSH_STATE && !atRoot) {
+          fragment = this._fragment = this._getFragment(null, true);
+          location.replace(root + location.search + '#' + fragment);
+          return true;
+        } else if (use == PUSH_STATE && atRoot && location.hash) {
+          this._fragment = this._getHash().replace(routeStripper, '');
+          this._history.replaceState({}, document.title, root + fragment + location.search);
+        }
+      }
+    },
+
+    _updateHash: function (location, fragment, replace) {
+      if (replace) {
+        var href = location.href.replace(/(javascript:|#).*$/, '');
+        location.replace(href + '#' + fragment);
+      } else {
+        location.hash = '#' + fragment;
+      }
+    },
+
+    _createIFrame: function () {
+      /* jshint scripturl: true */
+      var iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = 'javascript:0';
+      iframe.tabIndex = -1;
+      document.body.appendChild(iframe);
+      this._iframe = iframe.contentWindow;
+    },
+
+    _tryFixOrigin: function () {
+      var location = window.location;
+      if (!location.origin) {
+        location.origin = location.protocol + '//' + location.hostname + (location.port ? ':' + location.port: '');
+      }
+    }
+  };
+
+  Events.register(History.prototype, ['on']);
 
   /**
   * @namespace Collection
@@ -8538,7 +8538,14 @@
 
 
 
-  //var PROPERTY = '__blocks.property__';
+  var application;
+  blocks.Application = function (options) {
+    return (application = application || new Application(options));
+  };
+
+  blocks.core.deleteApplication = function () {
+    application = undefined;
+  };
 
   /**
    * [Application description]
@@ -8549,7 +8556,7 @@
    *
    * @example {javascript}
    */
-  function Application(data) {
+  function Application(options) {
     this._router = new Router(this);
     this._modelPrototypes = {};
     this._collectionPrototypes = {};
@@ -8558,16 +8565,9 @@
     this._currentRoutedView = undefined;
     this._started = false;
     this._serverData = window.__blocksServerData__;
+    this.options = blocks.extend({}, this.options, options);
 
     this._setDefaults();
-
-    for (var key in data) {
-      if (key == 'options') {
-        this[key] = blocks.extend({}, this[key], data[key]);
-      } else {
-        this[key] = data[key];
-      }
-    }
 
     this._prepare();
   }
@@ -8819,11 +8819,17 @@
       }
     },
 
+    extend: function (obj) {
+      clonePrototype(obj, this);
+      return this;
+    },
+
     navigateTo: function (view, params) {
       if (!view.options.route) {
         return false;
       }
       this._history.navigate(this._router.routeTo(view.options.routeName, params));
+      return true;
     },
 
     /**
@@ -9007,27 +9013,6 @@
         }
       }).extend();
     }
-  };
-
-  blocks.core.applications = {};
-  blocks.Application = function (name, options) {
-    var applications = blocks.core.applications;
-    if (blocks.isObject(name)) {
-      options = name;
-      name = 'Default';
-    }
-    if (!name) {
-      name = 'Default';
-    }
-    if (applications[name]) {
-      return applications[name];
-    }
-    return (applications[name] = new Application(options || {}));
-  };
-
-  blocks.core.deleteApplication = function (name) {
-    name = name || 'Default';
-    blocks.core.applications[name] = undefined;
   };
 
 

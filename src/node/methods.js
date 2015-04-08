@@ -2,11 +2,7 @@ define([
   '../core',
   './ServerApplication',
 ], function (blocks, ServerApplication) {
-  blocks.serverApplication = function (options) {
+  blocks.server = function (options) {
     return new ServerApplication(options);
-  };
-
-  blocks.middleware = function () {
-
   };
 });

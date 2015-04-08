@@ -15,9 +15,7 @@
     it('baseUrl is set correctly', function () {
       blocks.core.deleteApplication();
       Application = blocks.Application({
-        options: {
-          baseUrl: 'test'
-        }
+        baseUrl: 'test'
       });
       testing.overrideApplicationStart(Application);
       expect(Application.options.baseUrl).toBe('test');

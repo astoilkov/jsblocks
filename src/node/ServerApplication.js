@@ -1,10 +1,8 @@
 define([
   '../core',
-  './Middleware',
-  './BrowserEnv'
-], function (blocks, Middleware, BrowserEnv) {
+  './Middleware'
+], function (blocks, Middleware) {
   var path = require('path');
-  var fs = require('fs');
   var express = require('express');
 
   function ServerApplication(options) {
@@ -20,7 +18,7 @@ define([
   });
 
   ServerApplication.prototype = {
-    expressApp: function () {
+    express: function () {
       return this._app;
     },
 
@@ -31,7 +29,7 @@ define([
 
       app.listen(options.port);
 
-      app.use(express.static(path.resolve(options.staticFolder), {
+      app.use(express.static(path.resolve(options.static), {
         index: false
       }));
 

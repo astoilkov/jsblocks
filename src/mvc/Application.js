@@ -1,14 +1,22 @@
 define([
   '../core',
   '../modules/Router',
+  './clonePrototype',
   './History',
   './Model',
   './Collection',
   './View',
   './Property'
-], function (blocks, Router, History, Model, Collection, View, Property) {
+], function (blocks, clonePrototype, Router, History, Model, Collection, View, Property) {
 
-  //var PROPERTY = '__blocks.property__';
+  var application;
+  blocks.Application = function (options) {
+    return (application = application || new Application(options));
+  };
+
+  blocks.core.deleteApplication = function () {
+    application = undefined;
+  };
 
   /**
    * [Application description]
@@ -19,7 +27,7 @@ define([
    *
    * @example {javascript}
    */
-  function Application(data) {
+  function Application(options) {
     this._router = new Router(this);
     this._modelPrototypes = {};
     this._collectionPrototypes = {};
@@ -28,16 +36,9 @@ define([
     this._currentRoutedView = undefined;
     this._started = false;
     this._serverData = window.__blocksServerData__;
+    this.options = blocks.extend({}, this.options, options);
 
     this._setDefaults();
-
-    for (var key in data) {
-      if (key == 'options') {
-        this[key] = blocks.extend({}, this[key], data[key]);
-      } else {
-        this[key] = data[key];
-      }
-    }
 
     this._prepare();
   }
@@ -289,11 +290,17 @@ define([
       }
     },
 
+    extend: function (obj) {
+      clonePrototype(obj, this);
+      return this;
+    },
+
     navigateTo: function (view, params) {
       if (!view.options.route) {
         return false;
       }
       this._history.navigate(this._router.routeTo(view.options.routeName, params));
+      return true;
     },
 
     /**
@@ -477,26 +484,5 @@ define([
         }
       }).extend();
     }
-  };
-
-  blocks.core.applications = {};
-  blocks.Application = function (name, options) {
-    var applications = blocks.core.applications;
-    if (blocks.isObject(name)) {
-      options = name;
-      name = 'Default';
-    }
-    if (!name) {
-      name = 'Default';
-    }
-    if (applications[name]) {
-      return applications[name];
-    }
-    return (applications[name] = new Application(options || {}));
-  };
-
-  blocks.core.deleteApplication = function (name) {
-    name = name || 'Default';
-    blocks.core.applications[name] = undefined;
   };
 });
