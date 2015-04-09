@@ -5,19 +5,19 @@ define([
   var path = require('path');
   var express = require('express');
 
-  function ServerApplication(options) {
-    this._options = blocks.extend({}, ServerApplication.Defaults, options);
+  function Server(options) {
+    this._options = blocks.extend({}, Server.Defaults, options);
     this._app = express();
     this._middleware = new Middleware(options);
 
     this._init();
   }
 
-  ServerApplication.Defaults = blocks.extend({}, Middleware.Defaults, {
+  Server.Defaults = blocks.extend({}, Middleware.Defaults, {
     port: 8000
   });
 
-  ServerApplication.prototype = {
+  Server.prototype = {
     express: function () {
       return this._app;
     },

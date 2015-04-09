@@ -37,7 +37,7 @@
     return value;
   };
 
-  blocks.version = '0.1.6';
+  blocks.version = '0.1.7';
   blocks.core = core;
 
   /**
@@ -6107,7 +6107,9 @@ return result;
       passRawValues: true,
 
       preprocess: function (domQuery, template, value) {
+        var serverData = domQuery._serverData;
         var html;
+
         template = blocks.$unwrap(template);
         if (blocks.isElement(template)) {
           html = template.innerHTML;
@@ -6123,9 +6125,9 @@ return result;
           if (value) {
             blocks.queries['with'].preprocess.call(this, domQuery, value, '$template');
           }
-          if (!domQuery._serverData) {
+          if (!serverData || !serverData.templates || !serverData.templates[ElementsData.id(this)]) {
             this.html(html);
-            if (!this._each) {
+            if (!this._each && this._el != HtmlElement.Empty()) {
               this._children = createVirtual(this._el._element.childNodes[0], this);
               this._innerHTML = null;
             }
@@ -10926,8 +10928,8 @@ return result;
     this._views = {};
     this._currentRoutedView = undefined;
     this._started = false;
-    this._serverData = window.__blocksServerData__;
     this.options = blocks.extend({}, this.options, options);
+    this._serverData = null;
 
     this._setDefaults();
 
@@ -11182,6 +11184,7 @@ return result;
     },
 
     extend: function (obj) {
+      blocks.extend(this, obj);
       clonePrototype(obj, this);
       return this;
     },
@@ -11231,6 +11234,7 @@ return result;
     },
 
     _ready: function (element) {
+      this._serverData = window.__blocksServerData__;
       this._history = new History(this.options);
       this._history
           .on('urlChange', blocks.bind(this._urlChange, this))
@@ -11247,7 +11251,8 @@ return result;
       blocks.each(routes, function (route) {
         blocks.each(_this._views, function (view) {
           if (view.options.routeName == route.id) {
-            if (!currentView && (view.options.initialPreload || (data.initial && this._serverData))) {
+            if (!currentView && (view.options.initialPreload ||
+              (data.initial && _this._serverData && _this.options.history == 'pushState'))) {
               view.options.url = undefined;
             }
             if (currentView && currentView != view) {

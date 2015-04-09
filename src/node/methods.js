@@ -1,8 +1,12 @@
 define([
   '../core',
-  './ServerApplication',
-], function (blocks, ServerApplication) {
+  './Server',
+], function (blocks, Server) {
   blocks.server = function (options) {
-    return new ServerApplication(options);
+    return new Server(options);
+  };
+
+  blocks.static = function (options) {
+    
   };
 });

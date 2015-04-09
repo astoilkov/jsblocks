@@ -31,16 +31,15 @@ define([
 
     var hasRoute = false;
     var hasActive = false;
-    blocks.each(env.server.applications, function (application) {
-      application.start();
-      blocks.each(application._views, function (view) {
-        if (blocks.has(view.options, 'route')) {
-          hasRoute = true;
-        }
-        if (view.isActive()) {
-          hasActive = true;
-        }
-      });
+    var application = server.application;
+    application.start();
+    blocks.each(application._views, function (view) {
+      if (blocks.has(view.options, 'route')) {
+        hasRoute = true;
+      }
+      if (view.isActive()) {
+        hasActive = true;
+      }
     });
 
     if (hasRoute && !hasActive) {

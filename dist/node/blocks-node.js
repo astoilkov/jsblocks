@@ -37,7 +37,7 @@
     return value;
   };
 
-  blocks.version = '0.1.6';
+  blocks.version = '0.1.7';
   blocks.core = core;
 
   /**
@@ -6112,7 +6112,9 @@ return result;
       passRawValues: true,
 
       preprocess: function (domQuery, template, value) {
+        var serverData = domQuery._serverData;
         var html;
+
         template = blocks.$unwrap(template);
         if (blocks.isElement(template)) {
           html = template.innerHTML;
@@ -6128,9 +6130,9 @@ return result;
           if (value) {
             blocks.queries['with'].preprocess.call(this, domQuery, value, '$template');
           }
-          if (!domQuery._serverData) {
+          if (!serverData || !serverData.templates || !serverData.templates[ElementsData.id(this)]) {
             this.html(html);
-            if (!this._each) {
+            if (!this._each && this._el != HtmlElement.Empty()) {
               this._children = createVirtual(this._el._element.childNodes[0], this);
               this._innerHTML = null;
             }
@@ -10931,8 +10933,8 @@ return result;
     this._views = {};
     this._currentRoutedView = undefined;
     this._started = false;
-    this._serverData = window.__blocksServerData__;
     this.options = blocks.extend({}, this.options, options);
+    this._serverData = null;
 
     this._setDefaults();
 
@@ -11187,6 +11189,7 @@ return result;
     },
 
     extend: function (obj) {
+      blocks.extend(this, obj);
       clonePrototype(obj, this);
       return this;
     },
@@ -11236,6 +11239,7 @@ return result;
     },
 
     _ready: function (element) {
+      this._serverData = window.__blocksServerData__;
       this._history = new History(this.options);
       this._history
           .on('urlChange', blocks.bind(this._urlChange, this))
@@ -11252,7 +11256,8 @@ return result;
       blocks.each(routes, function (route) {
         blocks.each(_this._views, function (view) {
           if (view.options.routeName == route.id) {
-            if (!currentView && (view.options.initialPreload || (data.initial && this._serverData))) {
+            if (!currentView && (view.options.initialPreload ||
+              (data.initial && _this._serverData && _this.options.history == 'pushState'))) {
               view.options.url = undefined;
             }
             if (currentView && currentView != view) {
@@ -11609,16 +11614,15 @@ return result;
 
     var hasRoute = false;
     var hasActive = false;
-    blocks.each(env.server.applications, function (application) {
-      application.start();
-      blocks.each(application._views, function (view) {
-        if (blocks.has(view.options, 'route')) {
-          hasRoute = true;
-        }
-        if (view.isActive()) {
-          hasActive = true;
-        }
-      });
+    var application = server.application;
+    application.start();
+    blocks.each(application._views, function (view) {
+      if (blocks.has(view.options, 'route')) {
+        hasRoute = true;
+      }
+      if (view.isActive()) {
+        hasActive = true;
+      }
     });
 
     if (hasRoute && !hasActive) {
@@ -11962,19 +11966,19 @@ return result;
   var path = require('path');
   var express = require('express');
 
-  function ServerApplication(options) {
-    this._options = blocks.extend({}, ServerApplication.Defaults, options);
+  function Server(options) {
+    this._options = blocks.extend({}, Server.Defaults, options);
     this._app = express();
     this._middleware = new Middleware(options);
 
     this._init();
   }
 
-  ServerApplication.Defaults = blocks.extend({}, Middleware.Defaults, {
+  Server.Defaults = blocks.extend({}, Middleware.Defaults, {
     port: 8000
   });
 
-  ServerApplication.prototype = {
+  Server.prototype = {
     express: function () {
       return this._app;
     },
@@ -11998,7 +12002,11 @@ return result;
 
 
   blocks.server = function (options) {
-    return new ServerApplication(options);
+    return new Server(options);
+  };
+
+  blocks.static = function (options) {
+    
   };
 
 
@@ -12067,14 +12075,14 @@ return result;
   };
 
   Application.prototype._prepare = function () {
-    server.applications.push(this);
+    server.application = this;
   };
 
   var viewQuery = blocks.queries.view.preprocess;
 
   blocks.queries.view.preprocess = function (domQuery, view) {
     viewQuery.call(this, domQuery, view);
-    if (view._html) {
+    if (view._html && server.application && server.application.options.history == 'pushState') {
       this._children = parseToVirtual(view._html);
     }
   };
@@ -12089,6 +12097,8 @@ return result;
         this._children = parseToVirtual(this.html());
         this._innerHTML = null;
       }
+      server.data.templates = server.data.templates || {};
+      server.data.templates[ElementsData.id(this)] = true;
     }
   };
 

@@ -35,8 +35,8 @@ define([
     this._views = {};
     this._currentRoutedView = undefined;
     this._started = false;
-    this._serverData = window.__blocksServerData__;
     this.options = blocks.extend({}, this.options, options);
+    this._serverData = null;
 
     this._setDefaults();
 
@@ -291,6 +291,7 @@ define([
     },
 
     extend: function (obj) {
+      blocks.extend(this, obj);
       clonePrototype(obj, this);
       return this;
     },
@@ -340,6 +341,7 @@ define([
     },
 
     _ready: function (element) {
+      this._serverData = window.__blocksServerData__;
       this._history = new History(this.options);
       this._history
           .on('urlChange', blocks.bind(this._urlChange, this))
@@ -356,7 +358,8 @@ define([
       blocks.each(routes, function (route) {
         blocks.each(_this._views, function (view) {
           if (view.options.routeName == route.id) {
-            if (!currentView && (view.options.initialPreload || (data.initial && this._serverData))) {
+            if (!currentView && (view.options.initialPreload ||
+              (data.initial && _this._serverData && _this.options.history == 'pushState'))) {
               view.options.url = undefined;
             }
             if (currentView && currentView != view) {

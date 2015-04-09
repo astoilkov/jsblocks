@@ -72,14 +72,14 @@ define([
   };
 
   Application.prototype._prepare = function () {
-    server.applications.push(this);
+    server.application = this;
   };
 
   var viewQuery = blocks.queries.view.preprocess;
 
   blocks.queries.view.preprocess = function (domQuery, view) {
     viewQuery.call(this, domQuery, view);
-    if (view._html) {
+    if (view._html && server.application && server.application.options.history == 'pushState') {
       this._children = parseToVirtual(view._html);
     }
   };
@@ -94,6 +94,8 @@ define([
         this._children = parseToVirtual(this.html());
         this._innerHTML = null;
       }
+      server.data.templates = server.data.templates || {};
+      server.data.templates[ElementsData.id(this)] = true;
     }
   };
 

@@ -94,7 +94,9 @@ define([
       passRawValues: true,
 
       preprocess: function (domQuery, template, value) {
+        var serverData = domQuery._serverData;
         var html;
+
         template = blocks.$unwrap(template);
         if (blocks.isElement(template)) {
           html = template.innerHTML;
@@ -110,9 +112,9 @@ define([
           if (value) {
             blocks.queries['with'].preprocess.call(this, domQuery, value, '$template');
           }
-          if (!domQuery._serverData) {
+          if (!serverData || !serverData.templates || !serverData.templates[ElementsData.id(this)]) {
             this.html(html);
-            if (!this._each) {
+            if (!this._each && this._el != HtmlElement.Empty()) {
               this._children = createVirtual(this._el._element.childNodes[0], this);
               this._innerHTML = null;
             }
