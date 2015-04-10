@@ -60,7 +60,7 @@ define([
 
       fragment = fragment.replace(pathStripper, '');
       if (this._fragment === fragment) {
-        return;
+        return false;
       }
       this._fragment = fragment;
       if (fragment === '' && url !== '/') {
@@ -78,10 +78,11 @@ define([
           this._updateHash(iframe.location, fragment, options.replace);
         }
       } else {
-        return location.assign(url);
+        location.assign(url);
+        return true;
       }
 
-      this._loadUrl(fragment);
+      return this._loadUrl(fragment);
     },
 
     _initEvents: function (oldIE) {
@@ -102,14 +103,15 @@ define([
     },
 
     _loadUrl: function (fragment) {
-      this._fragment = fragment = this._getFragment(fragment);
-
-      Events.trigger(this, 'urlChange', {
-        url: fragment,
-        initial: this._initial
-      });
+      var initial = this._initial;
 
       this._initial = false;
+      this._fragment = fragment = this._getFragment(fragment);
+
+      return Events.trigger(this, 'urlChange', {
+        url: fragment,
+        initial: initial
+      });
     },
 
     _getHash: function (window) {
@@ -157,8 +159,9 @@ define([
             !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.which !== 2) {
 
             // handle click
-            this.navigate(target.href);
-            e.preventDefault();
+            if (this.navigate(target.href)) {
+              e.preventDefault();
+            }
           }
 
           break;

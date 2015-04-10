@@ -37,7 +37,7 @@
     return value;
   };
 
-  blocks.version = '0.1.7';
+  blocks.version = '0.1.8';
   blocks.core = core;
 
   /**
@@ -1213,7 +1213,7 @@
       trigger: function (object, eventName) {
         var eventsData;
         var context;
-        var result;
+        var result = true;
         var args;
 
         if (object && object._events) {

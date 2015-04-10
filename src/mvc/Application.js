@@ -379,6 +379,8 @@ define([
       if (!found && currentView) {
         currentView.isActive(false);
       }
+
+      return found;
     },
 
     _createView: function (prototype) {

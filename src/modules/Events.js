@@ -99,7 +99,7 @@ define([
       trigger: function (object, eventName) {
         var eventsData;
         var context;
-        var result;
+        var result = true;
         var args;
 
         if (object && object._events) {

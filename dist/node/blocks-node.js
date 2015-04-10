@@ -37,7 +37,7 @@
     return value;
   };
 
-  blocks.version = '0.1.7';
+  blocks.version = '0.1.8';
   blocks.core = core;
 
   /**
@@ -3622,7 +3622,7 @@ return result;
       trigger: function (object, eventName) {
         var eventsData;
         var context;
-        var result;
+        var result = true;
         var args;
 
         if (object && object._events) {
@@ -10320,7 +10320,7 @@ return result;
 
       fragment = fragment.replace(pathStripper, '');
       if (this._fragment === fragment) {
-        return;
+        return false;
       }
       this._fragment = fragment;
       if (fragment === '' && url !== '/') {
@@ -10338,10 +10338,11 @@ return result;
           this._updateHash(iframe.location, fragment, options.replace);
         }
       } else {
-        return location.assign(url);
+        location.assign(url);
+        return true;
       }
 
-      this._loadUrl(fragment);
+      return this._loadUrl(fragment);
     },
 
     _initEvents: function (oldIE) {
@@ -10362,14 +10363,15 @@ return result;
     },
 
     _loadUrl: function (fragment) {
-      this._fragment = fragment = this._getFragment(fragment);
-
-      Events.trigger(this, 'urlChange', {
-        url: fragment,
-        initial: this._initial
-      });
+      var initial = this._initial;
 
       this._initial = false;
+      this._fragment = fragment = this._getFragment(fragment);
+
+      return Events.trigger(this, 'urlChange', {
+        url: fragment,
+        initial: initial
+      });
     },
 
     _getHash: function (window) {
@@ -10417,8 +10419,9 @@ return result;
             !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.which !== 2) {
 
             // handle click
-            this.navigate(target.href);
-            e.preventDefault();
+            if (this.navigate(target.href)) {
+              e.preventDefault();
+            }
           }
 
           break;
@@ -11277,6 +11280,8 @@ return result;
       if (!found && currentView) {
         currentView.isActive(false);
       }
+
+      return found;
     },
 
     _createView: function (prototype) {
