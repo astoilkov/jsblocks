@@ -10414,12 +10414,17 @@ return result;
       while (target) {
         if (target && target.tagName && target.tagName.toLowerCase() == 'a') {
           var download = target.getAttribute('download');
+          var element;
 
           if (download !== '' && !download && this._hostRegEx.test(target.href) &&
             !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.which !== 2) {
 
             // handle click
             if (this.navigate(target.href)) {
+              element = document.getElementById(window.location.hash.replace(/^#/, ''));
+              if (element && element.scrollIntoView) {
+                element.scrollIntoView();
+              }
               e.preventDefault();
             }
           }
@@ -11480,8 +11485,8 @@ return result;
             parent._innerHTML = parent.renderChildren();
           }
         }
-        if (parent && newParent) {
-          parent = newParent;
+        if (parent) {
+          parent = newParent || root;
         }
       },
 
@@ -11620,15 +11625,17 @@ return result;
     var hasRoute = false;
     var hasActive = false;
     var application = server.application;
-    application.start();
-    blocks.each(application._views, function (view) {
-      if (blocks.has(view.options, 'route')) {
-        hasRoute = true;
-      }
-      if (view.isActive()) {
-        hasActive = true;
-      }
-    });
+    if (application) {
+      application.start();
+      blocks.each(application._views, function (view) {
+        if (blocks.has(view.options, 'route')) {
+          hasRoute = true;
+        }
+        if (view.isActive()) {
+          hasActive = true;
+        }
+      });
+    }
 
     if (hasRoute && !hasActive) {
       callback('not found', null);

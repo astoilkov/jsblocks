@@ -10409,12 +10409,17 @@ return result;
       while (target) {
         if (target && target.tagName && target.tagName.toLowerCase() == 'a') {
           var download = target.getAttribute('download');
+          var element;
 
           if (download !== '' && !download && this._hostRegEx.test(target.href) &&
             !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.which !== 2) {
 
             // handle click
             if (this.navigate(target.href)) {
+              element = document.getElementById(window.location.hash.replace(/^#/, ''));
+              if (element && element.scrollIntoView) {
+                element.scrollIntoView();
+              }
               e.preventDefault();
             }
           }

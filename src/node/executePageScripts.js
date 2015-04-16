@@ -32,15 +32,17 @@ define([
     var hasRoute = false;
     var hasActive = false;
     var application = server.application;
-    application.start();
-    blocks.each(application._views, function (view) {
-      if (blocks.has(view.options, 'route')) {
-        hasRoute = true;
-      }
-      if (view.isActive()) {
-        hasActive = true;
-      }
-    });
+    if (application) {
+      application.start();
+      blocks.each(application._views, function (view) {
+        if (blocks.has(view.options, 'route')) {
+          hasRoute = true;
+        }
+        if (view.isActive()) {
+          hasActive = true;
+        }
+      });
+    }
 
     if (hasRoute && !hasActive) {
       callback('not found', null);

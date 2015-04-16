@@ -85,8 +85,8 @@ define([
             parent._innerHTML = parent.renderChildren();
           }
         }
-        if (parent && newParent) {
-          parent = newParent;
+        if (parent) {
+          parent = newParent || root;
         }
       },
 
