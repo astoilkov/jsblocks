@@ -37,7 +37,7 @@
     return value;
   };
 
-  blocks.version = '0.1.8';
+  blocks.version = '0.2.1';
   blocks.core = core;
 
   /**
@@ -3546,6 +3546,10 @@ return result;
         return this;
       },
 
+      once: function (eventNames, callback, thisArg) {
+        Events.once(this, eventNames, callback, thisArg);
+      },
+
       off: function (eventName, callback) {
         Events.off(this, eventName, callback);
       },
@@ -3569,7 +3573,7 @@ return result;
         }
       },
 
-      on: function (object, eventNames, callback, context) {
+      on: function (object, eventNames, callback, thisArg) {
         eventNames = blocks.toArray(eventNames).join(' ').split(' ');
 
         var i = 0;
@@ -3590,9 +3594,16 @@ return result;
           }
           object._events[eventName].push({
             callback: callback,
-            context: context
+            thisArg: thisArg
           });
         }
+      },
+
+      once: function (object, eventNames, callback, thisArg) {
+        Events.on(object, eventNames, callback, thisArg);
+        Events.on(object, eventNames, function () {
+          Events.off(object, eventNames, callback);
+        });
       },
 
       off: function (object, eventName, callback) {
@@ -3620,9 +3631,9 @@ return result;
       },
 
       trigger: function (object, eventName) {
-        var eventsData;
-        var context;
         var result = true;
+        var eventsData;
+        var thisArg;
         var args;
 
         if (object && object._events) {
@@ -3633,11 +3644,11 @@ return result;
 
             blocks.each(eventsData, function iterateEventsData(eventData) {
               if (eventData) {
-                context = object;
-                if (eventData.context !== undefined) {
-                  context = eventData.context;
+                thisArg = object;
+                if (eventData.thisArg !== undefined) {
+                  thisArg = eventData.thisArg;
                 }
-                if (eventData.callback.apply(context, args) === false) {
+                if (eventData.callback.apply(thisArg, args) === false) {
                   result = false;
                 }
               }
@@ -5289,7 +5300,7 @@ return result;
       element.style.display = '';
     }
 
-    if (elementData.preprocess) {
+    if (elementData.preprocess || blocks.core.animationStop) {
       disposeCallback();
       return;
     }
@@ -7211,6 +7222,16 @@ return result;
 
         on: function (eventName, callback, thisArg) {
           Events.on(this, eventName, callback, thisArg || this.__context__);
+          return this;
+        },
+
+        once: function (eventName, callback, thisArg) {
+          Events.once(this, eventName, callback, thisArg || this.__context__);
+          return this;
+        },
+
+        off: function (eventName, callback) {
+          Events.off(this, eventName, callback);
           return this;
         },
 
@@ -10513,7 +10534,7 @@ return result;
 
     if (application) {
       observable._application = application;
-      observable._view = application._initializingView;
+      observable._view = blocks.__viewInInitialize__;
       if (!prototype.options.baseUrl) {
         prototype.options.baseUrl = application.options.baseUrl;
       }
@@ -10779,6 +10800,8 @@ return result;
      */
     init: blocks.noop,
 
+    ready: blocks.noop,
+
     /**
      * Override the routed method to perform actions when the View have routing and routing
      * mechanism actives it.
@@ -10844,9 +10867,7 @@ return result;
           this._load();
         } else {
           this._initialized = true;
-          this._application._initializingView = this;
           this._callInit();
-          this._application._initializingView = null;
           if (this.isActive()) {
             this.isActive.update();
           }
@@ -10887,9 +10908,17 @@ return result;
 
     _load: function () {
       var url = this.options.url;
+      var serverData = this._application._serverData;
+
+      if (serverData && serverData.views && serverData.views[url]) {
+        url = this.options.url = undefined;
+        this._tryInitialize(true);
+      }
+
       if (url && !this.loading()) {
         this.loading(true);
         ajax({
+          isView: true,
           url: url,
           success: blocks.bind(this._loaded, this),
           error: blocks.bind(this._error, this)
@@ -11224,6 +11253,7 @@ return result;
     start: function (element) {
       if (!this._started) {
         this._started = true;
+        this._serverData = window.__blocksServerData__;
         this._createViews();
         if (document.__mock__ && window.__mock__) {
           this._ready(element);
@@ -11248,6 +11278,27 @@ return result;
           .on('urlChange', blocks.bind(this._urlChange, this))
           .start();
       blocks.query(this, element);
+      this._viewsReady(this._views);
+    },
+
+    _viewsReady: function (views) {
+      blocks.each(views, function (view) {
+        if (view.ready !== blocks.noop) {
+          if (view.isActive()) {
+            view.ready();
+          } else {
+            view.isActive.once('change', function () {
+              if (view.loading()) {
+                view.loading.once('change', function () {
+                  view.ready();
+                });
+              } else {
+                view.ready();
+              }
+            });
+          }
+        }
+      });
     },
 
     _urlChange: function (data) {

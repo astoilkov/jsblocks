@@ -75,6 +75,8 @@ define([
     server.application = this;
   };
 
+  Application.prototype._viewsReady = blocks.noop;
+
   var viewQuery = blocks.queries.view.preprocess;
 
   blocks.queries.view.preprocess = function (domQuery, view) {
@@ -105,12 +107,19 @@ define([
   var path = require('path');
   Request.prototype.execute = function () {
     var url = this.options.url;
+    var views;
 
-    if (blocks.startsWith(url, 'http') || blocks.startsWith(url, 'www')) {
-
-    } else {
+    if (this.options.isView) {
+      views = server.data.views = server.data.views || {};
+      views[url] = true;
       this.callSuccess(fs.readFileSync(path.join(server.options.static, url), { encoding: 'utf-8'} ));
     }
+
+    //if (blocks.startsWith(url, 'http') || blocks.startsWith(url, 'www')) {
+    //
+    //} else {
+    //
+    //}
   };
 
   Request.prototype._handleFileCallback = function (err, contents) {

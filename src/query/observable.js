@@ -230,6 +230,16 @@ define([
           return this;
         },
 
+        once: function (eventName, callback, thisArg) {
+          Events.once(this, eventName, callback, thisArg || this.__context__);
+          return this;
+        },
+
+        off: function (eventName, callback) {
+          Events.off(this, eventName, callback);
+          return this;
+        },
+
         /**
          * Extends the current observable with particular functionality depending on the parameters
          * specified. If the method is called without arguments and jsvalue framework is included

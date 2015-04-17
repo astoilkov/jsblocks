@@ -323,6 +323,7 @@ define([
     start: function (element) {
       if (!this._started) {
         this._started = true;
+        this._serverData = window.__blocksServerData__;
         this._createViews();
         if (document.__mock__ && window.__mock__) {
           this._ready(element);
@@ -347,6 +348,27 @@ define([
           .on('urlChange', blocks.bind(this._urlChange, this))
           .start();
       blocks.query(this, element);
+      this._viewsReady(this._views);
+    },
+
+    _viewsReady: function (views) {
+      blocks.each(views, function (view) {
+        if (view.ready !== blocks.noop) {
+          if (view.isActive()) {
+            view.ready();
+          } else {
+            view.isActive.once('change', function () {
+              if (view.loading()) {
+                view.loading.once('change', function () {
+                  view.ready();
+                });
+              } else {
+                view.ready();
+              }
+            });
+          }
+        }
+      });
     },
 
     _urlChange: function (data) {

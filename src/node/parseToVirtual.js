@@ -66,12 +66,9 @@ define([
 
         if (skip) {
           attrs['data-query'] = null;
-          if (!selfClosing) {
-            skip += 1;
-          }
         }
 
-        if (!selfClosing && (tagName == 'script' || tagName == 'style' || tagName == 'code' || element.hasClass('bl-skip'))) {
+        if (!selfClosing && (skip || tagName == 'script' || tagName == 'style' || tagName == 'code' || element.hasClass('bl-skip'))) {
           skip += 1;
         }
       },
@@ -81,7 +78,7 @@ define([
 
         if (skip) {
           skip -= 1;
-          if (skip === 0 && newParent) {
+          if (skip === 0) {
             parent._innerHTML = parent.renderChildren();
           }
         }

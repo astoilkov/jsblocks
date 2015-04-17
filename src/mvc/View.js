@@ -58,6 +58,8 @@ define([
      */
     init: blocks.noop,
 
+    ready: blocks.noop,
+
     /**
      * Override the routed method to perform actions when the View have routing and routing
      * mechanism actives it.
@@ -123,9 +125,7 @@ define([
           this._load();
         } else {
           this._initialized = true;
-          this._application._initializingView = this;
           this._callInit();
-          this._application._initializingView = null;
           if (this.isActive()) {
             this.isActive.update();
           }
@@ -166,9 +166,17 @@ define([
 
     _load: function () {
       var url = this.options.url;
+      var serverData = this._application._serverData;
+
+      if (serverData && serverData.views && serverData.views[url]) {
+        url = this.options.url = undefined;
+        this._tryInitialize(true);
+      }
+
       if (url && !this.loading()) {
         this.loading(true);
         ajax({
+          isView: true,
           url: url,
           success: blocks.bind(this._loaded, this),
           error: blocks.bind(this._error, this)

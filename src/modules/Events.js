@@ -23,6 +23,10 @@ define([
         return this;
       },
 
+      once: function (eventNames, callback, thisArg) {
+        Events.once(this, eventNames, callback, thisArg);
+      },
+
       off: function (eventName, callback) {
         Events.off(this, eventName, callback);
       },
@@ -46,7 +50,7 @@ define([
         }
       },
 
-      on: function (object, eventNames, callback, context) {
+      on: function (object, eventNames, callback, thisArg) {
         eventNames = blocks.toArray(eventNames).join(' ').split(' ');
 
         var i = 0;
@@ -67,9 +71,16 @@ define([
           }
           object._events[eventName].push({
             callback: callback,
-            context: context
+            thisArg: thisArg
           });
         }
+      },
+
+      once: function (object, eventNames, callback, thisArg) {
+        Events.on(object, eventNames, callback, thisArg);
+        Events.on(object, eventNames, function () {
+          Events.off(object, eventNames, callback);
+        });
       },
 
       off: function (object, eventName, callback) {
@@ -97,9 +108,9 @@ define([
       },
 
       trigger: function (object, eventName) {
-        var eventsData;
-        var context;
         var result = true;
+        var eventsData;
+        var thisArg;
         var args;
 
         if (object && object._events) {
@@ -110,11 +121,11 @@ define([
 
             blocks.each(eventsData, function iterateEventsData(eventData) {
               if (eventData) {
-                context = object;
-                if (eventData.context !== undefined) {
-                  context = eventData.context;
+                thisArg = object;
+                if (eventData.thisArg !== undefined) {
+                  thisArg = eventData.thisArg;
                 }
-                if (eventData.callback.apply(context, args) === false) {
+                if (eventData.callback.apply(thisArg, args) === false) {
                   result = false;
                 }
               }

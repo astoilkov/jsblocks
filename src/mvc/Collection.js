@@ -40,7 +40,7 @@ define([
 
     if (application) {
       observable._application = application;
-      observable._view = application._initializingView;
+      observable._view = blocks.__viewInInitialize__;
       if (!prototype.options.baseUrl) {
         prototype.options.baseUrl = application.options.baseUrl;
       }

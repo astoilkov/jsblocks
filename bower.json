@@ -1,6 +1,6 @@
 {
     "name": "blocks",
-    "version": "0.1.8",
+    "version": "0.2.1",
     "main": "dist/blocks.js",
     "license": "MIT",
     "author": {
