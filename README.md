@@ -4,34 +4,30 @@ Better MV-ish Framework
 
 From simple user interfaces to complex single-page applications using faster, server-side rendered and easy to learn framework.
 
-[[ official website ]](http://104.131.138.38)
+[[ official website ]](http://jsblocks.com)
 
 ### Features
 
- * [Server-side rendering](http://104.131.138.38/learn/introduction-why-jsblocks#server-side-rendering)
- * [Debugging experience](http://104.131.138.38/learn/introduction-why-jsblocks#debugging-experience)
- * [Faster](http://104.131.138.38/#performance)
- * [MV-ish](http://104.131.138.38/learn/introduction-why-jsblocks#mv-ish)
- * [Modular](http://104.131.138.38/learn/introduction-why-jsblocks#modular)
- * [Built-in utility library](http://104.131.138.38/learn/introduction-why-jsblocks#built-in-utility-library)
- * [Forward thinking](http://104.131.138.38/learn/introduction-why-jsblocks#forward-thinking)
- * [... and many more](http://104.131.138.38/learn/introduction-why-jsblocks#feature-rich)
+ * [Server-side rendering](http://jsblocks.com/learn/introduction-why-jsblocks#server-side-rendering)
+ * [Debugging experience](http://jsblocks.com/learn/introduction-why-jsblocks#debugging-experience)
+ * [Faster](http://jsblocks.com/#performance)
+ * [MV-ish](http://jsblocks.com/learn/introduction-why-jsblocks#mv-ish)
+ * [Modular](http://jsblocks.com/learn/introduction-why-jsblocks#modular)
+ * [Built-in utility library](http://jsblocks.com/learn/introduction-why-jsblocks#built-in-utility-library)
+ * [Forward thinking](http://jsblocks.com/learn/introduction-why-jsblocks#forward-thinking)
+ * [... and many more](http://jsblocks.com/learn/introduction-why-jsblocks#feature-rich)
 
 ### Getting started
 
- * include it in your page or [download](http://104.131.138.38/blocks.js) it
-
-```html
-<script src="http://104.131.138.38/blocks.js"></script>
-```
-
- * start with the example below or [read the documentation](http://104.131.138.38/learn)
+Just copy and paste the code below for your first jsblocks application.
+Continue with the [documentation](http://jsblocks.com/learn)
+and the [jsblocks starter template project](https://github.com/astoilkov/jsblocks-seed)
 
 ```html
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="http://104.131.138.38/blocks.js"></script>
+    <script src="http://jsblocks.com/jsblocks/blocks.js"></script>
     <script>
       blocks.query({
         name: blocks.observable()
