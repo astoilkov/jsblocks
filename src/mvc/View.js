@@ -133,12 +133,12 @@ define([
       }
     },
 
-    _routed: function (params) {
+    _routed: function (params, metadata) {
       this._tryInitialize(true);
-      this.routed(params);
+      this.routed(params, metadata);
       blocks.each(this._views, function (view) {
         if (view.isActive()) {
-          view._routed(params);
+          view._routed(params, metadata);
         }
       });
       this.isActive(true);

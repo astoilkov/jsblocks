@@ -32,10 +32,13 @@ module.exports = function (grunt) {
   grunt.registerTask('npm', function () {
     grunt.file.recurse('dist', function (abspath, rootdir, subdir, filename) {
       var subFolder = subdir ? subdir + '/' : '';
-      if (subdir != 'npm') {
+      subdir = subdir || '';
+
+      if (subdir.indexOf('npm') == -1) {
         grunt.file.write('dist/npm/' + subFolder + filename, grunt.file.read(abspath));
       }
-    })
+    });
     grunt.file.write('dist/npm/package.json', JSON.stringify(packageJSON, null, 4));
+    grunt.file.write('dist/npm/README.md', grunt.file.read('README.md'));
   });
 };

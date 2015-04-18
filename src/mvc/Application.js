@@ -387,7 +387,7 @@ define([
             if (currentView && currentView != view) {
               currentView.isActive(false);
             }
-            view._routed(route.params);
+            view._routed(route.params, data);
             _this._currentView = view;
             found = true;
             return false;

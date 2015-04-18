@@ -37,7 +37,7 @@
     return value;
   };
 
-  blocks.version = '0.2.1';
+  blocks.version = '0.2.3';
   blocks.core = core;
 
   /**
@@ -2907,7 +2907,7 @@
       element.style.display = '';
     }
 
-    if (elementData.preprocess || blocks.core.animationStop) {
+    if (elementData.preprocess) {
       disposeCallback();
       return;
     }

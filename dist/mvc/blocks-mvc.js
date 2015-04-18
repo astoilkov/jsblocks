@@ -37,7 +37,7 @@
     return value;
   };
 
-  blocks.version = '0.2.1';
+  blocks.version = '0.2.3';
   blocks.core = core;
 
   /**
@@ -2907,7 +2907,7 @@
       element.style.display = '';
     }
 
-    if (elementData.preprocess || blocks.core.animationStop) {
+    if (elementData.preprocess) {
       disposeCallback();
       return;
     }
@@ -8502,12 +8502,12 @@
       }
     },
 
-    _routed: function (params) {
+    _routed: function (params, metadata) {
       this._tryInitialize(true);
-      this.routed(params);
+      this.routed(params, metadata);
       blocks.each(this._views, function (view) {
         if (view.isActive()) {
-          view._routed(params);
+          view._routed(params, metadata);
         }
       });
       this.isActive(true);
@@ -8955,7 +8955,7 @@
             if (currentView && currentView != view) {
               currentView.isActive(false);
             }
-            view._routed(route.params);
+            view._routed(route.params, data);
             _this._currentView = view;
             found = true;
             return false;
