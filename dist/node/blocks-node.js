@@ -37,7 +37,7 @@
     return value;
   };
 
-  blocks.version = '0.2.4';
+  blocks.version = '0.2.5';
   blocks.core = core;
 
   /**
@@ -11670,32 +11670,40 @@ return result;
 
     funcs[code].call(this, blocks, env.document, env.window, require);
 
-    server.on('ready', function () {
-      var hasRoute = false;
-      var hasActive = false;
-      var application = server.application;
-      if (application) {
-        application.start();
-        blocks.each(application._views, function (view) {
-          if (blocks.has(view.options, 'route')) {
-            hasRoute = true;
-          }
-          if (view.isActive()) {
-            hasActive = true;
-          }
-        });
-      }
+    if (server.isReady()) {
+      handleResult(env, callback);
+    } else {
+      server.on('ready', function () {
+        handleResult(env, callback);
+      });
+    }
+  }
 
-      if (hasRoute && !hasActive) {
-        callback('not found', null);
-      }
+  function handleResult(env, callback) {
+    var hasRoute = false;
+    var hasActive = false;
+    var application = env.server.application;
+    if (application) {
+      application.start();
+      blocks.each(application._views, function (view) {
+        if (blocks.has(view.options, 'route')) {
+          hasRoute = true;
+        }
+        if (view.isActive()) {
+          hasActive = true;
+        }
+      });
+    }
 
-      if (env.server.rendered) {
-        callback(null, env.server.rendered);
-      } else {
-        callback('no query', env.server.html);
-      }
-    });
+    if (hasRoute && !hasActive) {
+      callback('not found', null);
+    }
+
+    if (env.server.rendered) {
+      callback(null, env.server.rendered);
+    } else {
+      callback('no query', env.server.html);
+    }
   }
 
 
@@ -12065,7 +12073,8 @@ return result;
   }
 
   Server.Defaults = blocks.extend({}, Middleware.Defaults, {
-    port: 8000
+    port: 8000,
+    use: null
   });
 
   Server.prototype = {
@@ -12079,6 +12088,10 @@ return result;
       var middleware = this._middleware;
 
       app.listen(options.port);
+
+      blocks.each(blocks.toArray(options.use), function (middleware) {
+        app.use(middleware);
+      });
 
       app.use(express.static(path.resolve(options.static), {
         index: false

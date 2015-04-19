@@ -14,7 +14,8 @@ define([
   }
 
   Server.Defaults = blocks.extend({}, Middleware.Defaults, {
-    port: 8000
+    port: 8000,
+    use: null
   });
 
   Server.prototype = {
@@ -28,6 +29,10 @@ define([
       var middleware = this._middleware;
 
       app.listen(options.port);
+
+      blocks.each(blocks.toArray(options.use), function (middleware) {
+        app.use(middleware);
+      });
 
       app.use(express.static(path.resolve(options.static), {
         index: false
