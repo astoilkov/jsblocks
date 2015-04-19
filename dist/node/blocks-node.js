@@ -37,7 +37,7 @@
     return value;
   };
 
-  blocks.version = '0.2.3';
+  blocks.version = '0.2.4';
   blocks.core = core;
 
   /**
@@ -11670,30 +11670,32 @@ return result;
 
     funcs[code].call(this, blocks, env.document, env.window, require);
 
-    var hasRoute = false;
-    var hasActive = false;
-    var application = server.application;
-    if (application) {
-      application.start();
-      blocks.each(application._views, function (view) {
-        if (blocks.has(view.options, 'route')) {
-          hasRoute = true;
-        }
-        if (view.isActive()) {
-          hasActive = true;
-        }
-      });
-    }
+    server.on('ready', function () {
+      var hasRoute = false;
+      var hasActive = false;
+      var application = server.application;
+      if (application) {
+        application.start();
+        blocks.each(application._views, function (view) {
+          if (blocks.has(view.options, 'route')) {
+            hasRoute = true;
+          }
+          if (view.isActive()) {
+            hasActive = true;
+          }
+        });
+      }
 
-    if (hasRoute && !hasActive) {
-      callback('not found', null);
-    }
+      if (hasRoute && !hasActive) {
+        callback('not found', null);
+      }
 
-    if (env.server.rendered) {
-      callback(null, env.server.rendered);
-    } else {
-      callback('no query', env.server.html);
-    }
+      if (env.server.rendered) {
+        callback(null, env.server.rendered);
+      } else {
+        callback('no query', env.server.html);
+      }
+    });
   }
 
 
@@ -11734,6 +11736,40 @@ return result;
 
     return result;
   }
+
+  function ServerEnv(options, html) {
+    this.options = options;
+    this.html = html;
+
+    this.data = {};
+
+  }
+
+  ServerEnv.prototype = {
+    _waiting: 0,
+
+    rendered: '',
+
+    isReady: function () {
+      return this._waiting === 0;
+    },
+
+    wait: function () {
+      this._waiting += 1;
+    },
+
+    ready: function () {
+      if (this._waiting > 0) {
+        this._waiting -= 1;
+        if (this._waiting === 0) {
+          this.trigger('ready');
+        }
+      }
+    }
+  };
+
+  Events.register(ServerEnv.prototype, ['on', 'once', 'off', 'trigger']);
+
 
   function createBrowserEnvObject() {
     var windowObj = createWindowContext();
@@ -11997,13 +12033,7 @@ return result;
     },
 
     _createEnv: function (req) {
-      var server = {
-        options: this._options,
-        html: this._contents,
-        data: {},
-        rendered: '',
-        applications: []
-      };
+      var server = new ServerEnv(this._options, this._contents);
 
       return blocks.extend({ server: server }, this._createBrowserEnv(req));
     },
@@ -12106,7 +12136,13 @@ return result;
         if (child.tagName() == 'body') {
           child._parent = null;
           child.render(domQuery);
-          server.rendered += child.render() + VirtualElement('script').html('window.__blocksServerData__ = ' + JSON.stringify(server.data)).render();
+          if (server.isReady()) {
+            renderBody(child);
+          } else {
+            server.on('ready', function () {
+              renderBody(child);
+            });
+          }
         } else {
           server.rendered += child.renderBeginTag();
           renderChildren(child.children(), domQuery);
@@ -12116,6 +12152,10 @@ return result;
         server.rendered += child;
       }
     });
+  }
+
+  function renderBody(child) {
+    server.rendered += child.render() + VirtualElement('script').html('window.__blocksServerData__ = ' + JSON.stringify(server.data)).render();
   }
 
   var executeExpressionValue = Expression.Execute;
@@ -12169,20 +12209,32 @@ return result;
   var fs = require('fs');
   var path = require('path');
   Request.prototype.execute = function () {
+    var _this = this;
     var url = this.options.url;
     var views;
 
-    if (this.options.isView) {
-      views = server.data.views = server.data.views || {};
-      views[url] = true;
-      this.callSuccess(fs.readFileSync(path.join(server.options.static, url), { encoding: 'utf-8'} ));
-    }
+    if (blocks.startsWith(url, 'http') || blocks.startsWith(url, 'www')) {
 
-    //if (blocks.startsWith(url, 'http') || blocks.startsWith(url, 'www')) {
-    //
-    //} else {
-    //
-    //}
+    } else {
+      url = path.join(server.options.static, url);
+      if (this.options.isView) {
+        views = server.data.views = server.data.views || {};
+        views[url] = true;
+        this.callSuccess(fs.readFileSync(url, {encoding: 'utf-8'}));
+      } else if (this.options.async === false) {
+
+      } else {
+        server.wait();
+        fs.readFile(url, { encoding: 'utf-8' }, function (err, contents) {
+          if (err) {
+            _this.callError(err);
+          } else {
+            _this.callSuccess(contents);
+          }
+          server.ready();
+        });
+      }
+    }
   };
 
   Request.prototype._handleFileCallback = function (err, contents) {

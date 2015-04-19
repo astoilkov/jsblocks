@@ -29,30 +29,32 @@ define([
 
     funcs[code].call(this, blocks, env.document, env.window, require);
 
-    var hasRoute = false;
-    var hasActive = false;
-    var application = server.application;
-    if (application) {
-      application.start();
-      blocks.each(application._views, function (view) {
-        if (blocks.has(view.options, 'route')) {
-          hasRoute = true;
-        }
-        if (view.isActive()) {
-          hasActive = true;
-        }
-      });
-    }
+    server.on('ready', function () {
+      var hasRoute = false;
+      var hasActive = false;
+      var application = server.application;
+      if (application) {
+        application.start();
+        blocks.each(application._views, function (view) {
+          if (blocks.has(view.options, 'route')) {
+            hasRoute = true;
+          }
+          if (view.isActive()) {
+            hasActive = true;
+          }
+        });
+      }
 
-    if (hasRoute && !hasActive) {
-      callback('not found', null);
-    }
+      if (hasRoute && !hasActive) {
+        callback('not found', null);
+      }
 
-    if (env.server.rendered) {
-      callback(null, env.server.rendered);
-    } else {
-      callback('no query', env.server.html);
-    }
+      if (env.server.rendered) {
+        callback(null, env.server.rendered);
+      } else {
+        callback('no query', env.server.html);
+      }
+    });
   }
 
 

@@ -4,8 +4,9 @@ define([
   './executePageScripts',
   './getElementsById',
   './parseToVirtual',
+  './ServerEnv',
   './BrowserEnv'
-], function (blocks, findPageScripts, executePageScripts, getElementsById, parseToVirtual, BrowserEnv) {
+], function (blocks, findPageScripts, executePageScripts, getElementsById, parseToVirtual, ServerEnv, BrowserEnv) {
   var fs = require('fs');
   var path = require('path');
 
@@ -91,13 +92,7 @@ define([
     },
 
     _createEnv: function (req) {
-      var server = {
-        options: this._options,
-        html: this._contents,
-        data: {},
-        rendered: '',
-        applications: []
-      };
+      var server = new ServerEnv(this._options, this._contents);
 
       return blocks.extend({ server: server }, this._createBrowserEnv(req));
     },

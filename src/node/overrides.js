@@ -43,7 +43,13 @@ define([
         if (child.tagName() == 'body') {
           child._parent = null;
           child.render(domQuery);
-          server.rendered += child.render() + VirtualElement('script').html('window.__blocksServerData__ = ' + JSON.stringify(server.data)).render();
+          if (server.isReady()) {
+            renderBody(child);
+          } else {
+            server.on('ready', function () {
+              renderBody(child);
+            });
+          }
         } else {
           server.rendered += child.renderBeginTag();
           renderChildren(child.children(), domQuery);
@@ -53,6 +59,10 @@ define([
         server.rendered += child;
       }
     });
+  }
+
+  function renderBody(child) {
+    server.rendered += child.render() + VirtualElement('script').html('window.__blocksServerData__ = ' + JSON.stringify(server.data)).render();
   }
 
   var executeExpressionValue = Expression.Execute;
@@ -106,20 +116,32 @@ define([
   var fs = require('fs');
   var path = require('path');
   Request.prototype.execute = function () {
+    var _this = this;
     var url = this.options.url;
     var views;
 
-    if (this.options.isView) {
-      views = server.data.views = server.data.views || {};
-      views[url] = true;
-      this.callSuccess(fs.readFileSync(path.join(server.options.static, url), { encoding: 'utf-8'} ));
-    }
+    if (blocks.startsWith(url, 'http') || blocks.startsWith(url, 'www')) {
 
-    //if (blocks.startsWith(url, 'http') || blocks.startsWith(url, 'www')) {
-    //
-    //} else {
-    //
-    //}
+    } else {
+      url = path.join(server.options.static, url);
+      if (this.options.isView) {
+        views = server.data.views = server.data.views || {};
+        views[url] = true;
+        this.callSuccess(fs.readFileSync(url, {encoding: 'utf-8'}));
+      } else if (this.options.async === false) {
+
+      } else {
+        server.wait();
+        fs.readFile(url, { encoding: 'utf-8' }, function (err, contents) {
+          if (err) {
+            _this.callError(err);
+          } else {
+            _this.callSuccess(contents);
+          }
+          server.ready();
+        });
+      }
+    }
   };
 
   Request.prototype._handleFileCallback = function (err, contents) {
