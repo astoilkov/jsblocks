@@ -37,7 +37,7 @@
     return value;
   };
 
-  blocks.version = '0.2.5';
+  blocks.version = '0.2.7';
   blocks.core = core;
 
   /**
@@ -1812,6 +1812,8 @@
         }
       });
 
+      expression.lastResult = value;
+
       return value;
     },
 
@@ -2477,7 +2479,11 @@
         } else if (domQuery) {
           html += Expression.GetValue(domQuery._context, null, child);
         } else {
-          html += Expression.GetValue(null, null, child);
+          if (!this._each && child.lastResult) {
+            html += child.lastResult;
+          } else {
+            html += Expression.GetValue(null, null, child);
+          }
         }
       }
 

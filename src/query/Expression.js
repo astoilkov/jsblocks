@@ -73,6 +73,8 @@ define([
         }
       });
 
+      expression.lastResult = value;
+
       return value;
     },
 

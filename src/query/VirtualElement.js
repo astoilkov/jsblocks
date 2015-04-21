@@ -320,7 +320,11 @@ define([
         } else if (domQuery) {
           html += Expression.GetValue(domQuery._context, null, child);
         } else {
-          html += Expression.GetValue(null, null, child);
+          if (!this._each && child.lastResult) {
+            html += child.lastResult;
+          } else {
+            html += Expression.GetValue(null, null, child);
+          }
         }
       }
 

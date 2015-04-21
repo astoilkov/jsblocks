@@ -123,7 +123,13 @@
   Router.GenerateRoute = function (routeString, params) {
     var router = new Router();
     var routeId = router.registerRoute(routeString);
-    return router.routeTo(routeId, params);
+    var route = router.routeTo(routeId, params);
+
+    if (routeString.indexOf('/') === 0 && route.indexOf('/') !== 0) {
+      return '/' + route;
+    }
+
+    return route;
   };
 
   Router.prototype = {

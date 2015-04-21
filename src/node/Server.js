@@ -31,7 +31,9 @@ define([
       app.listen(options.port);
 
       blocks.each(blocks.toArray(options.use), function (middleware) {
-        app.use(middleware);
+        if (blocks.isFunction(middleware)) {
+          app.use(middleware);
+        }
       });
 
       app.use(express.static(path.resolve(options.static), {
