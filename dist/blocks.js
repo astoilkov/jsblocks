@@ -37,7 +37,7 @@
     return value;
   };
 
-  blocks.version = '0.2.7';
+  blocks.version = '0.3.0';
   blocks.core = core;
 
   /**
@@ -1370,7 +1370,7 @@ function addError(message, error, method, paramNames) {
         }
         message.addText(')');
         message.endSpan();
-        message.addText(' - less arguments then the required specified');
+        message.addText(' - less arguments than the required specified');
         break;
       case 'more-args':
         message.addText(paramNames.slice(0, error.expected).join(', '));
@@ -7779,8 +7779,6 @@ return result;
     renderBeginTag: function () {
       var html;
 
-      //executeFormatQueries(this);
-
       html = '<' + this._tagName;
       if (this._haveAttributes) {
         html += this._renderAttributes();
@@ -10853,18 +10851,28 @@ return result;
    * based on the provided options
    *
    * @memberof extenders
-   * @param  {(Function|Object|String)} options
+   * @param {(Function|Object|String)} options - provide a callback function
+   * which returns true or false, you could also provide an observable
    * @returns {blocks.observable} - Returns a new observable
    * containing a .view property with the filtered data
-   *
-   * @example {javascript}
    */
   blocks.observable.filter = function (options) {
     var observable = initExpressionExtender(this);
+    var callback = options;
+
+    if (!blocks.isFunction(callback) || blocks.isObservable(callback)) {
+      callback = function (value) {
+        var filter = blocks.unwrap(options);
+        var filterString = String(filter).toLowerCase();
+        value = String(blocks.unwrap(value)).toLowerCase();
+
+        return !filter || value.indexOf(filterString) != -1;
+      };
+    }
 
     observable._operations.push({
       type: 'filter',
-      filter: options
+      filter: callback
     });
 
     observable.on('add', function () {
@@ -10942,7 +10950,7 @@ return result;
    * based on the provided options
    *
    * @memberof extenders
-   * @param  {(Function|string)} options -
+   * @param {(Function|string)} options - provide a callback sort function or field name to be sorted
    * @returns {blocks.observable} - Returns a new observable
    * containing a .view property with the sorted data
    */

@@ -252,8 +252,6 @@ define([
     renderBeginTag: function () {
       var html;
 
-      //executeFormatQueries(this);
-
       html = '<' + this._tagName;
       if (this._haveAttributes) {
         html += this._renderAttributes();
