@@ -194,7 +194,7 @@ define([
     * var Users = App.Collection(User, {
     *   count: App.Property({
     *     value: function () {
-    *       return this().lenght;
+    *       return this().length;
     *     }
     *   })
     * });
