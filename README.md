@@ -6,10 +6,6 @@ From simple user interfaces to complex single-page applications using faster, se
 
 [[ official website ]](http://jsblocks.com)
 
-### Discussion at Reddit
-
-[jsblocks - faster than AngularJS and ReactJS. Better MV-ish Framework. Oh yeah!](https://www.reddit.com/r/javascript/comments/33l327/jsblocks_faster_than_angularjs_and_reactjs_better/)
-
 ### Features
 
  * [Server-side rendering](http://jsblocks.com/learn/introduction-why-jsblocks#server-side-rendering)
