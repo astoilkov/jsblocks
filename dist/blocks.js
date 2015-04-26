@@ -14122,8 +14122,10 @@ return result;
      * Defines a view that will be part of the Application
      *
      * @memberof Application
-     * @param {string} name -
-     * @param {Object} prototype -
+     * @param {string} [parentViewName] - Provide this parameter only if you are creating nested views.
+     * This is the name of the parent View
+     * @param {string} name - The name of the View you are creating
+     * @param {Object} prototype - The object that will represent the View
      *
      * @example {javascript}
      * var App = blocks.Application();
