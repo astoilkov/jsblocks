@@ -51,12 +51,12 @@ define([
      * @param {data-query} [alternate] - The query that will be executed if the specified condition returns a truthy value
      *
      * @example {html}
-     * <div data-query="if(true, setClass('success'), setClass('fail'))"></div>
-     * <div data-query="if(false, setClass('success'), setClass('fail'))"></div>
+     * <div data-query="ifnot(true, setClass('success'), setClass('fail'))"></div>
+     * <div data-query="ifnot(false, setClass('success'), setClass('fail'))"></div>
      *
      * <!-- will result in -->
-     * <div data-query="if(true, setClass('success'), setClass('fail'))" class="fail"></div>
-     * <div data-query="if(false, setClass('success'), setClass('fail'))" class="success"></div>
+     * <div data-query="ifnot(true, setClass('success'), setClass('fail'))" class="fail"></div>
+     * <div data-query="ifnot(false, setClass('success'), setClass('fail'))" class="success"></div>
      */
     ifnot: {},
 
@@ -65,9 +65,9 @@ define([
      *
      * @memberof blocks.queries
      * @param {(HTMLElement|string)} template - The template that will be rendered
-     * @param {*} value - The value that will used in the template
      * The value could be an element id (the element innerHTML property will be taken), string (the template) or
      * an element (again the element innerHTML property will be taken)
+     * @param {*} [value] - Optional context for the template
      *
      * @example {html}
      * <script>
@@ -191,12 +191,12 @@ define([
      *     }
      *   });
      * </script>
-     * <div data-query="view(ProfilePage.user, '$user')">
+     * <div data-query="with(ProfilePage.user, '$user')">
      *  My name is {{$user.name}} and I am {{$this.age}} years old.
      * </div>
      *
      * <!-- will result in -->
-     * <div data-query="view(ProfilePage.user, '$user')">
+     * <div data-query="with(ProfilePage.user, '$user')">
      *  My name is John Doe and I am 22 years old.
      * </div>
      */
@@ -607,7 +607,7 @@ define([
     },
 
     /**
-    * Adds or removes the inner text from an element
+    * Adds or removes the inner text from an element. Escapes any HTML provided
     *
     * @memberof blocks.queries
     * @param {string} text - The text that will be places inside element replacing any other content.
@@ -650,7 +650,6 @@ define([
     * @memberof blocks.queries
     * @param {string} attributeName - The attribute name that will be get, set or removed.
     * @param {string} attributeValue - The value of the attribute. It will be set if condition is true.
-    * @param {boolean} [condition=true] - Value indicating if the attribute will be set or removed.
     *
     * @example {html}
     * <div data-query="attr('data-content', 'some content')"></div>
@@ -669,7 +668,6 @@ define([
     *
     * @memberof blocks.queries
     * @param {(string|number|Array|undefined)} value - The new value for the element.
-    * @param {boolean} [condition=true] - Determines if the value will be set or not.
     *
     * @example {html}
     * <script>

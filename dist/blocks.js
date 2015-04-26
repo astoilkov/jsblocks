@@ -246,40 +246,6 @@
      */
     noop: function() {},
 
-    /**
-     * The method helps create inheritance easily and avoid working with prototypes directly.
-     * Extends a Class or creates new Class type.
-     *
-     * @memberof blocks
-     * @param {Function} [BaseClass] - Optionally provide the Class from which to extend
-     * @param {} Class - The new Class constructor that will be created
-     * @param {Object} prototype - The object that will be the prototype of the new Class
-     * @returns {Object} - The class that was created
-     *
-     * @example {javascript}
-     * var Mammal = blocks.inherit(function (name) {
-     *   this.name = name;
-     * }, {
-     *   message: function () {
-     *     return 'This mammal is ' + this.name;
-     *   }
-     * });
-     *
-     * var Monkey = blocks.inherit(Mammal, function () {
-     *   this._super('Monkey');
-     * }, {
-     *   helloMessage: function () {
-     *     return 'I am monkey';
-     *   }
-     * });
-     *
-     * var monkey = new Monkey();
-     * monkey.helloMessage();
-     * // -> 'I am monkey';
-     *
-     * monkey.message();
-     * // -> 'This mammal is Monkey'
-     */
     inherit: function(BaseClass, Class, prototype) {
       if ((arguments.length < 3 && blocks.isPlainObject(Class)) || arguments.length == 1) {
         prototype = Class;
@@ -497,7 +463,7 @@
      * // -> [3]
      *
      * function calculate() {
-     *   var numbers = blocks.isArray(arguments);
+     *   var numbers = blocks.toArray(arguments);
      * }
      *
      * blocks.toArray([3, 1, 4]);
@@ -2060,7 +2026,7 @@ blocks.debug.queries = {
                   children: ['data-query']
                 }, '=', {
                   name: 'hljs-value',
-                  children: ['"if(true, setClass(\'success\'), setClass(\'fail\'))"']
+                  children: ['"ifnot(true, setClass(\'success\'), setClass(\'fail\'))"']
                 }, '>']
             }, {
               name: 'hljs-tag',
@@ -2078,7 +2044,7 @@ blocks.debug.queries = {
                   children: ['data-query']
                 }, '=', {
                   name: 'hljs-value',
-                  children: ['"if(false, setClass(\'success\'), setClass(\'fail\'))"']
+                  children: ['"ifnot(false, setClass(\'success\'), setClass(\'fail\'))"']
                 }, '>']
             }, {
               name: 'hljs-tag',
@@ -2099,7 +2065,7 @@ blocks.debug.queries = {
                   children: ['data-query']
                 }, '=', {
                   name: 'hljs-value',
-                  children: ['"if(true, setClass(\'success\'), setClass(\'fail\'))"']
+                  children: ['"ifnot(true, setClass(\'success\'), setClass(\'fail\'))"']
                 }, ' ', {
                   name: 'hljs-attribute',
                   children: ['class']
@@ -2123,7 +2089,7 @@ blocks.debug.queries = {
                   children: ['data-query']
                 }, '=', {
                   name: 'hljs-value',
-                  children: ['"if(false, setClass(\'success\'), setClass(\'fail\'))"']
+                  children: ['"ifnot(false, setClass(\'success\'), setClass(\'fail\'))"']
                 }, ' ', {
                   name: 'hljs-attribute',
                   children: ['class']
@@ -2153,16 +2119,16 @@ blocks.debug.queries = {
         types: ['HTMLElement', 'string'],
         optional: false,
         isArguments: false,
-        description: 'The template that will be rendered',
+        description: 'The template that will be rendered\n The value could be an element id (the element innerHTML property will be taken), string (the template) or\n an element (again the element innerHTML property will be taken)',
         defaultValue: '',
         value: ''
       }, {
         name: 'value',
-        rawName: 'value',
+        rawName: '[value]',
         types: ['*'],
-        optional: false,
+        optional: true,
         isArguments: false,
-        description: 'The value that will used in the template\n The value could be an element id (the element innerHTML property will be taken), string (the template) or\n an element (again the element innerHTML property will be taken)',
+        description: 'Optional context for the template',
         defaultValue: '',
         value: ''
       }],
@@ -2441,7 +2407,7 @@ blocks.debug.queries = {
                   children: ['data-query']
                 }, '=', {
                   name: 'hljs-value',
-                  children: ['"view(ProfilePage.user, \'$user\')"']
+                  children: ['"with(ProfilePage.user, \'$user\')"']
                 }, '>']
             }, '\n My name is {{$user.name}} and I am {{$this.age}} years old.\n', {
               name: 'hljs-tag',
@@ -2462,7 +2428,7 @@ blocks.debug.queries = {
                   children: ['data-query']
                 }, '=', {
                   name: 'hljs-value',
-                  children: ['"view(ProfilePage.user, \'$user\')"']
+                  children: ['"with(ProfilePage.user, \'$user\')"']
                 }, '>']
             }, '\n My name is John Doe and I am 22 years old.\n', {
               name: 'hljs-tag',
@@ -3139,7 +3105,7 @@ blocks.debug.queries = {
   text: {
     fullName: 'text',
     name: 'text',
-    description: 'Adds or removes the inner text from an element',
+    description: 'Adds or removes the inner text from an element. Escapes any HTML provided',
     params: [{
         name: 'text',
         rawName: 'text',
@@ -3337,15 +3303,6 @@ blocks.debug.queries = {
         description: 'The value of the attribute. It will be set if condition is true.',
         defaultValue: '',
         value: ''
-      }, {
-        name: 'condition',
-        rawName: '[condition=true]',
-        types: ['boolean'],
-        optional: true,
-        isArguments: false,
-        description: 'Value indicating if the attribute will be set or removed.',
-        defaultValue: 'true',
-        value: ''
       }],
     returns: undefined,
     examples: [{
@@ -3415,15 +3372,6 @@ blocks.debug.queries = {
         isArguments: false,
         description: 'The new value for the element.',
         defaultValue: '',
-        value: ''
-      }, {
-        name: 'condition',
-        rawName: '[condition=true]',
-        types: ['boolean'],
-        optional: true,
-        isArguments: false,
-        description: 'Determines if the value will be set or not.',
-        defaultValue: 'true',
         value: ''
       }],
     returns: undefined,
@@ -3870,7 +3818,7 @@ blocks.debug.queries = {
                   children: ['data-query']
                 }, '=', {
                   name: 'hljs-value',
-                  children: ['"view(users)"']
+                  children: ['"each(users)"']
                 }, '>']
             }, '\n    ', {
               name: 'hljs-comment',
@@ -3918,19 +3866,13 @@ blocks.debug.queries = {
             }, ' App = blocks.Application();\n\nApp.View(', {
               name: 'hljs-string',
               children: ['\'Profiles\'']
-            }, ', {\n  init: ', {
-              name: 'hljs-function',
-              children: [{
-                  name: 'hljs-keyword',
-                  children: ['function']
-                }, ' ', {
-                  name: 'hljs-params',
-                  children: ['()']
-                }, ' ']
-            }, '{\n    ', {
-              name: 'hljs-comment',
-              children: ['// ...initing this.users...']
-            }, '\n  },\n\n  selectUser: ', {
+            }, ', {\n  users: [{ username: ', {
+              name: 'hljs-string',
+              children: ['\'John\'']
+            }, ' }, { username: ', {
+              name: 'hljs-string',
+              children: ['\'Doe\'']
+            }, ' }],\n\n  selectUser: ', {
               name: 'hljs-function',
               children: [{
                   name: 'hljs-keyword',
@@ -3942,7 +3884,7 @@ blocks.debug.queries = {
             }, '{\n    ', {
               name: 'hljs-comment',
               children: ['// ...stuff...']
-            }, '\n  }\n});\n\nApp.start();']
+            }, '\n  }\n});']
         },
         value: ''
       }],
@@ -9050,12 +8992,12 @@ return result;
      * @param {data-query} [alternate] - The query that will be executed if the specified condition returns a truthy value
      *
      * @example {html}
-     * <div data-query="if(true, setClass('success'), setClass('fail'))"></div>
-     * <div data-query="if(false, setClass('success'), setClass('fail'))"></div>
+     * <div data-query="ifnot(true, setClass('success'), setClass('fail'))"></div>
+     * <div data-query="ifnot(false, setClass('success'), setClass('fail'))"></div>
      *
      * <!-- will result in -->
-     * <div data-query="if(true, setClass('success'), setClass('fail'))" class="fail"></div>
-     * <div data-query="if(false, setClass('success'), setClass('fail'))" class="success"></div>
+     * <div data-query="ifnot(true, setClass('success'), setClass('fail'))" class="fail"></div>
+     * <div data-query="ifnot(false, setClass('success'), setClass('fail'))" class="success"></div>
      */
     ifnot: {},
 
@@ -9064,9 +9006,9 @@ return result;
      *
      * @memberof blocks.queries
      * @param {(HTMLElement|string)} template - The template that will be rendered
-     * @param {*} value - The value that will used in the template
      * The value could be an element id (the element innerHTML property will be taken), string (the template) or
      * an element (again the element innerHTML property will be taken)
+     * @param {*} [value] - Optional context for the template
      *
      * @example {html}
      * <script>
@@ -9190,12 +9132,12 @@ return result;
      *     }
      *   });
      * </script>
-     * <div data-query="view(ProfilePage.user, '$user')">
+     * <div data-query="with(ProfilePage.user, '$user')">
      *  My name is {{$user.name}} and I am {{$this.age}} years old.
      * </div>
      *
      * <!-- will result in -->
-     * <div data-query="view(ProfilePage.user, '$user')">
+     * <div data-query="with(ProfilePage.user, '$user')">
      *  My name is John Doe and I am 22 years old.
      * </div>
      */
@@ -9606,7 +9548,7 @@ return result;
     },
 
     /**
-    * Adds or removes the inner text from an element
+    * Adds or removes the inner text from an element. Escapes any HTML provided
     *
     * @memberof blocks.queries
     * @param {string} text - The text that will be places inside element replacing any other content.
@@ -9649,7 +9591,6 @@ return result;
     * @memberof blocks.queries
     * @param {string} attributeName - The attribute name that will be get, set or removed.
     * @param {string} attributeValue - The value of the attribute. It will be set if condition is true.
-    * @param {boolean} [condition=true] - Value indicating if the attribute will be set or removed.
     *
     * @example {html}
     * <div data-query="attr('data-content', 'some content')"></div>
@@ -9668,7 +9609,6 @@ return result;
     *
     * @memberof blocks.queries
     * @param {(string|number|Array|undefined)} value - The new value for the element.
-    * @param {boolean} [condition=true] - Determines if the value will be set or not.
     *
     * @example {html}
     * <script>
@@ -10406,15 +10346,16 @@ return result;
          * Removes an item from the observable array
          *
          * @memberof array
-         * @param {[type]}   position [description]
-         * @param {Function} callback [description]
+         * @param {(Function|*)} value - the value that will be removed or a callback function
+         * which returns true or false to determine if the value should be removed
+         * @param {Function} [thisArg] - Optional this context for the callback
          * @returns {blocks.observable} - Returns the observable itself - return this;
          *
          * @example {javascript}
          *
          */
-        remove: function (callback, thisArg) {
-          return this.removeAll(callback, thisArg, true);
+        remove: function (value, thisArg) {
+          return this.removeAll(value, thisArg, true);
         },
 
         /**
@@ -10442,8 +10383,8 @@ return result;
          * @memberof array
          * @param {Function} [callback] - Optional callback function which filters which items
          * to be removed. Returning a truthy value will remove the item and vice versa
-         * @param {*}  [thisArg] - Optional this context for the callback function
-         * @param {blocks.observable} - Returns the observable itself - return this;
+         * @param {*} [thisArg] - Optional this context for the callback function
+         * @returns {blocks.observable} - Returns the observable itself - return this;
          */
         removeAll: function (callback, thisArg, removeOne) {
           var array = this.__value__;
@@ -10498,8 +10439,8 @@ return result;
          * The concat() method is used to join two or more arrays
          *
          * @memberof array
-         * @param {...Array} The arrays to be joined
-         * @returns {Array} The joined array
+         * @param {...Array} arrays - The arrays to be joined
+         * @returns {Array} - The joined array
          */
         concat: function () {
           var array = this();
@@ -11330,7 +11271,7 @@ return result;
      * <!-- Associating the div element and its children with the Profiles view -->
      * <div data-query="view(Profiles)">
      *   <!-- looping through the View users collection -->
-     *   <ul data-query="view(users)">
+     *   <ul data-query="each(users)">
      *     <!-- Using the $view context value to point to the View selectUser handler -->
      *     <li data-query="click($view.selectUser)">{{username}}</li>
      *   </ul>
@@ -11340,16 +11281,12 @@ return result;
      * var App = blocks.Application();
      *
      * App.View('Profiles', {
-     *   init: function () {
-     *     // ...initing this.users...
-     *   },
+     *   users: [{ username: 'John' }, { username: 'Doe' }],
      *
      *   selectUser: function (e) {
      *     // ...stuff...
      *   }
      * });
-     *
-     * App.start();
      */
     view: {
       passDomQuery: true,
@@ -12986,7 +12923,7 @@ return result;
      * App.View('SignUp', {
      *   newUser: User(),
      *
-     *   registerHandler: function () {
+     *   registerUser: function () {
      *     if (this.newUser.validate()) {
      *       alert('Successful registration!');
      *     }
@@ -14010,7 +13947,7 @@ return result;
      *
      * var User = App.Model({
      *   username: App.Property({
-     *     defaultValue: 'JohnDoe'
+     *     defaultValue: 'John Doe'
      *   })
      * });
      */
@@ -14122,7 +14059,7 @@ return result;
     * var Users = App.Collection(User, {
     *   count: App.Property({
     *     value: function () {
-    *       return this().lenght;
+    *       return this().length;
     *     }
     *   })
     * });
@@ -14189,7 +14126,6 @@ return result;
      * @param {Object} prototype -
      *
      * @example {javascript}
-     *
      * var App = blocks.Application();
      *
      * App.View('Clicker', {
@@ -14232,22 +14168,7 @@ return result;
       return true;
     },
 
-    /**
-     * Starts the application by preparing the application and calling blocks.query() method
-     * to execute all data-query attributes and render the HTML output
-     *
-     * @memberof Application
-     * @param {HTMLElement} [element=document.body] - Optional element that will be used for the root of the
-     * Application. If not specified the document.body will be used
-     *
-     * @example {javascript}
-     * var App = blocks.Application();
-     *
-     * App.helloWorldMessage = 'Hello World!';
-     *
-     * @example {html}
-     * <h1>{{helloWorldMessage}}</h1>
-     */
+
     start: function (element) {
       if (!this._started) {
         this._started = true;

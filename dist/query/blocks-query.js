@@ -246,40 +246,6 @@
      */
     noop: function() {},
 
-    /**
-     * The method helps create inheritance easily and avoid working with prototypes directly.
-     * Extends a Class or creates new Class type.
-     *
-     * @memberof blocks
-     * @param {Function} [BaseClass] - Optionally provide the Class from which to extend
-     * @param {} Class - The new Class constructor that will be created
-     * @param {Object} prototype - The object that will be the prototype of the new Class
-     * @returns {Object} - The class that was created
-     *
-     * @example {javascript}
-     * var Mammal = blocks.inherit(function (name) {
-     *   this.name = name;
-     * }, {
-     *   message: function () {
-     *     return 'This mammal is ' + this.name;
-     *   }
-     * });
-     *
-     * var Monkey = blocks.inherit(Mammal, function () {
-     *   this._super('Monkey');
-     * }, {
-     *   helloMessage: function () {
-     *     return 'I am monkey';
-     *   }
-     * });
-     *
-     * var monkey = new Monkey();
-     * monkey.helloMessage();
-     * // -> 'I am monkey';
-     *
-     * monkey.message();
-     * // -> 'This mammal is Monkey'
-     */
     inherit: function(BaseClass, Class, prototype) {
       if ((arguments.length < 3 && blocks.isPlainObject(Class)) || arguments.length == 1) {
         prototype = Class;
@@ -497,7 +463,7 @@
      * // -> [3]
      *
      * function calculate() {
-     *   var numbers = blocks.isArray(arguments);
+     *   var numbers = blocks.toArray(arguments);
      * }
      *
      * blocks.toArray([3, 1, 4]);
@@ -3687,12 +3653,12 @@
      * @param {data-query} [alternate] - The query that will be executed if the specified condition returns a truthy value
      *
      * @example {html}
-     * <div data-query="if(true, setClass('success'), setClass('fail'))"></div>
-     * <div data-query="if(false, setClass('success'), setClass('fail'))"></div>
+     * <div data-query="ifnot(true, setClass('success'), setClass('fail'))"></div>
+     * <div data-query="ifnot(false, setClass('success'), setClass('fail'))"></div>
      *
      * <!-- will result in -->
-     * <div data-query="if(true, setClass('success'), setClass('fail'))" class="fail"></div>
-     * <div data-query="if(false, setClass('success'), setClass('fail'))" class="success"></div>
+     * <div data-query="ifnot(true, setClass('success'), setClass('fail'))" class="fail"></div>
+     * <div data-query="ifnot(false, setClass('success'), setClass('fail'))" class="success"></div>
      */
     ifnot: {},
 
@@ -3701,9 +3667,9 @@
      *
      * @memberof blocks.queries
      * @param {(HTMLElement|string)} template - The template that will be rendered
-     * @param {*} value - The value that will used in the template
      * The value could be an element id (the element innerHTML property will be taken), string (the template) or
      * an element (again the element innerHTML property will be taken)
+     * @param {*} [value] - Optional context for the template
      *
      * @example {html}
      * <script>
@@ -3827,12 +3793,12 @@
      *     }
      *   });
      * </script>
-     * <div data-query="view(ProfilePage.user, '$user')">
+     * <div data-query="with(ProfilePage.user, '$user')">
      *  My name is {{$user.name}} and I am {{$this.age}} years old.
      * </div>
      *
      * <!-- will result in -->
-     * <div data-query="view(ProfilePage.user, '$user')">
+     * <div data-query="with(ProfilePage.user, '$user')">
      *  My name is John Doe and I am 22 years old.
      * </div>
      */
@@ -4243,7 +4209,7 @@
     },
 
     /**
-    * Adds or removes the inner text from an element
+    * Adds or removes the inner text from an element. Escapes any HTML provided
     *
     * @memberof blocks.queries
     * @param {string} text - The text that will be places inside element replacing any other content.
@@ -4286,7 +4252,6 @@
     * @memberof blocks.queries
     * @param {string} attributeName - The attribute name that will be get, set or removed.
     * @param {string} attributeValue - The value of the attribute. It will be set if condition is true.
-    * @param {boolean} [condition=true] - Value indicating if the attribute will be set or removed.
     *
     * @example {html}
     * <div data-query="attr('data-content', 'some content')"></div>
@@ -4305,7 +4270,6 @@
     *
     * @memberof blocks.queries
     * @param {(string|number|Array|undefined)} value - The new value for the element.
-    * @param {boolean} [condition=true] - Determines if the value will be set or not.
     *
     * @example {html}
     * <script>
@@ -5043,15 +5007,16 @@
          * Removes an item from the observable array
          *
          * @memberof array
-         * @param {[type]}   position [description]
-         * @param {Function} callback [description]
+         * @param {(Function|*)} value - the value that will be removed or a callback function
+         * which returns true or false to determine if the value should be removed
+         * @param {Function} [thisArg] - Optional this context for the callback
          * @returns {blocks.observable} - Returns the observable itself - return this;
          *
          * @example {javascript}
          *
          */
-        remove: function (callback, thisArg) {
-          return this.removeAll(callback, thisArg, true);
+        remove: function (value, thisArg) {
+          return this.removeAll(value, thisArg, true);
         },
 
         /**
@@ -5079,8 +5044,8 @@
          * @memberof array
          * @param {Function} [callback] - Optional callback function which filters which items
          * to be removed. Returning a truthy value will remove the item and vice versa
-         * @param {*}  [thisArg] - Optional this context for the callback function
-         * @param {blocks.observable} - Returns the observable itself - return this;
+         * @param {*} [thisArg] - Optional this context for the callback function
+         * @returns {blocks.observable} - Returns the observable itself - return this;
          */
         removeAll: function (callback, thisArg, removeOne) {
           var array = this.__value__;
@@ -5135,8 +5100,8 @@
          * The concat() method is used to join two or more arrays
          *
          * @memberof array
-         * @param {...Array} The arrays to be joined
-         * @returns {Array} The joined array
+         * @param {...Array} arrays - The arrays to be joined
+         * @returns {Array} - The joined array
          */
         concat: function () {
           var array = this();

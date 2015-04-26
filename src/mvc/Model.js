@@ -109,7 +109,7 @@ define([
      * App.View('SignUp', {
      *   newUser: User(),
      *
-     *   registerHandler: function () {
+     *   registerUser: function () {
      *     if (this.newUser.validate()) {
      *       alert('Successful registration!');
      *     }

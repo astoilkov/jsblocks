@@ -19,7 +19,7 @@
      * <!-- Associating the div element and its children with the Profiles view -->
      * <div data-query="view(Profiles)">
      *   <!-- looping through the View users collection -->
-     *   <ul data-query="view(users)">
+     *   <ul data-query="each(users)">
      *     <!-- Using the $view context value to point to the View selectUser handler -->
      *     <li data-query="click($view.selectUser)">{{username}}</li>
      *   </ul>
@@ -29,16 +29,12 @@
      * var App = blocks.Application();
      *
      * App.View('Profiles', {
-     *   init: function () {
-     *     // ...initing this.users...
-     *   },
+     *   users: [{ username: 'John' }, { username: 'Doe' }],
      *
      *   selectUser: function (e) {
      *     // ...stuff...
      *   }
      * });
-     *
-     * App.start();
      */
     view: {
       passDomQuery: true,

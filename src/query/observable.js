@@ -436,15 +436,16 @@ define([
          * Removes an item from the observable array
          *
          * @memberof array
-         * @param {[type]}   position [description]
-         * @param {Function} callback [description]
+         * @param {(Function|*)} value - the value that will be removed or a callback function
+         * which returns true or false to determine if the value should be removed
+         * @param {Function} [thisArg] - Optional this context for the callback
          * @returns {blocks.observable} - Returns the observable itself - return this;
          *
          * @example {javascript}
          *
          */
-        remove: function (callback, thisArg) {
-          return this.removeAll(callback, thisArg, true);
+        remove: function (value, thisArg) {
+          return this.removeAll(value, thisArg, true);
         },
 
         /**
@@ -472,8 +473,8 @@ define([
          * @memberof array
          * @param {Function} [callback] - Optional callback function which filters which items
          * to be removed. Returning a truthy value will remove the item and vice versa
-         * @param {*}  [thisArg] - Optional this context for the callback function
-         * @param {blocks.observable} - Returns the observable itself - return this;
+         * @param {*} [thisArg] - Optional this context for the callback function
+         * @returns {blocks.observable} - Returns the observable itself - return this;
          */
         removeAll: function (callback, thisArg, removeOne) {
           var array = this.__value__;
@@ -528,8 +529,8 @@ define([
          * The concat() method is used to join two or more arrays
          *
          * @memberof array
-         * @param {...Array} The arrays to be joined
-         * @returns {Array} The joined array
+         * @param {...Array} arrays - The arrays to be joined
+         * @returns {Array} - The joined array
          */
         concat: function () {
           var array = this();

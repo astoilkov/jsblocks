@@ -82,7 +82,7 @@ define([
      *
      * var User = App.Model({
      *   username: App.Property({
-     *     defaultValue: 'JohnDoe'
+     *     defaultValue: 'John Doe'
      *   })
      * });
      */
@@ -261,7 +261,6 @@ define([
      * @param {Object} prototype -
      *
      * @example {javascript}
-     *
      * var App = blocks.Application();
      *
      * App.View('Clicker', {
@@ -304,22 +303,7 @@ define([
       return true;
     },
 
-    /**
-     * Starts the application by preparing the application and calling blocks.query() method
-     * to execute all data-query attributes and render the HTML output
-     *
-     * @memberof Application
-     * @param {HTMLElement} [element=document.body] - Optional element that will be used for the root of the
-     * Application. If not specified the document.body will be used
-     *
-     * @example {javascript}
-     * var App = blocks.Application();
-     *
-     * App.helloWorldMessage = 'Hello World!';
-     *
-     * @example {html}
-     * <h1>{{helloWorldMessage}}</h1>
-     */
+
     start: function (element) {
       if (!this._started) {
         this._started = true;
