@@ -11292,16 +11292,14 @@ return result;
       passDomQuery: true,
 
       preprocess: function (domQuery, view) {
-        //var args = Array.prototype.slice.call(arguments, 2);
-        //view._initArgs = args;
         if (!view.isActive()) {
           this.css('display', 'none');
-          //this._innerHTML = '';
-          //view._children = this._children;
-          //return false;
         } else {
           //view._tryInitialize(view.isActive());
           this.css('display', '');
+          if (view._html) {
+            blocks.queries.template.preprocess.call(this, domQuery, view._html, view);
+          }
           // Quotes are used because of IE8 and below. It failes with 'Expected idenfitier'
           //queries['with'].preprocess.call(this, domQuery, view, '$view');
           //queries.define.preprocess.call(this, domQuery, view._name, view);
@@ -13681,6 +13679,7 @@ return result;
     var _this = this;
     var options = this.options;
     var views = this._views = [];
+    var hasRoute = blocks.has(options, 'route');
 
     clonePrototype(prototype, this);
 
@@ -13690,10 +13689,10 @@ return result;
     this._html = undefined;
 
     this.loading = blocks.observable(false);
-    this.isActive = blocks.observable(!blocks.has(options, 'route'));
+    this.isActive = blocks.observable(!hasRoute);
     this.isActive.on('changing', function (oldValue, newValue) {
       blocks.each(views, function (view) {
-        if (!view.options.route) {
+        if (!hasRoute) {
           view.isActive(newValue);
         }
       });
@@ -13706,6 +13705,14 @@ return result;
   }
 
   View.prototype = {
+    /**
+     * Determines if the view is visible
+     *
+     * @memberof View
+     * @name isActive
+     * @type {blocks.observable}
+     */
+
     /**
      * Override the init method to perform actions when the View is first created
      * and shown on the page

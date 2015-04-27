@@ -96,12 +96,15 @@ define([
     }
   };
 
-  blocks.queries.template.preprocess = function (domQuery, virtual, value) {
-    if (virtual) {
+  blocks.queries.template.preprocess = function (domQuery, html, value) {
+    if (VirtualElement.Is(html)) {
+      html = html.html();
+    }
+    if (html) {
       if (value) {
         blocks.queries['with'].preprocess.call(this, domQuery, value, '$template');
       }
-      this.html(virtual.html());
+      this.html(html);
       if (!this._each) {
         this._children = parseToVirtual(this.html());
         this._innerHTML = null;

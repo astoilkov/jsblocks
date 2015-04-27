@@ -40,16 +40,14 @@
       passDomQuery: true,
 
       preprocess: function (domQuery, view) {
-        //var args = Array.prototype.slice.call(arguments, 2);
-        //view._initArgs = args;
         if (!view.isActive()) {
           this.css('display', 'none');
-          //this._innerHTML = '';
-          //view._children = this._children;
-          //return false;
         } else {
           //view._tryInitialize(view.isActive());
           this.css('display', '');
+          if (view._html) {
+            blocks.queries.template.preprocess.call(this, domQuery, view._html, view);
+          }
           // Quotes are used because of IE8 and below. It failes with 'Expected idenfitier'
           //queries['with'].preprocess.call(this, domQuery, view, '$view');
           //queries.define.preprocess.call(this, domQuery, view._name, view);
