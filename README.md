@@ -46,3 +46,11 @@ and the [jsblocks starter template project](https://github.com/astoilkov/jsblock
 ### Example projects
  * [TodoMVC](https://github.com/astoilkov/jsblocks-todomvc)
  * [E-shopping](https://github.com/astoilkov/jsblocks-shopping-example)
+
+
+### Ask a question
+
+> We are watching and ready to answer your questions quickly.
+
+* [Stack Overflow](http://stackoverflow.com/questions/tagged/jsblocks)
+* [Github Issue](https://github.com/astoilkov/jsblocks/issues/new)
