@@ -37,6 +37,31 @@ define([
       });
     },
 
+    fillServer: function (server) {
+      var window = this._env.window;
+      var timeout = setTimeout;
+      var clear = clearTimeout;
+
+      window.setTimeout = function (callback, delay) {
+        if (delay === 0) {
+          server.wait();
+          return timeout(function () {
+            var result = callback();
+
+            server.ready();
+
+            return result;
+          }, delay);
+        }
+
+        return timeout(blocks.noop, delay);
+      };
+
+      window.clearTimeout = function (id) {
+        return clear(id);
+      };
+    },
+
     _initialize: function () {
       var env = this._env;
       var document = env.document;

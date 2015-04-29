@@ -56,19 +56,24 @@
   Request.prototype = {
     execute: function () {
       var options = this.options;
+      var serverData = window.__blocksServerData__;
 
       if (options.type == 'GET' && options.data) {
         this.appendDataToUrl(options.data);
       }
 
-      try {
-        if (options.dataType == 'jsonp') {
-          this.scriptRequest();
-        } else {
-          this.xhrRequest();
-        }
-      } catch (e) {
+      if (serverData && serverData.requests && serverData.requests[options.url]) {
+        this.callSuccess(serverData.requests[options.url]);
+      } else {
+        try {
+          if (options.dataType == 'jsonp') {
+            this.scriptRequest();
+          } else {
+            this.xhrRequest();
+          }
+        } catch (e) {
 
+        }
       }
     },
 

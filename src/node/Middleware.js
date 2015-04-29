@@ -94,14 +94,15 @@ define([
     _createEnv: function (req) {
       var server = new ServerEnv(this._options, this._contents);
 
-      return blocks.extend({ server: server }, this._createBrowserEnv(req));
+      return blocks.extend({ server: server }, this._createBrowserEnv(req, server));
     },
 
-    _createBrowserEnv: function (req) {
+    _createBrowserEnv: function (req, server) {
       var browserEnv = BrowserEnv.Create();
 
       browserEnv.fillLocation(this._getLocation(req));
       browserEnv.addElementsById(this._elementsById);
+      browserEnv.fillServer(server);
 
       return browserEnv.getObject();
     },

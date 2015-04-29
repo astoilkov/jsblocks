@@ -534,27 +534,6 @@ define([
     return haveStyle ? html : '';
   }
 
-  //function generateStyleValue(style) {
-  //  var html = '';
-  //  var haveStyle = false;
-  //  var key;
-  //  var value;
-  //
-  //  for (key in style) {
-  //    value = style[key];
-  //    if (value != null) {
-  //      haveStyle = true;
-  //      key = key.replace(/[A-Z]/g, replaceStyleAttribute);
-  //      html += key;
-  //      html += ':';
-  //      html += value;
-  //      html += ';';
-  //    }
-  //  }
-  //  html += '';
-  //  return html;
-  //}
-
   function replaceStyleAttribute(match) {
     return '-' + match.toLowerCase();
   }

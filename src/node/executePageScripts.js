@@ -16,26 +16,40 @@ define([
 
   var funcs = {};
   function executeCode(env, code, callback) {
-    blocks.extend(this, env);
+    contextBubble(env, function () {
+      blocks.core.deleteApplication();
+      ElementsData.reset();
 
-    blocks.core.deleteApplication();
-    ElementsData.reset();
+      if (!funcs[code]) {
+        // jshint -W054
+        // Disable JSHint error: The Function constructor is a form of eval
+        funcs[code] = new Function('blocks', 'document', 'window', 'require', code);
+      }
 
-    if (!funcs[code]) {
-      // jshint -W054
-      // Disable JSHint error: The Function constructor is a form of eval
-      funcs[code] = new Function('blocks', 'document', 'window', 'require', code);
-    }
+      funcs[code].call(this, blocks, env.document, env.window, require);
 
-    funcs[code].call(this, blocks, env.document, env.window, require);
-
-    if (server.isReady()) {
-      handleResult(env, callback);
-    } else {
-      server.on('ready', function () {
+      server.onReady('init', function () {
         handleResult(env, callback);
       });
-    }
+    });
+  }
+
+  function contextBubble(obj, callback) {
+    var _this = this;
+    var values = {};
+
+    blocks.each(obj, function (val, name) {
+      values[name] = _this[name];
+      _this[name] = val;
+    });
+
+    callback();
+
+    server.onReady('sent', function () {
+      blocks.each(obj, function (val, name) {
+        _this[name] = values[name];
+      });
+    }, true);
   }
 
   function handleResult(env, callback) {
@@ -54,14 +68,20 @@ define([
       });
     }
 
-    if (hasRoute && !hasActive) {
-      callback('not found', null);
-    }
+    server.onReady('ready', function () {
+      if (hasRoute && !hasActive) {
+        callback('not found', null);
+      }
 
-    if (env.server.rendered) {
-      callback(null, env.server.rendered);
-    } else {
-      callback('no query', env.server.html);
+      if (env.server.rendered) {
+        callback(null, env.server.rendered);
+      } else {
+        callback('no query', env.server.html);
+      }
+    });
+
+    if (server.isReady()) {
+      server.trigger('ready');
     }
   }
 

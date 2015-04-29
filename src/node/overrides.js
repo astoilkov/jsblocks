@@ -38,31 +38,41 @@ define([
   };
 
   function renderChildren(children, domQuery) {
-    blocks.each(children, function (child) {
-      if (VirtualElement.Is(child)) {
-        if (child.tagName() == 'body') {
-          child._parent = null;
-          child.render(domQuery);
-          if (server.isReady()) {
-            renderBody(child);
-          } else {
-            server.on('ready', function () {
-              renderBody(child);
-            });
-          }
-        } else {
-          server.rendered += child.renderBeginTag();
-          renderChildren(child.children(), domQuery);
-          server.rendered += child.renderEndTag();
-        }
-      } else {
-        server.rendered += child;
+    var body = findByTagName(children, 'body');
+    var head = findByTagName(children, 'head');
+    var root = VirtualElement();
+
+    root._children = children;
+    body._parent = null;
+    body.render(domQuery);
+
+    server.onReady('started', function () {
+      if (head) {
+        head.children().splice(0, 0, getServerDataScript());
       }
+      server.rendered = root.renderChildren();
     });
   }
 
-  function renderBody(child) {
-    server.rendered += child.render() + VirtualElement('script').html('window.__blocksServerData__ = ' + JSON.stringify(server.data)).render();
+  function findByTagName(children, tagName) {
+    var result;
+
+    blocks.each(children, function(child) {
+      if (VirtualElement.Is(child)) {
+        if (child.tagName() == tagName) {
+          result = child;
+          return false;
+        } else {
+          result = findByTagName(child.children(), tagName);
+        }
+      }
+    });
+
+    return result;
+  }
+
+  function getServerDataScript() {
+    return VirtualElement('script').html('window.__blocksServerData__ = ' + JSON.stringify(server.data)).render();
   }
 
   var executeExpressionValue = Expression.Execute;
@@ -120,22 +130,32 @@ define([
   var path = require('path');
   Request.prototype.execute = function () {
     var _this = this;
-    var url = this.options.url;
+    var options = this.options;
+    var url = options.url;
+    var relativeUrl;
+    var requests;
     var views;
+
+    if (options.type == 'GET' && options.data) {
+      this.appendDataToUrl(options.data);
+    }
 
     if (blocks.startsWith(url, 'http') || blocks.startsWith(url, 'www')) {
 
     } else {
-      url = path.join(server.options.static, url);
+      relativeUrl = path.join(server.options.static, url);
       if (this.options.isView) {
         views = server.data.views = server.data.views || {};
         views[url] = true;
-        this.callSuccess(fs.readFileSync(url, {encoding: 'utf-8'}));
+        this.callSuccess(fs.readFileSync(relativeUrl, {encoding: 'utf-8'}));
       } else if (this.options.async === false) {
 
       } else {
+
         server.wait();
-        fs.readFile(url, { encoding: 'utf-8' }, function (err, contents) {
+        fs.readFile(relativeUrl, { encoding: 'utf-8' }, function (err, contents) {
+          requests = server.data.requests = server.data.requests || {};
+          requests[url] = contents;
           if (err) {
             _this.callError(err);
           } else {
@@ -154,6 +174,4 @@ define([
       this.callSuccess(contents);
     }
   };
-
-  //var createExpression =
 });

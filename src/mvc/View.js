@@ -38,7 +38,8 @@ define([
 
   View.prototype = {
     /**
-     * Determines if the view is visible
+     * Determines if the view is visible or not.
+     * This property is automatically populated when routing is enabled for the view.
      *
      * @memberof View
      * @name isActive
