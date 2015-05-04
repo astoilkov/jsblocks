@@ -357,11 +357,11 @@
           html: html
         });
 
-        expect($('#testElement')).toHaveAttr('data-value', '&lt;div&gt;content&lt;/div&gt;');
+        expect($('#testElement')).toHaveAttr('data-value', '&lt;div>content&lt;/div>');
 
         html('<input />');
 
-        expect($('#testElement')).toHaveAttr('data-value', '&lt;input /&gt;');
+        expect($('#testElement')).toHaveAttr('data-value', '&lt;input />');
       });
     });
   });
