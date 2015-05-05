@@ -68,6 +68,22 @@ define([
      */
     init: blocks.noop,
 
+    /**
+     * Override the ready method to perform actions when the DOM is ready and
+     * all data-query have been executed.
+     * 
+     * @memberof View
+     * @type {Function}
+     * 
+     * @example {javascript}
+     * var App = blocks.Application();
+     *
+     * App.View('ContactUs', {
+     *   ready: function () {
+     *     $('#contact-form').ajaxSubmit();
+     *   }
+     * });
+     */
     ready: blocks.noop,
 
     /**
@@ -76,7 +92,6 @@ define([
      *
      * @memberof View
      * @type {Function}
-     *
      *
      * @example {javascript}
      * var App = blocks.Application();
