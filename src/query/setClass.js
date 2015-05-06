@@ -23,7 +23,7 @@ define([
       var index;
 
       if (VirtualElement.Is(element)) {
-        classAttribute = element._attributes[classAttr];
+        classAttribute = element._getAttr(classAttr);
       } else if (element.classList) {
         if (classListMultiArguments) {
           element.classList[type].apply(element.classList, classNames);
@@ -55,7 +55,11 @@ define([
       }
 
       if (VirtualElement.Is(element)) {
-        element._attributes[classAttr] = classAttribute;
+        if (element._state) {
+          element._state.attributes[classAttr] = classAttribute;
+        } else {
+         element._attributes[classAttr] = classAttribute; 
+        }
       } else {
         element.className = classAttribute;
       }

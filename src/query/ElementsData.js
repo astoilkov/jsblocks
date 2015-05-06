@@ -1,14 +1,14 @@
 ﻿define([
   './var/dataIdAttr',
+  './var/virtualElementIdentity',
   './VirtualElement'
-], function (dataIdAttr, VirtualElement) {
+], function (dataIdAttr, virtualElementIdentity, VirtualElement) {
   var ElementsData = (function () {
     var data = {};
     var globalId = 1;
-    var freeIds = [];
-
+    
     function getDataId(element) {
-      var result = element ? VirtualElement.Is(element) ? element._attributes[dataIdAttr] :
+      var result = element ? VirtualElement.Is(element) ? element._state ? element._state.attributes[dataIdAttr] : element._attributes[dataIdAttr] :
         element.nodeType == 1 ? element.getAttribute(dataIdAttr) :
           element.nodeType == 8 ? /\s+(\d+):[^\/]/.exec(element.nodeValue) :
             null :
@@ -34,7 +34,6 @@
       reset: function () {
         data = {};
         globalId = 1;
-        freeIds = [];
       },
       /* @endif */
 
@@ -47,13 +46,29 @@
       },
 
       createIfNotExists: function (element) {
-        var currentData = data[element && getDataId(element)];
+        var isVirtual = element && element.__identity__ == virtualElementIdentity;
+        var currentData;
         var id;
+        
+        if (isVirtual) {
+          currentData = data[element._getAttr(dataIdAttr)];
+        } else {
+          currentData = data[element && getDataId(element)];
+        }
 
         if (!currentData) {
-          id = freeIds.pop() || globalId++;
+          id = globalId++;
           if (element) {
-            setDataId(element, id);
+            if (isVirtual && element._each) {
+              element._haveAttributes = true;
+              if (element._state) {
+                element._state.attributes[dataIdAttr] = id;
+              } else {
+                element._attributes[dataIdAttr] = id;
+              }
+            } else {
+              setDataId(element, id);
+            }
           }
 
           // if element is not defined then treat it as expression
@@ -64,15 +79,19 @@
           } else {
             currentData = data[id] = {
               id: id,
-              virtual: VirtualElement.Is(element) ? element : null,
+              virtual: isVirtual ? element : null,
               animating: 0,
               observables: {},
-              preprocess: VirtualElement.Is(element)
+              preprocess: isVirtual
             };
           }
         }
 
         return currentData;
+      },
+
+      byId: function (id) {
+        return data[id];
       },
 
       data: function (element, name, value) {
@@ -102,9 +121,6 @@
             }
           });
           data[id] = undefined;
-          //if (!force) {
-          //  freeIds.push(id);
-          //}
           if (VirtualElement.Is(element)) {
             element.attr(dataIdAttr, null);
           } else if (element.nodeType == 1) {

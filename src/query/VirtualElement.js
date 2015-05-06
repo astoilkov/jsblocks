@@ -1,24 +1,27 @@
 define([
   '../core',
+  '../var/hasOwn',
   '../modules/keys',
+  './var/virtualElementIdentity',
   './var/classAttr',
   './var/dataIdAttr',
+  './var/dataQueryAttr',
   './getClassIndex',
   './setClass',
   './escapeValue',
-  './resolveKeyValue',
   './createFragment',
+  './dom',
   './Expression',
-  './ElementsData',
-  './HtmlElement'
-], function (blocks, keys, classAttr, dataIdAttr, getClassIndex, setClass, escapeValue, createFragment,
-             Expression, ElementsData, HtmlElement) {
+  './ElementsData'
+], function (blocks, hasOwn, keys, virtualElementIdentity, classAttr, dataIdAttr, dataQueryAttr, getClassIndex, setClass, escapeValue, createFragment, dom,
+             Expression, ElementsData) {
 
   function VirtualElement(tagName) {
     if (!VirtualElement.prototype.isPrototypeOf(this)) {
       return new VirtualElement(tagName);
     }
 
+    this.__identity__ = virtualElementIdentity;
     this._tagName = tagName ? tagName.toString().toLowerCase() : null;
     this._attributes = {};
     this._attributeExpressions = [];
@@ -30,12 +33,11 @@ define([
     this._renderMode = VirtualElement.RenderMode.All;
     this._haveStyle = false;
     this._style = {};
-    this._changes = null;
+    this._states = null;
+    this._state = null;
 
     if (blocks.isElement(tagName)) {
-      this._el = HtmlElement(tagName);
-    } else {
-      this._el = HtmlElement.Empty();
+      this._el = tagName;
     }
   }
 
@@ -51,9 +53,16 @@ define([
     html: function (html) {
       if (arguments.length > 0) {
         html = html == null ? '' : html;
-        this._innerHTML = html;
+        if (this._state) {
+          if (this._state.html !== html) {
+            this._state.html = html;
+            dom.html(this._el, html);
+          }
+        } else {
+          this._innerHTML = html;
+          dom.html(this._el, html);
+        }
         this._children = [];
-        this._el.html(html);
         return this;
       }
       return this._innerHTML || '';
@@ -98,12 +107,13 @@ define([
         var type = this._attributes.type;
         var rawAttributeValue = attributeValue;
         var elementData = ElementsData.data(this);
+        var value = this._getAttr('value');
 
         attributeName = blocks.unwrapObservable(attributeName);
-        attributeName = HtmlElement.AttrFix[attributeName] || attributeName;
+        attributeName = dom.attrFix[attributeName] || attributeName;
         attributeValue = blocks.unwrapObservable(attributeValue);
 
-        if (blocks.isObservable(rawAttributeValue) && attributeName == 'value' && HtmlElement.ValueTagNames[tagName] && (!type || HtmlElement.ValueTypes[type])) {
+        if (blocks.isObservable(rawAttributeValue) && attributeName == 'value' && dom.valueTagNames[tagName] && (!type || dom.valueTypes[type])) {
           elementData.subscribe = tagName == 'select' ? 'change' : 'input';
           elementData.valueObservable = rawAttributeValue;
         } else if (blocks.isObservable(rawAttributeValue) &&
@@ -114,14 +124,14 @@ define([
         }
 
         if (arguments.length == 1) {
-          returnValue = this._attributes[attributeName];
+          returnValue = this._getAttr(attributeName);
           return returnValue === undefined ? null : returnValue;
         }
 
         if (attributeName == 'checked' && attributeValue != null && !this._fake) {
           if (this._attributes.type == 'radio' &&
             typeof attributeValue == 'string' &&
-            attributeValue != this._attributes.value && this._attributes.value != null) {
+            value != attributeValue && value != null) {
 
             attributeValue = null;
           } else {
@@ -131,18 +141,22 @@ define([
           attributeValue = attributeValue ? 'disabled' : null;
         }
 
-        if (tagName == 'textarea' && attributeName == 'value' && this._el == HtmlElement.Empty()) {
+        if (tagName == 'textarea' && attributeName == 'value' && !this._el) {
           this.html(attributeValue);
         } else if (attributeName == 'value' && tagName == 'select') {
           this._values = keys(blocks.toArray(attributeValue));
-          this._el.attr(attributeName, attributeValue);
+          dom.attr(this._el, attributeName, attributeValue);
         } else {
-          if (this._changes) {
-            this._changes.attributes.push([attributeName, this._attributes[attributeName]]);
-          }
           this._haveAttributes = true;
-          this._attributes[attributeName] = attributeValue;
-          this._el.attr(attributeName, attributeValue);
+          if (this._state) {
+            if (this._state.attributes[attributeName] !== attributeValue) {
+              this._state.attributes[attributeName] = attributeValue;
+              dom.attr(this._el, attributeName, attributeValue);
+            }
+          } else {
+            this._attributes[attributeName] = attributeValue;
+            dom.attr(this._el, attributeName, attributeValue);
+          }
         }
       } else if (blocks.isPlainObject(attributeName)) {
         blocks.each(attributeName, function (val, key) {
@@ -155,7 +169,7 @@ define([
 
     removeAttr: function (attributeName) {
       this._attributes[attributeName] = null;
-      this._el.removeAttr(attributeName);
+      dom.removeAttr(this._el, attributeName);
       return this;
     },
 
@@ -175,7 +189,7 @@ define([
         });
 
         if (arguments.length === 1) {
-          value = this._style[propertyName];
+          value = this._getCss(propertyName);
           return value === undefined ? null : value;
         }
 
@@ -183,15 +197,19 @@ define([
           value = value == 'none' || (!value && value !== '') ? 'none' : '';
         }
 
-        if (this._changes) {
-          this._changes.styles.push([propertyName, this._style[propertyName]]);
-        }
         this._haveStyle = true;
         if (!VirtualElement.CssNumbers[propertyName]) {
           value = blocks.toUnit(value);
         }
-        this._style[propertyName] = value;
-        this._el.css(propertyName, value);
+        if (this._state) {
+          if (this._state.style[propertyName] !== value) {
+            this._state.style[propertyName] = value;
+            dom.css(this._el, propertyName, value);
+          }
+        } else {
+          this._style[propertyName] = value;
+          dom.css(this._el, propertyName, value);
+        }
       } else if (blocks.isPlainObject(propertyName)) {
         blocks.each(propertyName, function (val, key) {
           _this.css(key, val);
@@ -203,17 +221,19 @@ define([
 
     addChild: function (element, index) {
       var children = this._template || this._children;
+      var fragment;
+      
       if (element) {
         element._parent = this;
         if (this._childrenEach || this._each) {
           element._each = true;
-        } else if (this._el._element) {
+        } else if (this._el) {
+          fragment = createFragment(element.render(blocks.domQuery(this)));
+          element._el = fragment.childNodes[0]; 
           if (typeof index === 'number') {
-            this._el.element.insertBefore(
-              createFragment(element.render(blocks.domQuery(this))), this._el.element.childNodes[index]);
+            this._el.insertBefore(fragment, this._el.childNodes[index]);
           } else {
-            this._el._element.appendChild(
-              createFragment(element.render(blocks.domQuery(this))));
+            this._el.appendChild(fragment);
           }
         }
         if (typeof index === 'number') {
@@ -227,13 +247,13 @@ define([
 
     addClass: function (className) {
       setClass('add', this, className);
-      this._el.addClass(className);
+      dom.addClass(this._el, className);
       return this;
     },
 
     removeClass: function (className) {
       setClass('remove', this, className);
-      this._el.removeClass(className);
+      dom.removeClass(this._el, className);
       return this;
     },
 
@@ -257,7 +277,7 @@ define([
         html += this._renderAttributes();
       }
       if (this._haveStyle) {
-        html += generateStyleAttribute(this._style);
+        html += generateStyleAttribute(this._style, this._state);
       }
       html += this._isSelfClosing ? ' />' : '>';
 
@@ -271,12 +291,25 @@ define([
       return '</' + this._tagName + '>';
     },
 
-    render: function (domQuery) {
+    render: function (domQuery, syncIndex) {
       var html = '';
       var childHtml = '';
       var htmlElement = this._el;
 
-      this._el = HtmlElement.Empty();
+      if (syncIndex !== undefined) {
+        this._state = {
+          attributes: {},
+          style: {},
+          html: null,
+          expressions: {}
+        };
+        if (!this._states) {
+          this._states = {};
+        }
+        this._states[syncIndex] = this._state;
+      }
+
+      this._el = undefined;
 
       this._execute(domQuery);
 
@@ -284,10 +317,12 @@ define([
 
       if (this._renderMode != VirtualElement.RenderMode.None) {
         if (this._renderMode != VirtualElement.RenderMode.ElementOnly) {
-          if (this._innerHTML != null) {
+          if (this._state && this._state.html !== null) {
+            childHtml = this._state.html;
+          } else if (this._innerHTML != null) {
             childHtml = this._innerHTML;
           } else {
-            childHtml = this.renderChildren(domQuery);
+            childHtml = this.renderChildren(domQuery, syncIndex);
           }
         }
 
@@ -298,15 +333,18 @@ define([
         html += this.renderEndTag();
       }
 
+      this._state = null;
+
       return html;
     },
 
-    renderChildren: function (domQuery) {
+    renderChildren: function (domQuery, syncIndex) {
       var html = '';
       var children = this._template || this._children;
       var length = children.length;
       var index = -1;
       var child;
+      var value;
 
       while (++index < length) {
         child = children[index];
@@ -314,9 +352,13 @@ define([
           html += child;
         } else if (VirtualElement.Is(child)) {
           child._each = child._each || this._each;
-          html += child.render(domQuery);
+          html += child.render(domQuery, syncIndex);
         } else if (domQuery) {
-          html += Expression.GetValue(domQuery._context, null, child);
+          value = Expression.GetValue(domQuery._context, null, child);
+          if (this._state) {
+            this._state.expressions[index] = value;
+          }
+          html += value;
         } else {
           if (!this._each && child.lastResult) {
             html += child.lastResult;
@@ -329,86 +371,197 @@ define([
       return html;
     },
 
-    sync: function (domQuery) {
+    sync: function (domQuery, syncIndex, element) {
+      if (syncIndex) {
+        this._state = this._states[syncIndex];
+        this._el = element;
+        this._each = false;
+        this._sync = true;
+      }
+      
       this._execute(domQuery);
-
-      var children = this._children;
-      var length = children.length;
-      var index = -1;
-      var htmlElement;
-      var lastVirtual;
-      var child;
 
       this.renderBeginTag();
 
-      if (this._innerHTML || this._childrenEach) {
-        this.renderEndTag();
-        return;
-      }
-
-      while (++index < length) {
-        child = children[index];
-        if (VirtualElement.Is(child)) {
-          child._each = child._each || this._each;
-
-          child.sync(domQuery);
-
-          htmlElement = null;
-          lastVirtual = child;
-        } else if (typeof child != 'string' && domQuery) {
-          htmlElement = (htmlElement && htmlElement.nextSibling) || (lastVirtual && lastVirtual._el._element.nextSibling);
-          if (!htmlElement) {
-            if (this._el._element.nodeType == 1) {
-              htmlElement = this._el._element.childNodes[0];
-            } else {
-              htmlElement = this._el._element.nextSibling;
-            }
-          }
-          if (htmlElement) {
-            htmlElement.parentNode.insertBefore(createFragment(Expression.GetValue(domQuery._context, null, child)), htmlElement);
-            htmlElement.parentNode.removeChild(htmlElement);
-          }
-        }
+      if (!this._innerHTML && !this._childrenEach && this._renderMode != VirtualElement.RenderMode.None) {
+        this.syncChildren(domQuery, syncIndex);
       }
 
       this.renderEndTag();
+      
+      if (syncIndex) {
+        this._state = null;
+        this._el = undefined;
+        this._each = true;
+        this._sync = false;
+      }
+    },
+
+    syncChildren: function (domQuery, syncIndex, offset) {
+      var children = this._template || this._children;
+      var length = children.length;
+      var state = this._state;
+      var element = this._el.nodeType == 8 ? this._el.nextSibling : this._el.childNodes[offset || 0];
+      var index = -1;
+      var elementForDeletion;
+      var expression;
+      var child;
+      
+      while (++index < length) {
+        child = children[index];
+        if (child.isExpression) {
+          if (domQuery) {
+            expression = Expression.GetValue(domQuery._context, null, child, state ? Expression.ValueOnly : Expression.Html);
+            
+            if (!state || (state && state.expressions[index] !== expression)) {
+              if (state) {
+                state.expressions[index] = expression;
+                if (element) {
+                  if (element.nodeType == 8) {
+                    element = element.nextSibling;
+                  }
+                  element.nodeValue = expression;
+                  element = element.nextSibling;
+                } else {
+                  this._el.textContent = expression;
+                }
+              } else {
+                this._el.insertBefore(createFragment(expression), element);
+                elementForDeletion = element;
+                element = element.nextSibling;
+                this._el.removeChild(elementForDeletion);
+              }
+            }
+          }
+        } else if (typeof child != 'string' && child._renderMode != VirtualElement.RenderMode.None) {
+          child._each = child._each || this._each;
+
+          child.sync(domQuery, syncIndex, element);
+          
+          element = element.nextSibling;
+        } else {
+          element = element.nextSibling;
+        }
+      }
+    },
+    
+    updateChildren: function (domQuery, collection, domElement) {
+      var template = this._template;
+      var child = template[0];
+      var isOneChild = template.length === 1 && VirtualElement.Is(child);
+      var childNodes = domElement.childNodes;
+      var syncIndex = domQuery.getSyncIndex();
+      var childContexts = domQuery._context.childs;
+      var chunkLength = this._length();
+      var length = Math.min(collection.length, childNodes.length);
+      var index = -1;
+      var context;
+      
+      while (++index < length) {
+        domQuery._context = context = childContexts[index];
+        context.$this = collection[index];
+        context.$parent = context.$parentContext.$this;
+        if (isOneChild) {
+          child.sync(domQuery, syncIndex + index, childNodes[index]);
+        } else {
+          this.syncChildren(domQuery, syncIndex + index, index * chunkLength);
+        }
+      }
+
+      domQuery.popContext();
+    },
+    
+    _length: function () {
+      var template = this._template;
+      var index = -1;
+      var length = 0;
+      
+      while (++index < template.length) {
+        if (template[index]._renderMode !== VirtualElement.RenderMode.None) {
+          length += 1;
+        }
+      }
+      
+      return length;
+    },
+    
+    _getAttr: function (name) {
+      var state = this._state;
+      return state && state.attributes[name] !== undefined ? state.attributes[name] : this._attributes[name];
+    },
+    
+    _getCss: function (name) {
+      var state = this._state;
+      return state && state.style[name] !== undefined ? state.style[name] : this._style[name];
     },
 
     _execute: function (domQuery) {
       if (!domQuery) {
         return;
       }
+
       if (this._each) {
-        this._revertChanges();
-        this._trackChanges();
-        this._el = HtmlElement.Empty();
+        this._el = undefined;
       }
 
       if (this._renderMode != VirtualElement.RenderMode.None) {
-        ElementsData.createIfNotExists(this);
-        domQuery.applyContextToElement(this);
-        this._executeAttributeExpressions(domQuery._context);
-        domQuery.executeElementQuery(this);
-        ElementsData.clear(this);
+        var id = this._attributes[dataIdAttr];
+        var data;
+
+        if (!id || domQuery._serverData) {
+          ElementsData.createIfNotExists(this);
+          domQuery.applyContextToElement(this);
+          id = this._attributes[dataIdAttr];
+          data = ElementsData.byId(id);
+        }
+        
+        if (this._attributeExpressions.length) {
+          this._executeAttributeExpressions(domQuery._context);  
+        }
+        
+        domQuery.executeQuery(this, this._attributes[dataQueryAttr]);
+        
+        if (data && !data.haveData) {
+          ElementsData.clear(this);  
+        }
       }
     },
 
     _renderAttributes: function () {
       var attributes = this._attributes;
+      var state = this._state;
       var html = '';
       var key;
       var value;
 
       if (this._tagName == 'option' && this._parent._values) {
-        attributes.selected = this._parent._values[attributes.value] ? 'selected' : null;
+        if (state) {
+          state.attributes.selected = this._parent._values[state.attributes.value] ? 'selected' : null;  
+        } else {
+          attributes.selected = this._parent._values[attributes.value] ? 'selected' : null;  
+        }
       }
 
       for (key in attributes) {
         value = attributes[key];
+        if (state && hasOwn.call(state.attributes, key)) {
+          continue;
+        }
         if (value === '') {
           html += ' ' + key;
         } else if (value != null) {
           html += ' ' + key + '="' + value + '"';
+        }
+      }
+
+      if (state) {
+        for (key in state.attributes) {
+          value = state.attributes[key];
+          if (value === '') {
+            html += ' ' + key;
+          } else if (value != null) {
+            html += ' ' + key + '="' + value + '"';
+          }
         }
       }
 
@@ -434,62 +587,35 @@ define([
     },
 
     _executeAttributeExpressions: function (context) {
-      var element = this._each || HtmlElement.Empty() === this._el ? this : this._el;
-      var elementData = ElementsData.data(this);
+      var isVirtual = this._el ? false : true;
+      var attributes = this._state && this._state.attributes;
+      var elementData = ElementsData.byId(attributes ? attributes[dataIdAttr] : this._attributes[dataIdAttr]);
+      var expressions = this._attributeExpressions;
+      var attributeName;
+      var expression;
+      var value;
 
-      blocks.each(this._attributeExpressions, function (expression) {
-        element.attr(expression.attributeName, Expression.GetValue(context, elementData, expression));
-      });
-    },
-
-    _revertChanges: function () {
-      if (!this._changes) {
-        return;
-      }
-      var elementStyles = this._style;
-      var elementAttributes = this._attributes;
-      var changes = this._changes;
-      var styles = changes.styles;
-      var attributes = changes.attributes;
-      var length = Math.max(styles.length, attributes.length);
-      var i = length - 1;
-      var style;
-      var attribute;
-
-      for (; i >= 0; i--) {
-        style = styles[i];
-        attribute = attributes[i];
-        if (style) {
-          elementStyles[style[0]] = style[1];
-        }
-        if (attribute) {
-          elementAttributes[attribute[0]] = attribute[1];
+      for (var i = 0; i < expressions.length; i++) {
+        expression = expressions[i];
+        value = Expression.GetValue(context, elementData, expression);
+        attributeName = expression.attributeName; 
+        if ((attributes && attributes[attributeName] !== value) || !attributes) {
+          if (isVirtual) {
+            if (this._state) {
+              this._state.attributes[attributeName] = value;
+            } else {
+              this._attributes[attributeName] = value;
+            }
+          } else {
+            dom.attr(this._el, attributeName, value);  
+          }
         }
       }
-
-      this._attributes[classAttr] = changes[classAttr];
-      this._tagName = changes.tagName;
-      this._innerHTML = changes.html;
-      this._renderMode = VirtualElement.RenderMode.All;
-    },
-
-    _trackChanges: function () {
-      this._changes = {
-        styles: [],
-        attributes: [],
-        'class': this._attributes[classAttr],
-        html: this._innerHTML,
-        tagName: this._tagName
-      };
-    },
-
-    _removeRelation: function () {
-      this._el = HtmlElement.Empty();
     }
   });
 
   VirtualElement.Is = function (value) {
-    return VirtualElement.prototype.isPrototypeOf(value);
+    return value && value.__identity__ == virtualElementIdentity;
   };
 
   VirtualElement.RenderMode = {
@@ -513,7 +639,7 @@ define([
     'zoom': true
   };
 
-  function generateStyleAttribute(style) {
+  function generateStyleAttribute(style, state) {
     var html = ' style="';
     var haveStyle = false;
     var key;
@@ -521,6 +647,9 @@ define([
 
     for (key in style) {
       value = style[key];
+      if (state && hasOwn.call(state.style, key)) {
+        continue;
+      }
       if (value || value === 0) {
         haveStyle = true;
         key = key.replace(/[A-Z]/g, replaceStyleAttribute);
@@ -530,6 +659,21 @@ define([
         html += ';';
       }
     }
+    
+    if (state) {
+      for (key in state.style) {
+        value = state.style[key];
+        if (value || value === 0) {
+          haveStyle = true;
+          key = key.replace(/[A-Z]/g, replaceStyleAttribute);
+          html += key;
+          html += ':';
+          html += value;
+          html += ';';
+        }
+      }  
+    }
+
     html += '"';
     return haveStyle ? html : '';
   }

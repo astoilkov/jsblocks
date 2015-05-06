@@ -220,6 +220,40 @@
         expect($('#testElement')).toHaveText('<input />');
         expect($('#testElement').children().length).toBe(0);
       });
+      
+      it('multiple observables and non observables are synced correctly', function () {
+        var observable = blocks.observable(2);
+        
+        appendText('{{nonObservable}}{{observable}}{{observable}}{{nonObservable}}{{nonObservable}}{{observable}}');
+        
+        query({
+          nonObservable: 1,
+          observable: observable
+        });
+        
+        expect($('#testElement')).toHaveText('122112');
+        
+        observable(3);
+        
+        expect($('#testElement')).toHaveText('133113');
+      });
+      
+      it('multiple observables and non observables (with spaces between them) are synced correctly', function () {
+        var observable = blocks.observable(2);
+        
+        appendText(' {{nonObservable}} {{observable}} {{observable}} {{nonObservable}} {{nonObservable}} {{observable}} ');
+        
+        query({
+          nonObservable: 1,
+          observable: observable
+        });
+        
+        expect($('#testElement').text()).toBe(' 1 2 2 1 1 2 ');
+        
+        observable(3);
+        
+        expect($('#testElement').text()).toBe(' 1 3 3 1 1 3 ');
+      });
     });
 
     describe('attributes', function () {
@@ -357,11 +391,11 @@
           html: html
         });
 
-        expect($('#testElement')).toHaveAttr('data-value', '&lt;div&gt;content&lt;/div&gt;');
+        expect($('#testElement')).toHaveAttr('data-value', '&lt;div>content&lt;/div>');
 
-        html('<input />');
+        html('<input />&nbsp;');
 
-        expect($('#testElement')).toHaveAttr('data-value', '&lt;input /&gt;');
+        expect($('#testElement')).toHaveAttr('data-value', '&lt;input />&amp;nbsp;');
       });
     });
   });

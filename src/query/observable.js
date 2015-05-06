@@ -5,14 +5,14 @@ define([
   '../modules/Events',
   './var/parameterQueryCache',
   './var/OBSERVABLE',
+  './dom',
   './Expression',
   './ChunkManager',
   './ElementsData',
   './Observer',
-  './VirtualElement',
-  './HtmlElement'
-], function (blocks, slice, trimRegExp, Events, parameterQueryCache, OBSERVABLE,
-             Expression, ChunkManager, ElementsData, Observer, VirtualElement, HtmlElement) {
+  './VirtualElement'
+], function (blocks, slice, trimRegExp, Events, parameterQueryCache, OBSERVABLE, dom,
+             Expression, ChunkManager, ElementsData, Observer, VirtualElement) {
 
   var observableId = 1;
 
@@ -37,9 +37,8 @@ define([
       } else if (!blocks.equals(value, currentValue, false) && Events.trigger(observable, 'changing', value, currentValue) !== false) {
         observable.update = blocks.noop;
         if (!observable._dependencyType) {
-          if (blocks.isArray(currentValue) && blocks.isArray(value) && observable.removeAll && observable.addMany) {
-            observable.removeAll();
-            observable.addMany(value);
+          if (blocks.isArray(currentValue) && blocks.isArray(value) && observable.reset) {
+            observable.reset(value);
           } else {
             observable.__value__ = value;
           }
@@ -99,7 +98,6 @@ define([
     Observer.startObserving();
     accessor.call(observable.__context__);
     blocks.each(Observer.stopObserving(), function (dependency) {
-      //(dependency._dependencies = dependency._dependencies || []).push(observable);
       var dependencies = (dependency._dependencies = dependency._dependencies || []);
       var exists = false;
       blocks.each(dependencies, function (value) {
@@ -120,11 +118,16 @@ define([
       : observable._dependencyType == 2 ? observable.__value__.get.call(context)
       : observable.__value__;
   }
+  
+  var observableIndexes = {};
 
   blocks.extend(blocks.observable, {
     getIndex: function (observable, index, forceGet) {
       if (!blocks.isObservable(observable)) {
-        return blocks.observable(index);
+        if (!observableIndexes[index]) {
+          observableIndexes[index] = blocks.observable(index);
+        }
+        return observableIndexes[index];
       }
       var indexes = observable._indexes;
       var $index;
@@ -134,7 +137,7 @@ define([
           $index = indexes[index];
         } else {
           $index = blocks.observable(index);
-          indexes.push($index);
+          indexes.splice(index, 0, $index);
         }
       } else {
         $index = blocks.observable(index);
@@ -315,9 +318,60 @@ define([
          * // removes the previous values and fills the observable array with [5, 6, 7] values
          * items.reset([5, 6, 7]);
          */
-        reset: function (value) {
-          value = blocks.isArray(value) ? value : [];
-          return this(value);
+        reset: function (array) {
+          if (arguments.length === 0) {
+            this.removeAll();
+            return this;
+          }
+          
+          var current = this.__value__;
+          var chunkManager = this._chunkManager;
+          var addCount = array.length - current.length;
+          var removeCount = Math.max(current.length - array.length, 0);
+          
+          array = blocks.unwrap(array);
+          
+          Events.trigger(this, 'removing', {
+            type: 'removing',
+            items: current,
+            index: 0
+          });
+          
+          Events.trigger(this, 'adding', {
+            type: 'adding',
+            items: array,
+            index: 0
+          });
+
+          chunkManager.each(function (domElement, virtualElement) {
+            var domQuery = blocks.domQuery(domElement);
+            
+            domQuery.contextBubble(blocks.context(domElement), function () {
+                virtualElement.updateChildren(domQuery, array, domElement);
+            });
+          });
+          
+          if (addCount > 0) {
+            chunkManager.add(array.slice(current.length), current.length);
+          } else if (removeCount > 0) {
+            chunkManager.remove(array.length, removeCount);
+          }
+          
+          this.__value__ = array;
+          
+          Events.trigger(this, 'remove', {
+            type: 'remove',
+            items: current,
+            index: 0
+          });
+          
+          Events.trigger(this, 'add', {
+            type: 'add',
+            items: array,
+            index: 0
+          });
+          
+          return this;
         },
 
         /**
@@ -741,9 +795,7 @@ define([
          * @returns {Array} A new array containing the removed items, if any.
          */
         splice: function (index, howMany) {
-          var _this = this;
           var array = this.__value__;
-          var indexes = this._indexes;
           var chunkManager = this._chunkManager;
           var returnValue = [];
           var args = arguments;
@@ -760,22 +812,14 @@ define([
               index: index
             });
 
-            chunkManager.each(function (domElement) {
-              for (var j = 0; j < howMany; j++) {
-                chunkManager.removeAt(domElement, index);
-              }
-            });
-
-            ElementsData.collectGarbage();
-
-            indexes.splice(index, howMany);
+            chunkManager.remove(index, howMany);
+            
             returnValue = array.splice(index, howMany);
             Events.trigger(this, 'remove', {
               type: 'remove',
               items: returnValue,
               index: index
             });
-            chunkManager.dispose();
           }
 
           if (args.length > 2) {
@@ -786,39 +830,9 @@ define([
               index: index,
               items: addItems
             });
-
-            blocks.each(addItems, function (item, i) {
-              indexes.splice(index + i, 0, blocks.observable(index + i));
-            });
-
-            chunkManager.each(function (domElement, virtualElement) {
-              var html = '';
-              var length = addItems.length;
-              var i = 0;
-
-              var domQuery = blocks.domQuery(domElement);
-              domQuery.contextBubble(blocks.context(domElement), function () {
-                for (; i < length; i++) {
-                  // TODO: Should be refactored in a method because
-                  // the same logic is used in the each method
-                  domQuery.dataIndex(blocks.observable.getIndex(_this, index + i, true));
-                  domQuery.pushContext(addItems[i]);
-                  html += virtualElement.renderChildren(domQuery);
-                  domQuery.popContext();
-                  domQuery.dataIndex(undefined);
-                }
-              });
-
-              if (domElement.childNodes.length === 0) {
-                (new HtmlElement(domElement)).html(html);
-                //domElement.innerHTML = html;
-                domQuery.createElementObservableDependencies(domElement.childNodes);
-              } else {
-                var fragment = domQuery.createFragment(html);
-                chunkManager.insertAt(domElement, index, fragment);
-              }
-            });
-
+            
+            chunkManager.add(addItems, index);
+            
             array.splice.apply(array, [index, 0].concat(addItems));
             Events.trigger(this, 'add', {
               type: 'add',
@@ -826,9 +840,6 @@ define([
               items: addItems
             });
           }
-
-          // TODO: Explain why this is here. Fixes a bug.
-          chunkManager.dispose();
 
           this.update();
           return returnValue;

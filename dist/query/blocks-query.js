@@ -1468,35 +1468,21 @@
   }
 
   var ampRegEx = /&/g;
-  var quotRegEx = /"/g;
-  var singleQuoteRegEx = /'/g;
   var lessThanRegEx = /</g;
-  var greaterThanRegEx = />/g;
+
   function escapeValue(value) {
     return String(value)
       .replace(ampRegEx, '&amp;')
-      .replace(quotRegEx, '&quot;')
-      .replace(singleQuoteRegEx, '&#39;')
-      .replace(lessThanRegEx, '&lt;')
-      .replace(greaterThanRegEx, '&gt;');
-    // return document
-    //   .createElement('a')
-    //   .appendChild(document.createTextNode(value))
-    //     .parentNode
-    //     .innerHTML;
+      .replace(lessThanRegEx, '&lt;');
   }
+    var hasOwn = Object.prototype.hasOwnProperty;
+
+    var virtualElementIdentity = '__blocks.VirtualElement__';
+
     var dataIdAttr = 'data-id';
 
+    var dataQueryAttr = 'data-query';
 
-  function resolveKeyValue(nameOrObject, value, callback) {
-    if (typeof nameOrObject == 'string') {
-      callback(nameOrObject, value);
-    } else if (blocks.isPlainObject(nameOrObject)) {
-      blocks.each(nameOrObject, function (val, key) {
-        callback(key, val);
-      });
-    }
-  }
 
   function createFragment(html) {
     var fragment = document.createDocumentFragment();
@@ -1540,305 +1526,6 @@
 
     return fragment;
   }
-    var parameterQueryCache = {};
-
-
-  var ElementsData = (function () {
-    var data = {};
-    var globalId = 1;
-    var freeIds = [];
-
-    function getDataId(element) {
-      var result = element ? VirtualElement.Is(element) ? element._attributes[dataIdAttr] :
-        element.nodeType == 1 ? element.getAttribute(dataIdAttr) :
-          element.nodeType == 8 ? /\s+(\d+):[^\/]/.exec(element.nodeValue) :
-            null :
-        null;
-
-      return blocks.isArray(result) ? result[1] : result;
-    }
-
-    function setDataId(element, id) {
-      if (VirtualElement.Is(element)) {
-        element.attr(dataIdAttr, id);
-      } else if (element.nodeType == 1) {
-        element.setAttribute(dataIdAttr, id);
-      }
-    }
-
-    return {
-      id: function (element) {
-        return getDataId(element);
-      },
-
-      /* @if SERVER */
-      reset: function () {
-        data = {};
-        globalId = 1;
-        freeIds = [];
-      },
-      /* @endif */
-
-      collectGarbage: function () {
-        blocks.each(data, function (value) {
-          if (value && value.dom && !document.body.contains(value.dom)) {
-            ElementsData.clear(value.id, true);
-          }
-        });
-      },
-
-      createIfNotExists: function (element) {
-        var currentData = data[element && getDataId(element)];
-        var id;
-
-        if (!currentData) {
-          id = freeIds.pop() || globalId++;
-          if (element) {
-            setDataId(element, id);
-          }
-
-          // if element is not defined then treat it as expression
-          if (!element) {
-            currentData = data[id] = {
-              id: id
-            };
-          } else {
-            currentData = data[id] = {
-              id: id,
-              virtual: VirtualElement.Is(element) ? element : null,
-              animating: 0,
-              observables: {},
-              preprocess: VirtualElement.Is(element)
-            };
-          }
-        }
-
-        return currentData;
-      },
-
-      data: function (element, name, value) {
-        var result = data[getDataId(element) || element];
-        if (!result) {
-          return;
-        }
-        if (arguments.length == 1) {
-          return result;
-        } else if (arguments.length > 2) {
-          result[name] = value;
-        }
-        return result[name];
-      },
-
-      clear: function (element, force) {
-        var id = getDataId(element) || element;
-        var currentData = data[id];
-
-        if (currentData && (!currentData.haveData || force)) {
-          blocks.each(currentData.observables, function (value) {
-            for (var i = 0; i < value._elements.length; i++) {
-              if (value._elements[i].elementId == data.id) {
-                value._elements.splice(i, 1);
-                i--;
-              }
-            }
-          });
-          data[id] = undefined;
-          //if (!force) {
-          //  freeIds.push(id);
-          //}
-          if (VirtualElement.Is(element)) {
-            element.attr(dataIdAttr, null);
-          } else if (element.nodeType == 1) {
-            element.removeAttribute(dataIdAttr);
-          }
-        }
-      }
-    };
-  })();
-
-  var Observer = (function () {
-    var stack = [];
-
-    return {
-      startObserving: function () {
-        stack.push([]);
-      },
-
-      stopObserving: function () {
-        return stack.pop();
-      },
-
-      currentObservables: function () {
-        return stack[stack.length - 1];
-      },
-
-      registerObservable: function (newObservable) {
-        var observables = stack[stack.length - 1];
-        var alreadyExists = false;
-
-        if (observables) {
-          blocks.each(observables, function (observable) {
-            if (observable === newObservable) {
-              alreadyExists = true;
-              return false;
-            }
-          });
-          if (!alreadyExists) {
-            observables.push(newObservable);
-          }
-        }
-      }
-    };
-  })();
-
-  var Expression = {
-    Create: function (text, attributeName, element) {
-      var index = -1;
-      var endIndex = 0;
-      var result = [];
-      var character;
-      var startIndex;
-      var match;
-
-      while (text.length > ++index) {
-        character = text.charAt(index);
-
-        if (character == '{' && text.charAt(index + 1) == '{') {
-          startIndex = index + 2;
-        } else if (character == '}' && text.charAt(index + 1) == '}') {
-          if (startIndex) {
-            match = text.substring(startIndex, index);
-            if (!attributeName) {
-              match = match
-                .replace(/&amp;/g, '&')
-                .replace(/&quot;/g, '"')
-                .replace(/&#39;/g, '\'')
-                .replace(/&lt;/g, '<')
-                .replace(/&gt;/g, '>');
-            }
-
-            character = text.substring(endIndex, startIndex - 2);
-            if (character) {
-              result.push(character);
-            }
-
-            result.push({
-              expression: match,
-              attributeName: attributeName
-            });
-
-            endIndex = index + 2;
-          }
-          startIndex = 0;
-        }
-      }
-
-      character = text.substring(endIndex);
-      if (character) {
-        result.push(character);
-      }
-
-      result.text = text;
-      result.attributeName = attributeName;
-      result.element = element;
-      return match ? result : null;
-    },
-
-    GetValue: function (context, elementData, expression) {
-      var value = '';
-
-      if (!context) {
-        return expression.text;
-      }
-
-      blocks.each(expression, function (chunk) {
-        if (typeof chunk == 'string') {
-          value += chunk;
-        } else {
-          value += Expression.Execute(context, elementData, chunk, expression).value;
-        }
-      });
-
-      expression.lastResult = value;
-
-      return value;
-    },
-
-    Execute: function (context, elementData, expressionData, entireExpression) {
-      var expression = expressionData.expression;
-      var attributeName = expressionData.attributeName;
-      var expressionObj;
-      var observables;
-      var result;
-      var value;
-      var func;
-
-      // jshint -W054
-      // Disable JSHint error: The Function constructor is a form of eval
-      func = parameterQueryCache[expression] = parameterQueryCache[expression] ||
-        new Function('c', 'with(c){with($this){ return ' + expression + '}}');
-
-      Observer.startObserving();
-
-      /* @if DEBUG */ {
-        try {
-          value = func(context);
-        } catch (ex) {
-          blocks.debug.expressionFail(expression, entireExpression.element);
-        }
-      } /* @endif */
-
-      value = func(context);
-
-      result = blocks.unwrap(value);
-      result = result == null ? '' : result.toString();
-      result = escapeValue(result);
-
-      observables = Observer.stopObserving();
-
-      //for (key in elementData.observables) {
-        //  blocks.observable.cache[key]._expressions.push({
-        //    length: elementData.length,
-        //    element: currentElement,
-        //    expression: elementData.expression,
-        //    context: elementData.context
-        //  });
-        //}
-
-      if (blocks.isObservable(value) || observables.length) {
-        if (!attributeName) {
-          elementData = ElementsData.createIfNotExists();
-        }
-        if (elementData) {
-          elementData.haveData = true;
-
-          expressionObj = {
-            length: result.length,
-            attr: attributeName,
-            context: context,
-            elementId: elementData.id,
-            expression: expression,
-            entire: entireExpression
-          };
-
-          blocks.each(observables, function (observable) {
-            if (!observable._expressionKeys[elementData.id]) {
-              observable._expressionKeys[elementData.id] = true;
-              observable._expressions.push(expressionObj);
-            }
-          });
-        }
-        if (!attributeName) {
-          result = '<!-- ' + elementData.id + ':blocks -->' + result;
-        }
-      }
-
-      return {
-        value: result,
-        elementData: elementData
-      };
-    }
-  };
 
   var browser = {};
 
@@ -1873,6 +1560,134 @@
       Firefox: window && window.navigator && parseVersion(window.navigator.userAgent.match(/Firefox\/([^ ]*)/))
     });
   }
+
+  var ElementsData = (function () {
+    var data = {};
+    var globalId = 1;
+    
+    function getDataId(element) {
+      var result = element ? VirtualElement.Is(element) ? element._state ? element._state.attributes[dataIdAttr] : element._attributes[dataIdAttr] :
+        element.nodeType == 1 ? element.getAttribute(dataIdAttr) :
+          element.nodeType == 8 ? /\s+(\d+):[^\/]/.exec(element.nodeValue) :
+            null :
+        null;
+
+      return blocks.isArray(result) ? result[1] : result;
+    }
+
+    function setDataId(element, id) {
+      if (VirtualElement.Is(element)) {
+        element.attr(dataIdAttr, id);
+      } else if (element.nodeType == 1) {
+        element.setAttribute(dataIdAttr, id);
+      }
+    }
+
+    return {
+      id: function (element) {
+        return getDataId(element);
+      },
+
+      /* @if SERVER */
+      reset: function () {
+        data = {};
+        globalId = 1;
+      },
+      /* @endif */
+
+      collectGarbage: function () {
+        blocks.each(data, function (value) {
+          if (value && value.dom && !document.body.contains(value.dom)) {
+            ElementsData.clear(value.id, true);
+          }
+        });
+      },
+
+      createIfNotExists: function (element) {
+        var isVirtual = element && element.__identity__ == virtualElementIdentity;
+        var currentData;
+        var id;
+        
+        if (isVirtual) {
+          currentData = data[element._getAttr(dataIdAttr)];
+        } else {
+          currentData = data[element && getDataId(element)];
+        }
+
+        if (!currentData) {
+          id = globalId++;
+          if (element) {
+            if (isVirtual && element._each) {
+              element._haveAttributes = true;
+              if (element._state) {
+                element._state.attributes[dataIdAttr] = id;
+              } else {
+                element._attributes[dataIdAttr] = id;
+              }
+            } else {
+              setDataId(element, id);
+            }
+          }
+
+          // if element is not defined then treat it as expression
+          if (!element) {
+            currentData = data[id] = {
+              id: id
+            };
+          } else {
+            currentData = data[id] = {
+              id: id,
+              virtual: isVirtual ? element : null,
+              animating: 0,
+              observables: {},
+              preprocess: isVirtual
+            };
+          }
+        }
+
+        return currentData;
+      },
+
+      byId: function (id) {
+        return data[id];
+      },
+
+      data: function (element, name, value) {
+        var result = data[getDataId(element) || element];
+        if (!result) {
+          return;
+        }
+        if (arguments.length == 1) {
+          return result;
+        } else if (arguments.length > 2) {
+          result[name] = value;
+        }
+        return result[name];
+      },
+
+      clear: function (element, force) {
+        var id = getDataId(element) || element;
+        var currentData = data[id];
+
+        if (currentData && (!currentData.haveData || force)) {
+          blocks.each(currentData.observables, function (value) {
+            for (var i = 0; i < value._elements.length; i++) {
+              if (value._elements[i].elementId == data.id) {
+                value._elements.splice(i, 1);
+                i--;
+              }
+            }
+          });
+          data[id] = undefined;
+          if (VirtualElement.Is(element)) {
+            element.attr(dataIdAttr, null);
+          } else if (element.nodeType == 1) {
+            element.removeAttribute(dataIdAttr);
+          }
+        }
+      }
+    };
+  })();
 
   function on(element, eventName, handler) {
     if (Workarounds[eventName]) {
@@ -1952,171 +1767,394 @@
     };
   })();
 
-  function HtmlElement(element) {
-    if (!HtmlElement.prototype.isPrototypeOf(this)) {
-      return new HtmlElement(element);
-    }
-    this._element = element;
-  }
+  
+  var dom = blocks.dom = {
+    valueTagNames: {
+      input: true,
+      textarea: true,
+      select: true
+    },
 
-  var Empty;
-  HtmlElement.Empty = function () {
-    if (!Empty) {
-      Empty = {};
-      for (var key in HtmlElement.prototype) {
-        Empty[key] = blocks.noop;
+    valueTypes: {
+      file: true,
+      hidden: true,
+      password: true,
+      text: true,
+
+      // New HTML5 Types
+      color: true,
+      date: true,
+      datetime: true,
+      'datetime-local': true,
+      email: true,
+      month: true,
+      number: true,
+      range: true,
+      search: true,
+      tel: true,
+      time: true,
+      url: true,
+      week: true
+    },
+
+    props: {
+      'for': true,
+      'class': true,
+      value: true,
+      checked: true,
+      tabindex: true,
+      className: true,
+      htmlFor: true
+    },
+
+    propFix: {
+      'for': 'htmlFor',
+      'class': 'className',
+      tabindex: 'tabIndex'
+    },
+
+    attrFix: {
+      className: 'class',
+      htmlFor: 'for'
+    },
+
+    addClass: function (element, className) {
+      if (element) {
+        setClass('add', element, className);  
+      }
+    },
+
+    removeClass: function (element, className) {
+      if (element) {
+        setClass('remove', element, className);  
+      }
+    },
+
+    html: function (element, html) {
+      if (element) {
+        html = html.toString();
+        if (element.nodeType == 8) {
+          dom.comment.html(element, html);
+        } else if (browser.IE < 10) {
+          while (element.firstChild) {
+            element.removeChild(this._element.firstChild);
+          }
+          element.appendChild(createFragment(html));
+        } else {
+          element.innerHTML = html;
+        }
+      }
+    },
+
+    css: function (element, name, value) {
+      // IE7 will thrown an error if you try to set element.style[''] (with empty string)
+      if (!element || !name) {
+        return;
+      }
+
+      if (name == 'display') {
+        animation.setVisibility(element, value == 'none' ? false : true);
+      } else {
+        element.style[name] = value;
+      }
+    },
+
+    on: function (element, eventName, handler) {
+      if (element) {
+        on(element, eventName, handler);
+      }
+    },
+
+    off: function () {
+
+    },
+
+    removeAttr: function (element, attributeName) {
+      if (element && attributeName) {
+        dom.attr(element, attributeName, null);  
+      }
+    },
+
+    attr: function (element, attributeName, attributeValue) {
+      var isProperty = dom.props[attributeName];
+      attributeName = dom.propFix[attributeName.toLowerCase()] || attributeName;
+
+      if ((blocks.core.skipExecution &&
+        blocks.core.skipExecution.element === element &&
+        blocks.core.skipExecution.attributeName == attributeName) ||
+        !element) {
+        return;
+      }
+      
+      if (element.nodeType == 8) {
+        dom.comment.attr(element, attributeName, attributeValue);
+        return;
+      }
+
+      if (attributeName == 'checked') {
+        if (attributeValue != 'checked' &&
+          typeof attributeValue == 'string' &&
+          element.getAttribute('type') == 'radio' &&
+          attributeValue != element.value && element.defaultValue != null && element.defaultValue !== '') {
+
+          attributeValue = false;
+        } else {
+          attributeValue = !!attributeValue;
+        }
+      }
+
+      if (arguments.length === 1) {
+        return isProperty ? element[attributeName] : element.getAttribute(attributeName);
+      } else if (attributeValue != null) {
+        if (attributeName == 'value' && element.tagName.toLowerCase() == 'select') {
+          attributeValue = keys(blocks.toArray(attributeValue));
+          blocks.each(element.children, function (child) {
+            child.selected = !!attributeValue[child.value];
+          });
+        } else {
+          if (isProperty) {
+            element[attributeName] = attributeValue;
+          } else {
+            element.setAttribute(attributeName, attributeValue);
+          }
+        }
+      } else {
+        if (isProperty) {
+          if (attributeName == 'value' && element.tagName.toLowerCase() == 'select') {
+            element.selectedIndex = -1;
+          } else if (element[attributeName]) {
+            element[attributeName] = '';
+          }
+        } else {
+          element.removeAttribute(attributeName);
+        }
+      }
+    },
+
+    comment: {
+      html: function (element, html) {
+        // var commentElement = this._element.nextSibling;
+        // var parentNode = commentElement.parentNode;
+        // parentNode.insertBefore(DomQuery.CreateFragment(html), commentElement);
+        // parentNode.removeChild(commentElement);
+        var commentElement = element;
+        var parentNode = commentElement.parentNode;
+        var currentElement = commentElement.nextSibling;
+        var temp;
+        var count = 0;
+
+        while (currentElement && (currentElement.nodeType != 8 || currentElement.nodeValue.indexOf('/blocks') == -1)) {
+          count++;
+          temp = currentElement.nextSibling;
+          parentNode.removeChild(currentElement);
+          currentElement = temp;
+        }
+
+        parentNode.insertBefore(createFragment(html), commentElement.nextSibling);
+        //parentNode.removeChild(currentElement);
+        return count;
+      },
+
+      attr: function (element, attributeName, attributeValue) {
+        if (element && attributeName == dataIdAttr && attributeValue) {
+          var commentElement = element;
+          // TODO: This should be refactored
+          var endComment = element._endElement;
+          commentElement.nodeValue = ' ' + attributeValue + ':' + commentElement.nodeValue.replace(trimRegExp, '') + ' ';
+          endComment.nodeValue = ' ' + attributeValue + ':' + endComment.nodeValue.replace(trimRegExp, '') + ' ';
+          return this;
+        }
+        return this;
       }
     }
-    return Empty;
   };
+    var parameterQueryCache = {};
 
-  HtmlElement.ValueTagNames = {
-   input: true,
-   textarea: true,
-   select: true
-  };
 
-  HtmlElement.ValueTypes = {
-   file: true,
-   hidden: true,
-   password: true,
-   text: true,
+  var Observer = (function () {
+    var stack = [];
 
-   // New HTML5 Types
-   color: true,
-   date: true,
-   datetime: true,
-   'datetime-local': true,
-   email: true,
-   month: true,
-   number: true,
-   range: true,
-   search: true,
-   tel: true,
-   time: true,
-   url: true,
-   week: true
-  };
+    return {
+      startObserving: function () {
+        stack.push([]);
+      },
 
-  HtmlElement.Props = {
-   'for': true,
-   'class': true,
-   value: true,
-   checked: true,
-   tabindex: true,
-   className: true,
-   htmlFor: true
-  };
+      stopObserving: function () {
+        return stack.pop();
+      },
 
-  HtmlElement.PropFix = {
-   'for': 'htmlFor',
-   'class': 'className',
-   tabindex: 'tabIndex'
-  };
+      currentObservables: function () {
+        return stack[stack.length - 1];
+      },
 
-  HtmlElement.AttrFix = {
-   className: 'class',
-   htmlFor: 'for'
-  };
+      registerObservable: function (newObservable) {
+        var observables = stack[stack.length - 1];
+        var alreadyExists = false;
 
-  HtmlElement.prototype = {
-   addClass: function (className) {
-     setClass('add', this._element, className);
-   },
+        if (observables) {
+          blocks.each(observables, function (observable) {
+            if (observable === newObservable) {
+              alreadyExists = true;
+              return false;
+            }
+          });
+          if (!alreadyExists) {
+            observables.push(newObservable);
+          }
+        }
+      }
+    };
+  })();
 
-   removeClass: function (className) {
-     setClass('remove', this._element, className);
-   },
+  var Expression = {
+    Html: 0,
+    ValueOnly: 2,
+    
+    Create: function (text, attributeName, element) {
+      var index = -1;
+      var endIndex = 0;
+      var result = [];
+      var character;
+      var startIndex;
+      var match;
 
-   html: function (html) {
-     html = html.toString();
-     if (browser.IE < 10) {
-       while (this._element.firstChild) {
-         this._element.removeChild(this._element.firstChild);
-       }
-       this._element.appendChild(createFragment(html));
-     } else {
-       this._element.innerHTML = html;
-     }
-   },
+      while (text.length > ++index) {
+        character = text.charAt(index);
 
-   attr: function (attributeName, attributeValue) {
-     var isProperty = HtmlElement.Props[attributeName];
-     var element = this._element;
-     attributeName = HtmlElement.PropFix[attributeName.toLowerCase()] || attributeName;
+        if (character == '{' && text.charAt(index + 1) == '{') {
+          startIndex = index + 2;
+        } else if (character == '}' && text.charAt(index + 1) == '}') {
+          if (startIndex) {
+            match = text.substring(startIndex, index);
+            if (!attributeName) {
+              match = match
+                .replace(/&amp;/g, '&')
+                .replace(/&quot;/g, '"')
+                .replace(/&#39;/g, '\'')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>');
+            }
 
-     if (blocks.core.skipExecution &&
-       blocks.core.skipExecution.element === element &&
-       blocks.core.skipExecution.attributeName == attributeName) {
-       return;
-     }
+            character = text.substring(endIndex, startIndex - 2);
+            if (character) {
+              result.push(character);
+            }
 
-     if (attributeName == 'checked') {
-       if (attributeValue != 'checked' &&
-         typeof attributeValue == 'string' &&
-         element.getAttribute('type') == 'radio' &&
-         attributeValue != element.value && element.defaultValue != null && element.defaultValue !== '') {
+            result.push({
+              expression: match,
+              attributeName: attributeName
+            });
 
-         attributeValue = false;
-       } else {
-         attributeValue = !!attributeValue;
-       }
-     }
+            endIndex = index + 2;
+          }
+          startIndex = 0;
+        }
+      }
 
-     if (arguments.length === 1) {
-       return isProperty ? element[attributeName] : element.getAttribute(attributeName);
-     } else if (attributeValue != null) {
-       if (attributeName == 'value' && element.tagName.toLowerCase() == 'select') {
-         attributeValue = keys(blocks.toArray(attributeValue));
-         blocks.each(element.children, function (child) {
-           child.selected = !!attributeValue[child.value];
-         });
-       } else {
-         if (isProperty) {
-           element[attributeName] = attributeValue;
-         } else {
-           element.setAttribute(attributeName, attributeValue);
-         }
-       }
-     } else {
-       if (isProperty) {
-         if (attributeName == 'value' && element.tagName.toLowerCase() == 'select') {
-           element.selectedIndex = -1;
-         } else if (element[attributeName]) {
-           element[attributeName] = '';
-         }
-       } else {
-         element.removeAttribute(attributeName);
-       }
-     }
-   },
+      character = text.substring(endIndex);
+      if (character) {
+        result.push(character);
+      }
 
-   removeAttr: function (attributeName) {
-     this.attr(attributeName, null);
-   },
+      result.text = text;
+      result.attributeName = attributeName;
+      result.element = element;
+      result.isExpression = true;
+      return match ? result : null;
+    },
 
-   css: function (name, value) {
-     // IE7 will thrown an error if you try to set element.style[''] (with empty string)
-     if (!name) {
-       return;
-     }
+    GetValue: function (context, elementData, expression, type) {
+      var value = '';
+      var length = expression.length;
+      var index = -1;
+      var chunk;
 
-     var element = this._element;
+      if (!context) {
+        return expression.text;
+      }
+      
+      if (length == 1) {
+        value = Expression.Execute(context, elementData, expression[0], expression, type);
+      } else {
+        while (++index < length) {
+          chunk = expression[index];
+          if (typeof chunk == 'string') {
+            value += chunk;
+          } else {
+            value += Expression.Execute(context, elementData, chunk, expression, type);
+          }
+        }  
+      }
 
-     if (name == 'display') {
-       animation.setVisibility(element, value == 'none' ? false : true);
-     } else {
-       element.style[name] = value;
-     }
-   },
+      expression.lastResult = value;
 
-   on: function (eventName, handler) {
-     on(this._element, eventName, handler);
-   },
+      return value;
+    },
 
-   off: function () {
+    Execute: function (context, elementData, expressionData, entireExpression, type) {
+      var expression = expressionData.expression;
+      var attributeName = expressionData.attributeName;
+      var isObservable;
+      var expressionObj;
+      var observables;
+      var result;
+      var value;
+      var func;
 
-   }
+      // jshint -W054
+      // Disable JSHint error: The Function constructor is a form of eval
+      func = parameterQueryCache[expression] = parameterQueryCache[expression] ||
+        new Function('c', 'with(c){with($this){ return ' + expression + '}}');
+
+      Observer.startObserving();
+
+      /* @if DEBUG */ {
+        try {
+          value = func(context);
+        } catch (ex) {
+          blocks.debug.expressionFail(expression, entireExpression.element);
+        }
+      } /* @endif */
+
+      value = func(context);
+
+      isObservable = blocks.isObservable(value);
+      result = isObservable ? value() : value;
+      result = result == null ? '' : result.toString();
+      result = escapeValue(result);
+
+      observables = Observer.stopObserving();
+
+      if (type != Expression.ValueOnly && (isObservable || observables.length)) {
+        if (!attributeName) {
+          elementData = ElementsData.createIfNotExists();
+        }
+        if (elementData) {
+          elementData.haveData = true;
+
+          expressionObj = {
+            length: result.length,
+            attr: attributeName,
+            context: context,
+            elementId: elementData.id,
+            expression: expression,
+            entire: entireExpression
+          };
+
+          blocks.each(observables, function (observable) {
+            if (!observable._expressionKeys[elementData.id]) {
+              observable._expressionKeys[elementData.id] = true;
+              observable._expressions.push(expressionObj);
+            }
+          });
+        }
+        if (!attributeName) {
+          result = '<!-- ' + elementData.id + ':blocks -->' + result;
+        }
+      }
+      
+      return result;
+    }
   };
 
 
@@ -2125,6 +2163,7 @@
       return new VirtualElement(tagName);
     }
 
+    this.__identity__ = virtualElementIdentity;
     this._tagName = tagName ? tagName.toString().toLowerCase() : null;
     this._attributes = {};
     this._attributeExpressions = [];
@@ -2136,12 +2175,11 @@
     this._renderMode = VirtualElement.RenderMode.All;
     this._haveStyle = false;
     this._style = {};
-    this._changes = null;
+    this._states = null;
+    this._state = null;
 
     if (blocks.isElement(tagName)) {
-      this._el = HtmlElement(tagName);
-    } else {
-      this._el = HtmlElement.Empty();
+      this._el = tagName;
     }
   }
 
@@ -2157,9 +2195,16 @@
     html: function (html) {
       if (arguments.length > 0) {
         html = html == null ? '' : html;
-        this._innerHTML = html;
+        if (this._state) {
+          if (this._state.html !== html) {
+            this._state.html = html;
+            dom.html(this._el, html);
+          }
+        } else {
+          this._innerHTML = html;
+          dom.html(this._el, html);
+        }
         this._children = [];
-        this._el.html(html);
         return this;
       }
       return this._innerHTML || '';
@@ -2204,12 +2249,13 @@
         var type = this._attributes.type;
         var rawAttributeValue = attributeValue;
         var elementData = ElementsData.data(this);
+        var value = this._getAttr('value');
 
         attributeName = blocks.unwrapObservable(attributeName);
-        attributeName = HtmlElement.AttrFix[attributeName] || attributeName;
+        attributeName = dom.attrFix[attributeName] || attributeName;
         attributeValue = blocks.unwrapObservable(attributeValue);
 
-        if (blocks.isObservable(rawAttributeValue) && attributeName == 'value' && HtmlElement.ValueTagNames[tagName] && (!type || HtmlElement.ValueTypes[type])) {
+        if (blocks.isObservable(rawAttributeValue) && attributeName == 'value' && dom.valueTagNames[tagName] && (!type || dom.valueTypes[type])) {
           elementData.subscribe = tagName == 'select' ? 'change' : 'input';
           elementData.valueObservable = rawAttributeValue;
         } else if (blocks.isObservable(rawAttributeValue) &&
@@ -2220,14 +2266,14 @@
         }
 
         if (arguments.length == 1) {
-          returnValue = this._attributes[attributeName];
+          returnValue = this._getAttr(attributeName);
           return returnValue === undefined ? null : returnValue;
         }
 
         if (attributeName == 'checked' && attributeValue != null && !this._fake) {
           if (this._attributes.type == 'radio' &&
             typeof attributeValue == 'string' &&
-            attributeValue != this._attributes.value && this._attributes.value != null) {
+            value != attributeValue && value != null) {
 
             attributeValue = null;
           } else {
@@ -2237,18 +2283,22 @@
           attributeValue = attributeValue ? 'disabled' : null;
         }
 
-        if (tagName == 'textarea' && attributeName == 'value' && this._el == HtmlElement.Empty()) {
+        if (tagName == 'textarea' && attributeName == 'value' && !this._el) {
           this.html(attributeValue);
         } else if (attributeName == 'value' && tagName == 'select') {
           this._values = keys(blocks.toArray(attributeValue));
-          this._el.attr(attributeName, attributeValue);
+          dom.attr(this._el, attributeName, attributeValue);
         } else {
-          if (this._changes) {
-            this._changes.attributes.push([attributeName, this._attributes[attributeName]]);
-          }
           this._haveAttributes = true;
-          this._attributes[attributeName] = attributeValue;
-          this._el.attr(attributeName, attributeValue);
+          if (this._state) {
+            if (this._state.attributes[attributeName] !== attributeValue) {
+              this._state.attributes[attributeName] = attributeValue;
+              dom.attr(this._el, attributeName, attributeValue);
+            }
+          } else {
+            this._attributes[attributeName] = attributeValue;
+            dom.attr(this._el, attributeName, attributeValue);
+          }
         }
       } else if (blocks.isPlainObject(attributeName)) {
         blocks.each(attributeName, function (val, key) {
@@ -2261,7 +2311,7 @@
 
     removeAttr: function (attributeName) {
       this._attributes[attributeName] = null;
-      this._el.removeAttr(attributeName);
+      dom.removeAttr(this._el, attributeName);
       return this;
     },
 
@@ -2281,7 +2331,7 @@
         });
 
         if (arguments.length === 1) {
-          value = this._style[propertyName];
+          value = this._getCss(propertyName);
           return value === undefined ? null : value;
         }
 
@@ -2289,15 +2339,19 @@
           value = value == 'none' || (!value && value !== '') ? 'none' : '';
         }
 
-        if (this._changes) {
-          this._changes.styles.push([propertyName, this._style[propertyName]]);
-        }
         this._haveStyle = true;
         if (!VirtualElement.CssNumbers[propertyName]) {
           value = blocks.toUnit(value);
         }
-        this._style[propertyName] = value;
-        this._el.css(propertyName, value);
+        if (this._state) {
+          if (this._state.style[propertyName] !== value) {
+            this._state.style[propertyName] = value;
+            dom.css(this._el, propertyName, value);
+          }
+        } else {
+          this._style[propertyName] = value;
+          dom.css(this._el, propertyName, value);
+        }
       } else if (blocks.isPlainObject(propertyName)) {
         blocks.each(propertyName, function (val, key) {
           _this.css(key, val);
@@ -2309,17 +2363,19 @@
 
     addChild: function (element, index) {
       var children = this._template || this._children;
+      var fragment;
+      
       if (element) {
         element._parent = this;
         if (this._childrenEach || this._each) {
           element._each = true;
-        } else if (this._el._element) {
+        } else if (this._el) {
+          fragment = createFragment(element.render(blocks.domQuery(this)));
+          element._el = fragment.childNodes[0]; 
           if (typeof index === 'number') {
-            this._el.element.insertBefore(
-              createFragment(element.render(blocks.domQuery(this))), this._el.element.childNodes[index]);
+            this._el.insertBefore(fragment, this._el.childNodes[index]);
           } else {
-            this._el._element.appendChild(
-              createFragment(element.render(blocks.domQuery(this))));
+            this._el.appendChild(fragment);
           }
         }
         if (typeof index === 'number') {
@@ -2333,13 +2389,13 @@
 
     addClass: function (className) {
       setClass('add', this, className);
-      this._el.addClass(className);
+      dom.addClass(this._el, className);
       return this;
     },
 
     removeClass: function (className) {
       setClass('remove', this, className);
-      this._el.removeClass(className);
+      dom.removeClass(this._el, className);
       return this;
     },
 
@@ -2363,7 +2419,7 @@
         html += this._renderAttributes();
       }
       if (this._haveStyle) {
-        html += generateStyleAttribute(this._style);
+        html += generateStyleAttribute(this._style, this._state);
       }
       html += this._isSelfClosing ? ' />' : '>';
 
@@ -2377,12 +2433,25 @@
       return '</' + this._tagName + '>';
     },
 
-    render: function (domQuery) {
+    render: function (domQuery, syncIndex) {
       var html = '';
       var childHtml = '';
       var htmlElement = this._el;
 
-      this._el = HtmlElement.Empty();
+      if (syncIndex !== undefined) {
+        this._state = {
+          attributes: {},
+          style: {},
+          html: null,
+          expressions: {}
+        };
+        if (!this._states) {
+          this._states = {};
+        }
+        this._states[syncIndex] = this._state;
+      }
+
+      this._el = undefined;
 
       this._execute(domQuery);
 
@@ -2390,10 +2459,12 @@
 
       if (this._renderMode != VirtualElement.RenderMode.None) {
         if (this._renderMode != VirtualElement.RenderMode.ElementOnly) {
-          if (this._innerHTML != null) {
+          if (this._state && this._state.html !== null) {
+            childHtml = this._state.html;
+          } else if (this._innerHTML != null) {
             childHtml = this._innerHTML;
           } else {
-            childHtml = this.renderChildren(domQuery);
+            childHtml = this.renderChildren(domQuery, syncIndex);
           }
         }
 
@@ -2404,15 +2475,18 @@
         html += this.renderEndTag();
       }
 
+      this._state = null;
+
       return html;
     },
 
-    renderChildren: function (domQuery) {
+    renderChildren: function (domQuery, syncIndex) {
       var html = '';
       var children = this._template || this._children;
       var length = children.length;
       var index = -1;
       var child;
+      var value;
 
       while (++index < length) {
         child = children[index];
@@ -2420,9 +2494,13 @@
           html += child;
         } else if (VirtualElement.Is(child)) {
           child._each = child._each || this._each;
-          html += child.render(domQuery);
+          html += child.render(domQuery, syncIndex);
         } else if (domQuery) {
-          html += Expression.GetValue(domQuery._context, null, child);
+          value = Expression.GetValue(domQuery._context, null, child);
+          if (this._state) {
+            this._state.expressions[index] = value;
+          }
+          html += value;
         } else {
           if (!this._each && child.lastResult) {
             html += child.lastResult;
@@ -2435,86 +2513,197 @@
       return html;
     },
 
-    sync: function (domQuery) {
+    sync: function (domQuery, syncIndex, element) {
+      if (syncIndex) {
+        this._state = this._states[syncIndex];
+        this._el = element;
+        this._each = false;
+        this._sync = true;
+      }
+      
       this._execute(domQuery);
-
-      var children = this._children;
-      var length = children.length;
-      var index = -1;
-      var htmlElement;
-      var lastVirtual;
-      var child;
 
       this.renderBeginTag();
 
-      if (this._innerHTML || this._childrenEach) {
-        this.renderEndTag();
-        return;
-      }
-
-      while (++index < length) {
-        child = children[index];
-        if (VirtualElement.Is(child)) {
-          child._each = child._each || this._each;
-
-          child.sync(domQuery);
-
-          htmlElement = null;
-          lastVirtual = child;
-        } else if (typeof child != 'string' && domQuery) {
-          htmlElement = (htmlElement && htmlElement.nextSibling) || (lastVirtual && lastVirtual._el._element.nextSibling);
-          if (!htmlElement) {
-            if (this._el._element.nodeType == 1) {
-              htmlElement = this._el._element.childNodes[0];
-            } else {
-              htmlElement = this._el._element.nextSibling;
-            }
-          }
-          if (htmlElement) {
-            htmlElement.parentNode.insertBefore(createFragment(Expression.GetValue(domQuery._context, null, child)), htmlElement);
-            htmlElement.parentNode.removeChild(htmlElement);
-          }
-        }
+      if (!this._innerHTML && !this._childrenEach && this._renderMode != VirtualElement.RenderMode.None) {
+        this.syncChildren(domQuery, syncIndex);
       }
 
       this.renderEndTag();
+      
+      if (syncIndex) {
+        this._state = null;
+        this._el = undefined;
+        this._each = true;
+        this._sync = false;
+      }
+    },
+
+    syncChildren: function (domQuery, syncIndex, offset) {
+      var children = this._template || this._children;
+      var length = children.length;
+      var state = this._state;
+      var element = this._el.nodeType == 8 ? this._el.nextSibling : this._el.childNodes[offset || 0];
+      var index = -1;
+      var elementForDeletion;
+      var expression;
+      var child;
+      
+      while (++index < length) {
+        child = children[index];
+        if (child.isExpression) {
+          if (domQuery) {
+            expression = Expression.GetValue(domQuery._context, null, child, state ? Expression.ValueOnly : Expression.Html);
+            
+            if (!state || (state && state.expressions[index] !== expression)) {
+              if (state) {
+                state.expressions[index] = expression;
+                if (element) {
+                  if (element.nodeType == 8) {
+                    element = element.nextSibling;
+                  }
+                  element.nodeValue = expression;
+                  element = element.nextSibling;
+                } else {
+                  this._el.textContent = expression;
+                }
+              } else {
+                this._el.insertBefore(createFragment(expression), element);
+                elementForDeletion = element;
+                element = element.nextSibling;
+                this._el.removeChild(elementForDeletion);
+              }
+            }
+          }
+        } else if (typeof child != 'string' && child._renderMode != VirtualElement.RenderMode.None) {
+          child._each = child._each || this._each;
+
+          child.sync(domQuery, syncIndex, element);
+          
+          element = element.nextSibling;
+        } else {
+          element = element.nextSibling;
+        }
+      }
+    },
+    
+    updateChildren: function (domQuery, collection, domElement) {
+      var template = this._template;
+      var child = template[0];
+      var isOneChild = template.length === 1 && VirtualElement.Is(child);
+      var childNodes = domElement.childNodes;
+      var syncIndex = domQuery.getSyncIndex();
+      var childContexts = domQuery._context.childs;
+      var chunkLength = this._length();
+      var length = Math.min(collection.length, childNodes.length);
+      var index = -1;
+      var context;
+      
+      while (++index < length) {
+        domQuery._context = context = childContexts[index];
+        context.$this = collection[index];
+        context.$parent = context.$parentContext.$this;
+        if (isOneChild) {
+          child.sync(domQuery, syncIndex + index, childNodes[index]);
+        } else {
+          this.syncChildren(domQuery, syncIndex + index, index * chunkLength);
+        }
+      }
+
+      domQuery.popContext();
+    },
+    
+    _length: function () {
+      var template = this._template;
+      var index = -1;
+      var length = 0;
+      
+      while (++index < template.length) {
+        if (template[index]._renderMode !== VirtualElement.RenderMode.None) {
+          length += 1;
+        }
+      }
+      
+      return length;
+    },
+    
+    _getAttr: function (name) {
+      var state = this._state;
+      return state && state.attributes[name] !== undefined ? state.attributes[name] : this._attributes[name];
+    },
+    
+    _getCss: function (name) {
+      var state = this._state;
+      return state && state.style[name] !== undefined ? state.style[name] : this._style[name];
     },
 
     _execute: function (domQuery) {
       if (!domQuery) {
         return;
       }
+
       if (this._each) {
-        this._revertChanges();
-        this._trackChanges();
-        this._el = HtmlElement.Empty();
+        this._el = undefined;
       }
 
       if (this._renderMode != VirtualElement.RenderMode.None) {
-        ElementsData.createIfNotExists(this);
-        domQuery.applyContextToElement(this);
-        this._executeAttributeExpressions(domQuery._context);
-        domQuery.executeElementQuery(this);
-        ElementsData.clear(this);
+        var id = this._attributes[dataIdAttr];
+        var data;
+
+        if (!id || domQuery._serverData) {
+          ElementsData.createIfNotExists(this);
+          domQuery.applyContextToElement(this);
+          id = this._attributes[dataIdAttr];
+          data = ElementsData.byId(id);
+        }
+        
+        if (this._attributeExpressions.length) {
+          this._executeAttributeExpressions(domQuery._context);  
+        }
+        
+        domQuery.executeQuery(this, this._attributes[dataQueryAttr]);
+        
+        if (data && !data.haveData) {
+          ElementsData.clear(this);  
+        }
       }
     },
 
     _renderAttributes: function () {
       var attributes = this._attributes;
+      var state = this._state;
       var html = '';
       var key;
       var value;
 
       if (this._tagName == 'option' && this._parent._values) {
-        attributes.selected = this._parent._values[attributes.value] ? 'selected' : null;
+        if (state) {
+          state.attributes.selected = this._parent._values[state.attributes.value] ? 'selected' : null;  
+        } else {
+          attributes.selected = this._parent._values[attributes.value] ? 'selected' : null;  
+        }
       }
 
       for (key in attributes) {
         value = attributes[key];
+        if (state && hasOwn.call(state.attributes, key)) {
+          continue;
+        }
         if (value === '') {
           html += ' ' + key;
         } else if (value != null) {
           html += ' ' + key + '="' + value + '"';
+        }
+      }
+
+      if (state) {
+        for (key in state.attributes) {
+          value = state.attributes[key];
+          if (value === '') {
+            html += ' ' + key;
+          } else if (value != null) {
+            html += ' ' + key + '="' + value + '"';
+          }
         }
       }
 
@@ -2540,62 +2729,35 @@
     },
 
     _executeAttributeExpressions: function (context) {
-      var element = this._each || HtmlElement.Empty() === this._el ? this : this._el;
-      var elementData = ElementsData.data(this);
+      var isVirtual = this._el ? false : true;
+      var attributes = this._state && this._state.attributes;
+      var elementData = ElementsData.byId(attributes ? attributes[dataIdAttr] : this._attributes[dataIdAttr]);
+      var expressions = this._attributeExpressions;
+      var attributeName;
+      var expression;
+      var value;
 
-      blocks.each(this._attributeExpressions, function (expression) {
-        element.attr(expression.attributeName, Expression.GetValue(context, elementData, expression));
-      });
-    },
-
-    _revertChanges: function () {
-      if (!this._changes) {
-        return;
-      }
-      var elementStyles = this._style;
-      var elementAttributes = this._attributes;
-      var changes = this._changes;
-      var styles = changes.styles;
-      var attributes = changes.attributes;
-      var length = Math.max(styles.length, attributes.length);
-      var i = length - 1;
-      var style;
-      var attribute;
-
-      for (; i >= 0; i--) {
-        style = styles[i];
-        attribute = attributes[i];
-        if (style) {
-          elementStyles[style[0]] = style[1];
-        }
-        if (attribute) {
-          elementAttributes[attribute[0]] = attribute[1];
+      for (var i = 0; i < expressions.length; i++) {
+        expression = expressions[i];
+        value = Expression.GetValue(context, elementData, expression);
+        attributeName = expression.attributeName; 
+        if ((attributes && attributes[attributeName] !== value) || !attributes) {
+          if (isVirtual) {
+            if (this._state) {
+              this._state.attributes[attributeName] = value;
+            } else {
+              this._attributes[attributeName] = value;
+            }
+          } else {
+            dom.attr(this._el, attributeName, value);  
+          }
         }
       }
-
-      this._attributes[classAttr] = changes[classAttr];
-      this._tagName = changes.tagName;
-      this._innerHTML = changes.html;
-      this._renderMode = VirtualElement.RenderMode.All;
-    },
-
-    _trackChanges: function () {
-      this._changes = {
-        styles: [],
-        attributes: [],
-        'class': this._attributes[classAttr],
-        html: this._innerHTML,
-        tagName: this._tagName
-      };
-    },
-
-    _removeRelation: function () {
-      this._el = HtmlElement.Empty();
     }
   });
 
   VirtualElement.Is = function (value) {
-    return VirtualElement.prototype.isPrototypeOf(value);
+    return value && value.__identity__ == virtualElementIdentity;
   };
 
   VirtualElement.RenderMode = {
@@ -2619,7 +2781,7 @@
     'zoom': true
   };
 
-  function generateStyleAttribute(style) {
+  function generateStyleAttribute(style, state) {
     var html = ' style="';
     var haveStyle = false;
     var key;
@@ -2627,6 +2789,9 @@
 
     for (key in style) {
       value = style[key];
+      if (state && hasOwn.call(state.style, key)) {
+        continue;
+      }
       if (value || value === 0) {
         haveStyle = true;
         key = key.replace(/[A-Z]/g, replaceStyleAttribute);
@@ -2636,6 +2801,21 @@
         html += ';';
       }
     }
+    
+    if (state) {
+      for (key in state.style) {
+        value = state.style[key];
+        if (value || value === 0) {
+          haveStyle = true;
+          key = key.replace(/[A-Z]/g, replaceStyleAttribute);
+          html += key;
+          html += ':';
+          html += value;
+          html += ';';
+        }
+      }  
+    }
+
     html += '"';
     return haveStyle ? html : '';
   }
@@ -2663,7 +2843,7 @@
       var index;
 
       if (VirtualElement.Is(element)) {
-        classAttribute = element._attributes[classAttr];
+        classAttribute = element._getAttr(classAttr);
       } else if (element.classList) {
         if (classListMultiArguments) {
           element.classList[type].apply(element.classList, classNames);
@@ -2695,7 +2875,11 @@
       }
 
       if (VirtualElement.Is(element)) {
-        element._attributes[classAttr] = classAttribute;
+        if (element._state) {
+          element._state.attributes[classAttr] = classAttribute;
+        } else {
+         element._attributes[classAttr] = classAttribute; 
+        }
       } else {
         element.className = classAttribute;
       }
@@ -2832,8 +3016,8 @@
       disposeCallback();
       return;
     }
-
-    if (cssType == 'show') {
+    
+    if (type == 'show') {
       element.style.display = '';
     }
 
@@ -2902,55 +3086,6 @@
 
     return true;
   }
-    var dataQueryAttr = 'data-query';
-
-
-
-  function HtmlCommentElement(commentElement) {
-    if (!HtmlCommentElement.prototype.isPrototypeOf(this)) {
-      return new HtmlCommentElement(commentElement);
-    }
-
-    this._element = commentElement;
-  }
-
-  HtmlCommentElement.prototype = blocks.clone(HtmlElement.Empty());
-
-  blocks.extend(HtmlCommentElement.prototype, {
-    html: function (html) {
-      // var commentElement = this._element.nextSibling;
-      // var parentNode = commentElement.parentNode;
-      // parentNode.insertBefore(DomQuery.CreateFragment(html), commentElement);
-      // parentNode.removeChild(commentElement);
-      var commentElement = this._element;
-      var parentNode = commentElement.parentNode;
-      var currentElement = commentElement.nextSibling;
-      var temp;
-      var count = 0;
-
-      while (currentElement && (currentElement.nodeType != 8 || currentElement.nodeValue.indexOf('/blocks') == -1)) {
-        count++;
-        temp = currentElement.nextSibling;
-        parentNode.removeChild(currentElement);
-        currentElement = temp;
-      }
-
-      parentNode.insertBefore(createFragment(html), commentElement.nextSibling);
-      //parentNode.removeChild(currentElement);
-      return count;
-    },
-
-    attr: function (attributeName, attributeValue) {
-      if (attributeName == dataIdAttr && attributeValue) {
-        var commentElement = this._element;
-        var endComment = this._endElement;
-        commentElement.nodeValue = ' ' + attributeValue + ':' + commentElement.nodeValue.replace(trimRegExp, '') + ' ';
-        endComment.nodeValue = ' ' + attributeValue + ':' + endComment.nodeValue.replace(trimRegExp, '') + ' ';
-        return this;
-      }
-      return this;
-    }
-  });
 
   function VirtualComment(commentText) {
     if (!VirtualComment.prototype.isPrototypeOf(this)) {
@@ -2961,7 +3096,7 @@
 
     if (commentText.nodeType == 8) {
       this._commentText = commentText.nodeValue;
-      this._el = HtmlCommentElement(commentText);
+      this._el = commentText;
     } else {
       this._commentText = commentText;
     }
@@ -2969,7 +3104,7 @@
 
   blocks.VirtualComment = blocks.inherit(VirtualElement, VirtualComment, {
     renderBeginTag: function () {
-      var dataId = this._attributes[dataIdAttr];
+      var dataId = this._getAttr(dataIdAttr);
       var html = '<!-- ';
 
       if (dataId) {
@@ -2981,7 +3116,7 @@
     },
 
     renderEndTag: function () {
-      var dataId = this._attributes[dataIdAttr];
+      var dataId = this._getAttr(dataIdAttr);
       var html = '<!-- ';
 
       if (dataId) {
@@ -3278,6 +3413,18 @@
 
       return newContext;
     },
+    
+    getSyncIndex: function () {
+      var context = this._context;
+      var index = '';
+      
+      while (context && context.$index) {
+        index = context.$index.__value__ + '_' + index;
+        context = context.$parentContext;
+      }
+      
+      return index;
+    },
 
     contextBubble: function (context, callback) {
       var currentContext = this._context;
@@ -3315,34 +3462,8 @@
     },
 
     executeQuery: function (element, query) {
-      var cache = DomQuery.QueryCache[query];
-
-      if (!cache) {
-        cache = DomQuery.QueryCache[query] = [];
-
-        parseQuery(query, function (methodName, parameters) {
-          var method = blocks.queries[methodName];
-          var methodObj = {
-            name: methodName,
-            params: parameters,
-            query: methodName + '(' + parameters.join(',') + ')'
-          };
-
-          if (method) {
-            // TODO: Think of a way to remove this approach
-            if (methodName == 'attr' || methodName == 'val') {
-              cache.unshift(methodObj);
-            } else {
-              cache.push(methodObj);
-            }
-          }
-          /* @if DEBUG */
-          else {
-            blocks.debug.queryNotExists(methodObj, element);
-          }
-          /* @endif */
-        });
-      }
+      var cache = DomQuery.QueryCache[query] || createCache(query, element);
+      
       this.executeMethods(element, cache);
     },
 
@@ -3450,7 +3571,7 @@
           var virtual = ElementsData.data(element).virtual;
           if (virtual._each) {
             virtual = VirtualElement('div');
-            virtual._el = HtmlElement(element);
+            virtual._el = element;
             virtual._fake = true;
           }
           if (method.call === true) {
@@ -3517,6 +3638,8 @@
           }
         }
       }
+      
+      this._context = null;
     },
 
     createFragment: function (html) {
@@ -3598,6 +3721,35 @@
       }
     }
   };
+  
+  function createCache(query, element) {
+    var cache = DomQuery.QueryCache[query] = [];
+
+    parseQuery(query, function (methodName, parameters) {
+      var method = blocks.queries[methodName];
+      var methodObj = {
+        name: methodName,
+        params: parameters,
+        query: methodName + '(' + parameters.join(',') + ')'
+      };
+
+      if (method) {
+        // TODO: Think of a way to remove this approach
+        if (methodName == 'attr' || methodName == 'val') {
+          cache.unshift(methodObj);
+        } else {
+          cache.push(methodObj);
+        }
+      }
+      /* @if DEBUG */
+      else {
+        blocks.debug.queryNotExists(methodObj, element);
+      }
+      /* @endif */
+    });
+    
+    return cache;
+  }
 
 
   /**
@@ -3695,8 +3847,8 @@
           }
           if (!serverData || !serverData.templates || !serverData.templates[ElementsData.id(this)]) {
             this.html(html);
-            if (!this._each && this._el != HtmlElement.Empty()) {
-              this._children = createVirtual(this._el._element.childNodes[0], this);
+            if (!this._each && this._el) {
+              this._children = createVirtual(this._el.childNodes[0], this);
               this._innerHTML = null;
             }
           }
@@ -3863,6 +4015,9 @@
 
           while (++index < children.length) {
             child = children[index];
+            if (child.isExpression) {
+              continue;
+            }
             if (typeof child == 'string') {
               if (child.replace(trimRegExp, '').replace(/(\r\n|\n|\r)/gm, '') === '') {
                 children.splice(index--, 1);
@@ -3891,23 +4046,28 @@
         };
       },
 
-      preprocess: function (domQuery, collection, name) {
+      preprocess: function (domQuery, collection) {
+        var syncIndex = domQuery.getSyncIndex();
         var element = this;
-        var i = 0;
+        var index = 0;
         var rawCollection;
         var elementData;
-        var startIndex;
         var staticHtml;
-        var maxCount;
+        var childs;
         var html;
+        
+        if (this._sync) {
+          element.updateChildren(domQuery, collection, this._el);
+          return;
+        }
 
-        element._template = element._template || element._children;
+        this._template = this._template || this._children;
 
         this._childrenEach = true;
 
         if (domQuery._serverData) {
-          elementData = domQuery._serverData[ElementsData.id(element)];
-          domQuery._serverData[ElementsData.id(element)] = undefined;
+          elementData = domQuery._serverData[ElementsData.id(this)];
+          domQuery._serverData[ElementsData.id(this)] = undefined;
           if (elementData) {
             var div = document.createElement('div');
             div.innerHTML = elementData;
@@ -3930,31 +4090,27 @@
 
         rawCollection = blocks.unwrapObservable(collection);
 
+        childs = domQuery._context.childs = [];
+        
         if (blocks.isArray(rawCollection)) {
-          startIndex = startIndex || 0;
-          maxCount = maxCount || rawCollection.length;
-          for (i = 0; i < rawCollection.length; i++) {
-            domQuery.dataIndex(blocks.observable.getIndex(collection, i));
-            domQuery.pushContext(rawCollection[i]);
-            if (name) {
-              blocks.queries.define.preprocess.call(element, domQuery, name, rawCollection[i]);
-            }
-            html += element.renderChildren(domQuery);
-            domQuery.popContext();
+          for (index = 0; index < rawCollection.length; index++) {
+            domQuery.dataIndex(blocks.observable.getIndex(collection, index));
+            childs.push(domQuery.pushContext(rawCollection[index])); 
+            html += this.renderChildren(domQuery, syncIndex + index);
+            domQuery.popContext(); 
             domQuery.dataIndex(undefined);
           }
         } else if (blocks.isObject(rawCollection)) {
           for (var key in rawCollection) {
-            domQuery.dataIndex(blocks.observable.getIndex(collection, i));
+            domQuery.dataIndex(blocks.observable.getIndex(collection, index));
             domQuery.pushContext(rawCollection[key]);
             html += element.renderChildren(domQuery);
             domQuery.popContext();
             domQuery.dataIndex(undefined);
-            i++;
+            index++;
           }
         }
 
-        //element._innerHTML = html + staticHtml.footer;
         this.html(html + staticHtml.footer);
       }
 
@@ -4014,7 +4170,6 @@
           if (!child._attributes || (child._attributes && !child._attributes['data-role'])) {
             children.splice(i--, 1);
           }
-
         }
 
         option._attributeExpressions.push(value);
@@ -4050,8 +4205,8 @@
       passDetailValues: true,
 
       preprocess: function (condition) {
-        if (!this._each) {
-          throw new Error('render() is supported only in each context');
+        if (!this._each && !this._sync) {
+          throw new Error('render() is supported only() in each context');
         }
 
         this._renderMode = condition.value ? VirtualElement.RenderMode.All : VirtualElement.RenderMode.None;
@@ -4066,7 +4221,7 @@
       update: function (condition) {
         var elementData = ElementsData.data(this);
         if (elementData.renderCache && condition.value) {
-          // TODO: Should use the logic from HtmlElement.prototype.html method
+          // TODO: Should use the logic from dom.html method
           this.innerHTML = elementData.renderCache.renderChildren(blocks.domQuery(this));
           blocks.domQuery(this).createElementObservableDependencies(this.childNodes);
           elementData.renderCache = null;
@@ -4160,7 +4315,7 @@
         var virtual = ElementsData.data(this).virtual;
         if (virtual._each) {
           virtual = VirtualElement();
-          virtual._el = HtmlElement(this);
+          virtual._el = this;
         }
         if (arguments.length > 1) {
           virtual.toggleClass(className, condition);
@@ -4430,7 +4585,6 @@
       this.startIndex = index + this.startOffset;
     },
 
-    // TODO: Explain why we even need this method. Required to fix a bug.
     setChildNodesCount: function (count) {
       if (this.childNodesCount === undefined) {
         this.observableLength = this.observable.__value__.length;
@@ -4475,23 +4629,27 @@
 
     removeAt: function (wrapper, index) {
       var chunkLength = this.chunkLength(wrapper);
-      //var childNode;
-      //var i = 0;
 
       animation.remove(
         wrapper,
         chunkLength * index + this.startIndex,
         chunkLength);
+    },
+    
+    remove: function (index, howMany) {
+      var _this = this;
+      
+      this.each(function (domElement) {
+        for (var j = 0; j < howMany; j++) {
+          _this.removeAt(domElement, index);
+        }
+      });
 
-      // TODO: When normalize = false we should ensure there is an empty text node left if there is need for one and there have been one before
-      //for (; i < chunkLength; i++) {
-      //  childNode = wrapper.childNodes[chunkLength * index + this.startIndex];
-      //  if (childNode) {
-      //    animateDomAction('remove', childNode);
-      //    //ElementsData.clear(childNode, true);
-      //    //wrapper.removeChild(childNode);
-      //  }
-      //}
+      ElementsData.collectGarbage();
+      
+      this.dispose();
+  
+      this.observable._indexes.splice(index, howMany);
     },
 
     removeAll: function () {
@@ -4503,6 +4661,43 @@
           _this.removeAt(parent, 0);
         });
       });
+    },
+    
+    add: function (addItems, index) {
+      var _this = this;
+      var observable = this.observable;
+      
+      blocks.each(addItems, function (item, i) {
+        observable._indexes.splice(index + i, 0, blocks.observable(index + i));
+      });
+
+      this.each(function (domElement, virtualElement) {
+        var domQuery = blocks.domQuery(domElement);
+        var context = blocks.context(domElement);
+        var html = '';
+        var syncIndex;
+        
+        domQuery.contextBubble(context, function () {
+          syncIndex = domQuery.getSyncIndex();
+          for (var i = 0; i < addItems.length; i++) {
+            domQuery.dataIndex(blocks.observable.getIndex(observable, i + index, true));
+            context.childs.splice(i + index, 0, domQuery.pushContext(addItems[i]));
+            html += virtualElement.renderChildren(domQuery, syncIndex + (i + index));
+            domQuery.popContext();
+            domQuery.dataIndex(undefined);
+          }
+        });
+
+        if (domElement.childNodes.length === 0) {
+          dom.html(domElement, html);
+          domQuery.createElementObservableDependencies(domElement.childNodes);
+        } else {
+          var fragment = domQuery.createFragment(html);
+          _this.insertAt(domElement, index, fragment);
+        }
+      });
+      
+      this.dispose();
     },
 
     each: function (callback) {
@@ -4556,7 +4751,7 @@
           commentElement = commentElement.nextSibling;
           commentIndex++;
         }
-        this.setChildNodesCount(commentIndex - this.startIndex/* - 1*/);
+        this.setChildNodesCount(commentIndex - this.startIndex);
         callback(domElement.parentNode, element, domElement);
       }
     }
@@ -4587,9 +4782,8 @@
       } else if (!blocks.equals(value, currentValue, false) && Events.trigger(observable, 'changing', value, currentValue) !== false) {
         observable.update = blocks.noop;
         if (!observable._dependencyType) {
-          if (blocks.isArray(currentValue) && blocks.isArray(value) && observable.removeAll && observable.addMany) {
-            observable.removeAll();
-            observable.addMany(value);
+          if (blocks.isArray(currentValue) && blocks.isArray(value) && observable.reset) {
+            observable.reset(value);
           } else {
             observable.__value__ = value;
           }
@@ -4649,7 +4843,6 @@
     Observer.startObserving();
     accessor.call(observable.__context__);
     blocks.each(Observer.stopObserving(), function (dependency) {
-      //(dependency._dependencies = dependency._dependencies || []).push(observable);
       var dependencies = (dependency._dependencies = dependency._dependencies || []);
       var exists = false;
       blocks.each(dependencies, function (value) {
@@ -4670,11 +4863,16 @@
       : observable._dependencyType == 2 ? observable.__value__.get.call(context)
       : observable.__value__;
   }
+  
+  var observableIndexes = {};
 
   blocks.extend(blocks.observable, {
     getIndex: function (observable, index, forceGet) {
       if (!blocks.isObservable(observable)) {
-        return blocks.observable(index);
+        if (!observableIndexes[index]) {
+          observableIndexes[index] = blocks.observable(index);
+        }
+        return observableIndexes[index];
       }
       var indexes = observable._indexes;
       var $index;
@@ -4684,7 +4882,7 @@
           $index = indexes[index];
         } else {
           $index = blocks.observable(index);
-          indexes.push($index);
+          indexes.splice(index, 0, $index);
         }
       } else {
         $index = blocks.observable(index);
@@ -4865,9 +5063,60 @@
          * // removes the previous values and fills the observable array with [5, 6, 7] values
          * items.reset([5, 6, 7]);
          */
-        reset: function (value) {
-          value = blocks.isArray(value) ? value : [];
-          return this(value);
+        reset: function (array) {
+          if (arguments.length === 0) {
+            this.removeAll();
+            return this;
+          }
+          
+          var current = this.__value__;
+          var chunkManager = this._chunkManager;
+          var addCount = array.length - current.length;
+          var removeCount = Math.max(current.length - array.length, 0);
+          
+          array = blocks.unwrap(array);
+          
+          Events.trigger(this, 'removing', {
+            type: 'removing',
+            items: current,
+            index: 0
+          });
+          
+          Events.trigger(this, 'adding', {
+            type: 'adding',
+            items: array,
+            index: 0
+          });
+
+          chunkManager.each(function (domElement, virtualElement) {
+            var domQuery = blocks.domQuery(domElement);
+            
+            domQuery.contextBubble(blocks.context(domElement), function () {
+                virtualElement.updateChildren(domQuery, array, domElement);
+            });
+          });
+          
+          if (addCount > 0) {
+            chunkManager.add(array.slice(current.length), current.length);
+          } else if (removeCount > 0) {
+            chunkManager.remove(array.length, removeCount);
+          }
+          
+          this.__value__ = array;
+          
+          Events.trigger(this, 'remove', {
+            type: 'remove',
+            items: current,
+            index: 0
+          });
+          
+          Events.trigger(this, 'add', {
+            type: 'add',
+            items: array,
+            index: 0
+          });
+          
+          return this;
         },
 
         /**
@@ -5291,9 +5540,7 @@
          * @returns {Array} A new array containing the removed items, if any.
          */
         splice: function (index, howMany) {
-          var _this = this;
           var array = this.__value__;
-          var indexes = this._indexes;
           var chunkManager = this._chunkManager;
           var returnValue = [];
           var args = arguments;
@@ -5310,22 +5557,14 @@
               index: index
             });
 
-            chunkManager.each(function (domElement) {
-              for (var j = 0; j < howMany; j++) {
-                chunkManager.removeAt(domElement, index);
-              }
-            });
-
-            ElementsData.collectGarbage();
-
-            indexes.splice(index, howMany);
+            chunkManager.remove(index, howMany);
+            
             returnValue = array.splice(index, howMany);
             Events.trigger(this, 'remove', {
               type: 'remove',
               items: returnValue,
               index: index
             });
-            chunkManager.dispose();
           }
 
           if (args.length > 2) {
@@ -5336,39 +5575,9 @@
               index: index,
               items: addItems
             });
-
-            blocks.each(addItems, function (item, i) {
-              indexes.splice(index + i, 0, blocks.observable(index + i));
-            });
-
-            chunkManager.each(function (domElement, virtualElement) {
-              var html = '';
-              var length = addItems.length;
-              var i = 0;
-
-              var domQuery = blocks.domQuery(domElement);
-              domQuery.contextBubble(blocks.context(domElement), function () {
-                for (; i < length; i++) {
-                  // TODO: Should be refactored in a method because
-                  // the same logic is used in the each method
-                  domQuery.dataIndex(blocks.observable.getIndex(_this, index + i, true));
-                  domQuery.pushContext(addItems[i]);
-                  html += virtualElement.renderChildren(domQuery);
-                  domQuery.popContext();
-                  domQuery.dataIndex(undefined);
-                }
-              });
-
-              if (domElement.childNodes.length === 0) {
-                (new HtmlElement(domElement)).html(html);
-                //domElement.innerHTML = html;
-                domQuery.createElementObservableDependencies(domElement.childNodes);
-              } else {
-                var fragment = domQuery.createFragment(html);
-                chunkManager.insertAt(domElement, index, fragment);
-              }
-            });
-
+            
+            chunkManager.add(addItems, index);
+            
             array.splice.apply(array, [index, 0].concat(addItems));
             Events.trigger(this, 'add', {
               type: 'add',
@@ -5376,9 +5585,6 @@
               items: addItems
             });
           }
-
-          // TODO: Explain why this is here. Fixes a bug.
-          chunkManager.dispose();
 
           this.update();
           return returnValue;

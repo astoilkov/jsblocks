@@ -14,10 +14,9 @@ define([
   './ElementsData',
   './DomQuery',
   './Expression',
-  './VirtualElement',
-  './HtmlElement'
+  './VirtualElement'
 ], function (blocks, slice, trimRegExp, keys, classAttr, queries, addListener, getClassIndex, escapeValue, animation, createFragment, createVirtual,
-  ElementsData, DomQuery, Expression, VirtualElement, HtmlElement) {
+  ElementsData, DomQuery, Expression, VirtualElement) {
 
   /**
   * @namespace blocks.queries
@@ -114,8 +113,8 @@ define([
           }
           if (!serverData || !serverData.templates || !serverData.templates[ElementsData.id(this)]) {
             this.html(html);
-            if (!this._each && this._el != HtmlElement.Empty()) {
-              this._children = createVirtual(this._el._element.childNodes[0], this);
+            if (!this._each && this._el) {
+              this._children = createVirtual(this._el.childNodes[0], this);
               this._innerHTML = null;
             }
           }
@@ -282,6 +281,9 @@ define([
 
           while (++index < children.length) {
             child = children[index];
+            if (child.isExpression) {
+              continue;
+            }
             if (typeof child == 'string') {
               if (child.replace(trimRegExp, '').replace(/(\r\n|\n|\r)/gm, '') === '') {
                 children.splice(index--, 1);
@@ -310,23 +312,28 @@ define([
         };
       },
 
-      preprocess: function (domQuery, collection, name) {
+      preprocess: function (domQuery, collection) {
+        var syncIndex = domQuery.getSyncIndex();
         var element = this;
-        var i = 0;
+        var index = 0;
         var rawCollection;
         var elementData;
-        var startIndex;
         var staticHtml;
-        var maxCount;
+        var childs;
         var html;
+        
+        if (this._sync) {
+          element.updateChildren(domQuery, collection, this._el);
+          return;
+        }
 
-        element._template = element._template || element._children;
+        this._template = this._template || this._children;
 
         this._childrenEach = true;
 
         if (domQuery._serverData) {
-          elementData = domQuery._serverData[ElementsData.id(element)];
-          domQuery._serverData[ElementsData.id(element)] = undefined;
+          elementData = domQuery._serverData[ElementsData.id(this)];
+          domQuery._serverData[ElementsData.id(this)] = undefined;
           if (elementData) {
             var div = document.createElement('div');
             div.innerHTML = elementData;
@@ -349,31 +356,27 @@ define([
 
         rawCollection = blocks.unwrapObservable(collection);
 
+        childs = domQuery._context.childs = [];
+        
         if (blocks.isArray(rawCollection)) {
-          startIndex = startIndex || 0;
-          maxCount = maxCount || rawCollection.length;
-          for (i = 0; i < rawCollection.length; i++) {
-            domQuery.dataIndex(blocks.observable.getIndex(collection, i));
-            domQuery.pushContext(rawCollection[i]);
-            if (name) {
-              blocks.queries.define.preprocess.call(element, domQuery, name, rawCollection[i]);
-            }
-            html += element.renderChildren(domQuery);
-            domQuery.popContext();
+          for (index = 0; index < rawCollection.length; index++) {
+            domQuery.dataIndex(blocks.observable.getIndex(collection, index));
+            childs.push(domQuery.pushContext(rawCollection[index])); 
+            html += this.renderChildren(domQuery, syncIndex + index);
+            domQuery.popContext(); 
             domQuery.dataIndex(undefined);
           }
         } else if (blocks.isObject(rawCollection)) {
           for (var key in rawCollection) {
-            domQuery.dataIndex(blocks.observable.getIndex(collection, i));
+            domQuery.dataIndex(blocks.observable.getIndex(collection, index));
             domQuery.pushContext(rawCollection[key]);
             html += element.renderChildren(domQuery);
             domQuery.popContext();
             domQuery.dataIndex(undefined);
-            i++;
+            index++;
           }
         }
 
-        //element._innerHTML = html + staticHtml.footer;
         this.html(html + staticHtml.footer);
       }
 
@@ -433,7 +436,6 @@ define([
           if (!child._attributes || (child._attributes && !child._attributes['data-role'])) {
             children.splice(i--, 1);
           }
-
         }
 
         option._attributeExpressions.push(value);
@@ -469,8 +471,8 @@ define([
       passDetailValues: true,
 
       preprocess: function (condition) {
-        if (!this._each) {
-          throw new Error('render() is supported only in each context');
+        if (!this._each && !this._sync) {
+          throw new Error('render() is supported only() in each context');
         }
 
         this._renderMode = condition.value ? VirtualElement.RenderMode.All : VirtualElement.RenderMode.None;
@@ -485,7 +487,7 @@ define([
       update: function (condition) {
         var elementData = ElementsData.data(this);
         if (elementData.renderCache && condition.value) {
-          // TODO: Should use the logic from HtmlElement.prototype.html method
+          // TODO: Should use the logic from dom.html method
           this.innerHTML = elementData.renderCache.renderChildren(blocks.domQuery(this));
           blocks.domQuery(this).createElementObservableDependencies(this.childNodes);
           elementData.renderCache = null;
@@ -579,7 +581,7 @@ define([
         var virtual = ElementsData.data(this).virtual;
         if (virtual._each) {
           virtual = VirtualElement();
-          virtual._el = HtmlElement(this);
+          virtual._el = this;
         }
         if (arguments.length > 1) {
           virtual.toggleClass(className, condition);

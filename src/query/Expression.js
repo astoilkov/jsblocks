@@ -6,6 +6,9 @@ define([
   './Observer'
 ], function (blocks, parameterQueryCache, escapeValue, ElementsData, Observer) {
   var Expression = {
+    Html: 0,
+    ValueOnly: 2,
+    
     Create: function (text, attributeName, element) {
       var index = -1;
       var endIndex = 0;
@@ -55,32 +58,42 @@ define([
       result.text = text;
       result.attributeName = attributeName;
       result.element = element;
+      result.isExpression = true;
       return match ? result : null;
     },
 
-    GetValue: function (context, elementData, expression) {
+    GetValue: function (context, elementData, expression, type) {
       var value = '';
+      var length = expression.length;
+      var index = -1;
+      var chunk;
 
       if (!context) {
         return expression.text;
       }
-
-      blocks.each(expression, function (chunk) {
-        if (typeof chunk == 'string') {
-          value += chunk;
-        } else {
-          value += Expression.Execute(context, elementData, chunk, expression).value;
-        }
-      });
+      
+      if (length == 1) {
+        value = Expression.Execute(context, elementData, expression[0], expression, type);
+      } else {
+        while (++index < length) {
+          chunk = expression[index];
+          if (typeof chunk == 'string') {
+            value += chunk;
+          } else {
+            value += Expression.Execute(context, elementData, chunk, expression, type);
+          }
+        }  
+      }
 
       expression.lastResult = value;
 
       return value;
     },
 
-    Execute: function (context, elementData, expressionData, entireExpression) {
+    Execute: function (context, elementData, expressionData, entireExpression, type) {
       var expression = expressionData.expression;
       var attributeName = expressionData.attributeName;
+      var isObservable;
       var expressionObj;
       var observables;
       var result;
@@ -104,22 +117,14 @@ define([
 
       value = func(context);
 
-      result = blocks.unwrap(value);
+      isObservable = blocks.isObservable(value);
+      result = isObservable ? value() : value;
       result = result == null ? '' : result.toString();
       result = escapeValue(result);
 
       observables = Observer.stopObserving();
 
-      //for (key in elementData.observables) {
-        //  blocks.observable.cache[key]._expressions.push({
-        //    length: elementData.length,
-        //    element: currentElement,
-        //    expression: elementData.expression,
-        //    context: elementData.context
-        //  });
-        //}
-
-      if (blocks.isObservable(value) || observables.length) {
+      if (type != Expression.ValueOnly && (isObservable || observables.length)) {
         if (!attributeName) {
           elementData = ElementsData.createIfNotExists();
         }
@@ -146,11 +151,8 @@ define([
           result = '<!-- ' + elementData.id + ':blocks -->' + result;
         }
       }
-
-      return {
-        value: result,
-        elementData: elementData
-      };
+      
+      return result;
     }
   };
 

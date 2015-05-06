@@ -1,8 +1,9 @@
 define([
   '../core',
+  './dom',
   './animation',
   './ElementsData'
-], function (blocks, animation, ElementsData) {
+], function (blocks, dom, animation, ElementsData) {
   function ChunkManager(observable) {
     this.observable = observable;
     this.chunkLengths = {};
@@ -22,7 +23,6 @@ define([
       this.startIndex = index + this.startOffset;
     },
 
-    // TODO: Explain why we even need this method. Required to fix a bug.
     setChildNodesCount: function (count) {
       if (this.childNodesCount === undefined) {
         this.observableLength = this.observable.__value__.length;
@@ -67,23 +67,27 @@ define([
 
     removeAt: function (wrapper, index) {
       var chunkLength = this.chunkLength(wrapper);
-      //var childNode;
-      //var i = 0;
 
       animation.remove(
         wrapper,
         chunkLength * index + this.startIndex,
         chunkLength);
+    },
+    
+    remove: function (index, howMany) {
+      var _this = this;
+      
+      this.each(function (domElement) {
+        for (var j = 0; j < howMany; j++) {
+          _this.removeAt(domElement, index);
+        }
+      });
 
-      // TODO: When normalize = false we should ensure there is an empty text node left if there is need for one and there have been one before
-      //for (; i < chunkLength; i++) {
-      //  childNode = wrapper.childNodes[chunkLength * index + this.startIndex];
-      //  if (childNode) {
-      //    animateDomAction('remove', childNode);
-      //    //ElementsData.clear(childNode, true);
-      //    //wrapper.removeChild(childNode);
-      //  }
-      //}
+      ElementsData.collectGarbage();
+      
+      this.dispose();
+  
+      this.observable._indexes.splice(index, howMany);
     },
 
     removeAll: function () {
@@ -95,6 +99,43 @@ define([
           _this.removeAt(parent, 0);
         });
       });
+    },
+    
+    add: function (addItems, index) {
+      var _this = this;
+      var observable = this.observable;
+      
+      blocks.each(addItems, function (item, i) {
+        observable._indexes.splice(index + i, 0, blocks.observable(index + i));
+      });
+
+      this.each(function (domElement, virtualElement) {
+        var domQuery = blocks.domQuery(domElement);
+        var context = blocks.context(domElement);
+        var html = '';
+        var syncIndex;
+        
+        domQuery.contextBubble(context, function () {
+          syncIndex = domQuery.getSyncIndex();
+          for (var i = 0; i < addItems.length; i++) {
+            domQuery.dataIndex(blocks.observable.getIndex(observable, i + index, true));
+            context.childs.splice(i + index, 0, domQuery.pushContext(addItems[i]));
+            html += virtualElement.renderChildren(domQuery, syncIndex + (i + index));
+            domQuery.popContext();
+            domQuery.dataIndex(undefined);
+          }
+        });
+
+        if (domElement.childNodes.length === 0) {
+          dom.html(domElement, html);
+          domQuery.createElementObservableDependencies(domElement.childNodes);
+        } else {
+          var fragment = domQuery.createFragment(html);
+          _this.insertAt(domElement, index, fragment);
+        }
+      });
+      
+      this.dispose();
     },
 
     each: function (callback) {
@@ -148,7 +189,7 @@ define([
           commentElement = commentElement.nextSibling;
           commentIndex++;
         }
-        this.setChildNodesCount(commentIndex - this.startIndex/* - 1*/);
+        this.setChildNodesCount(commentIndex - this.startIndex);
         callback(domElement.parentNode, element, domElement);
       }
     }

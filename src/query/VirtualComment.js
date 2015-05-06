@@ -2,9 +2,8 @@
   '../core',
   '../var/trimRegExp',
   './var/dataIdAttr',
-  './VirtualElement',
-  './HtmlCommentElement'
-], function (blocks, trimRegExp, dataIdAttr, VirtualElement, HtmlCommentElement) {
+  './VirtualElement'
+], function (blocks, trimRegExp, dataIdAttr, VirtualElement) {
   function VirtualComment(commentText) {
     if (!VirtualComment.prototype.isPrototypeOf(this)) {
       return new VirtualComment(commentText);
@@ -14,7 +13,7 @@
 
     if (commentText.nodeType == 8) {
       this._commentText = commentText.nodeValue;
-      this._el = HtmlCommentElement(commentText);
+      this._el = commentText;
     } else {
       this._commentText = commentText;
     }
@@ -22,7 +21,7 @@
 
   blocks.VirtualComment = blocks.inherit(VirtualElement, VirtualComment, {
     renderBeginTag: function () {
-      var dataId = this._attributes[dataIdAttr];
+      var dataId = this._getAttr(dataIdAttr);
       var html = '<!-- ';
 
       if (dataId) {
@@ -34,7 +33,7 @@
     },
 
     renderEndTag: function () {
-      var dataId = this._attributes[dataIdAttr];
+      var dataId = this._getAttr(dataIdAttr);
       var html = '<!-- ';
 
       if (dataId) {

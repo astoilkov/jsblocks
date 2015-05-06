@@ -683,7 +683,7 @@
         var model = getData();
 
         query(model);
-
+        
         model.columns.splice(0, 0, {
           field: 'Title'
         });
@@ -762,6 +762,7 @@
 
         var model = getData();
 
+debugger;
         query(model);
 
         model.columns.splice(0, 0, {
@@ -1027,7 +1028,7 @@
         });
 
         fixture.html('<div id="testElement1" data-query="each(items)"><span class="firstName" data-query=\'setClass(FirstName).attr("data-index", $index)\'></span> the best <span class="lastName" data-query="html(LastName)"></span></div>');
-        fixture.html(fixture.html() + '<div id="testElement2" data-query="each(items)"><span class="firstName" data-query="setClass(FirstName)" data-index="{{$index}}"></span> the best <span class="lastName">{{LastName}}</span></div>');
+        fixture.html(fixture.html() + '<div id="testElement2" data-query="each(items)"><span class="firstName" data-query="setClass(FirstName).visible($index() % 2 == 0)" data-index="{{$index}}">a</span> the best <span class="lastName">{{LastName}}</span></div>');
 
         setFixtures(fixture);
       });
@@ -1059,6 +1060,11 @@
           expect($('#testElement2').find('.firstName').eq(i)).toHaveClass('FirstName' + indexes[i]);
           expect($('#testElement2').find('.firstName').eq(i)).toHaveAttr('data-index', i);
           expect($('#testElement2').find('.lastName').eq(i)).toHaveHtml('LastName' + indexes[i]);
+          if (i % 2 == 0) {
+            expect($('#testElement2').find('.firstName').eq(i)).toBeVisible();  
+          } else {
+            expect($('#testElement2').find('.firstName').eq(i)).not.toBeVisible();
+          }
         }
       }
 

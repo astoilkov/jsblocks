@@ -76,16 +76,21 @@ define([
   }
 
   var executeExpressionValue = Expression.Execute;
-
+  var commentRegEx = /^<!-- ([0-9]+):/;
+  
   Expression.Execute = function (context, elementData, expressionData, entireExpression) {
     var value = executeExpressionValue(context, elementData, expressionData, entireExpression);
-    elementData = value.elementData;
-    if (elementData) {
-      if (expressionData.attributeName) {
-        server.data[elementData.id + expressionData.attributeName] =  entireExpression.text;
-      } else {
-        server.data[elementData.id] = '{{' + expressionData.expression + '}}';
-      }
+    var regExResult = commentRegEx.exec(value);
+    
+    if (regExResult) {
+      elementData = ElementsData.byId(regExResult[1]);
+      if (elementData) {
+        if (expressionData.attributeName) {
+          server.data[elementData.id + expressionData.attributeName] =  entireExpression.text;
+        } else {
+          server.data[elementData.id] = '{{' + expressionData.expression + '}}';
+        }
+      }  
     }
 
     return value;
@@ -124,6 +129,15 @@ define([
     }
   };
 
+  blocks.observable.fn.array.reset = function (array) {
+    this.removeAll();
+    
+    if (arguments.length > 0) {
+      this.addMany(blocks.unwrap(array));
+    }
+    
+    return this;
+  };
 
   var http = require('http');
   var fs = require('fs');

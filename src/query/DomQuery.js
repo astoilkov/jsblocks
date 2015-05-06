@@ -10,10 +10,9 @@ define([
   './ElementsData',
   './Observer',
   './VirtualElement',
-  './VirtualComment',
-  './HtmlElement'
+  './VirtualComment'
 ], function (blocks, trimRegExp, createProperty, addEventListener, dataQueryAttr, parameterQueryCache, on, parseQuery, createFragment,
-             ElementsData, Observer, VirtualElement, VirtualComment, HtmlElement) {
+             ElementsData, Observer, VirtualElement, VirtualComment) {
   function DomQuery(options) {
     this._options = options || {};
     this._contextProperties = {};
@@ -77,6 +76,18 @@ define([
 
       return newContext;
     },
+    
+    getSyncIndex: function () {
+      var context = this._context;
+      var index = '';
+      
+      while (context && context.$index) {
+        index = context.$index.__value__ + '_' + index;
+        context = context.$parentContext;
+      }
+      
+      return index;
+    },
 
     contextBubble: function (context, callback) {
       var currentContext = this._context;
@@ -114,34 +125,8 @@ define([
     },
 
     executeQuery: function (element, query) {
-      var cache = DomQuery.QueryCache[query];
-
-      if (!cache) {
-        cache = DomQuery.QueryCache[query] = [];
-
-        parseQuery(query, function (methodName, parameters) {
-          var method = blocks.queries[methodName];
-          var methodObj = {
-            name: methodName,
-            params: parameters,
-            query: methodName + '(' + parameters.join(',') + ')'
-          };
-
-          if (method) {
-            // TODO: Think of a way to remove this approach
-            if (methodName == 'attr' || methodName == 'val') {
-              cache.unshift(methodObj);
-            } else {
-              cache.push(methodObj);
-            }
-          }
-          /* @if DEBUG */
-          else {
-            blocks.debug.queryNotExists(methodObj, element);
-          }
-          /* @endif */
-        });
-      }
+      var cache = DomQuery.QueryCache[query] || createCache(query, element);
+      
       this.executeMethods(element, cache);
     },
 
@@ -249,7 +234,7 @@ define([
           var virtual = ElementsData.data(element).virtual;
           if (virtual._each) {
             virtual = VirtualElement('div');
-            virtual._el = HtmlElement(element);
+            virtual._el = element;
             virtual._fake = true;
           }
           if (method.call === true) {
@@ -316,6 +301,8 @@ define([
           }
         }
       }
+      
+      this._context = null;
     },
 
     createFragment: function (html) {
@@ -397,6 +384,35 @@ define([
       }
     }
   };
+  
+  function createCache(query, element) {
+    var cache = DomQuery.QueryCache[query] = [];
+
+    parseQuery(query, function (methodName, parameters) {
+      var method = blocks.queries[methodName];
+      var methodObj = {
+        name: methodName,
+        params: parameters,
+        query: methodName + '(' + parameters.join(',') + ')'
+      };
+
+      if (method) {
+        // TODO: Think of a way to remove this approach
+        if (methodName == 'attr' || methodName == 'val') {
+          cache.unshift(methodObj);
+        } else {
+          cache.push(methodObj);
+        }
+      }
+      /* @if DEBUG */
+      else {
+        blocks.debug.queryNotExists(methodObj, element);
+      }
+      /* @endif */
+    });
+    
+    return cache;
+  }
 
   return DomQuery;
 });

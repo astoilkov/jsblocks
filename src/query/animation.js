@@ -134,8 +134,8 @@
       disposeCallback();
       return;
     }
-
-    if (cssType == 'show') {
+    
+    if (type == 'show') {
       element.style.display = '';
     }
 
