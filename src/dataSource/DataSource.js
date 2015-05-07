@@ -35,34 +35,29 @@
       options.update.url = baseUrl + options.update.url;
     }
 
-    if (blocks.observable) {
-      this.data = blocks
-          .observable(blocks.unwrap(data) || [])
-          .extend()
-          .on('add remove', blocks.bind(this._onArrayChange, this));
-      this.view = blocks.observable([]).extend();
-      this.hasChanges = blocks.observable(false);
-    }
+    this.data = blocks
+        .observable(blocks.unwrap(data) || [])
+        .extend()
+        .on('add remove', blocks.bind(this._onArrayChange, this));
+    this.hasChanges = blocks.observable(false);
 
     this._aggregates = null;
     this._changes = [];
     this._changesMeta = {};
-    this._page = options.page;
-    this._pageSize = options.pageSize;
-    this._sortExpressions = blocks.toArray(options.sortExpressions);
-    this._filterExpressions = blocks.isArray(options.filterExpressions) ? options.filterExpressions : [{ logic: 'and', filters: [options.filterExpressions] }];
-    this._groupExpressions = blocks.toArray(options.groupExpressions);
-    this._aggregateExpressions = blocks.toArray(options.aggregateExpressions);
 
     this._subscribeToEvents();
   }
 
   blocks.DataSource = DataSource;
+  
+  DataSource.ArrayMode = 1;
+  DataSource.ObjectMode = 2;
 
-    DataSource.prototype = {
+  DataSource.prototype = {
     options: {
       baseUrl: '',
       idAttr: '',
+      mode: DataSource.ArrayMode,
 
       read: {
         url: '',
@@ -86,126 +81,11 @@
         url: '',
         type: 'POST',
         contentType: CONTENT_TYPE
-      },
-
-      // data: null, // the initial data
-      // autoSync: false,
-      // batch: false,
-
-      //serverPaging: false,
-      page: 1,
-      pageSize: Number.POSITIVE_INFINITY,
-
-
-      //#region Advanced
-
-      //serverAggregates: false,
-      aggregateExpressions: [
-          //{ field: 'Age', aggregate: 'sum' }
-      ],
-
-      //serverFiltering: false,
-      filterExpressions: {
-        //logic: 'or',
-        //filters: [
-        //    { field: 'category', operator: 'eq', value: 'asd' },
-        //    {
-        //        logic: 'and',
-        //        filters: [
-
-        //        ]
-        //    }
-        //]
-      },
-
-      //serverGrouping: false,
-      groupExpressions: [
-          //{ field: 'category', aggregate: 'sum', dir: 'desc' },
-          //{ field: 'subcategory' },
-      ],
-
-      //serverSorting: false,
-      sortExpressions: [
-          //{ field: 'category', dir: 'desc' },
-          //{ field: 'name', dir: 'asc' }
-      ]
-
-      //schema: {
-      //    model: {
-      //        id: 'ProductID',
-      //        fields: {
-      //            ProductID: {
-      //                //this field will not be editable (default value is true)
-      //                editable: false,
-      //                // a defaultValue will not be assigned (default value is false)
-      //                nullable: true
-      //            },
-      //            ProductName: {
-      //                //set validation rules
-      //                validation: { required: true }
-      //            },
-      //            UnitPrice: {
-      //                //data type of the field {Number|String|Boolean|Date} default is String
-      //                type: 'number',
-      //                // used when new model is created
-      //                defaultValue: 42,
-      //                validation: { required: true, min: 1 }
-      //            }
-      //        }
-      //    },
-
-      //    parse: function (response) {
-      //        var products = [];
-      //        for (var i = 0; i < response.length; i++) {
-      //            var product = {
-      //                id: response[i].ProductID,
-      //                name: response[i].ProductName
-      //            };
-      //            products.push(product);
-      //        }
-      //        return products;
-      //    },
-
-      //    // specify the the schema is XML
-      //    type: 'xml',
-      //    // the XML element which represents a single data record
-      //    data: '/books/book',
-      //    // define the model - the object which will represent a single data record
-      //    model: {
-      //        // configure the fields of the object
-      //        fields: {
-      //            // the 'title' field is mapped to the text of the 'title' XML element
-      //            title: 'title/text()',
-      //            // the 'id' field is mapped to the 'id' attribute of the 'book' XML element
-      //            id: '@cover'
-      //        }
-      //    }
-      //},
-
-
-      //#endregion
-    },
-
-    query: function (options, callback) { // Executes the specified query over the data items. Makes a HTTP request if bound to a remote service.
-      //dataSource.query({
-      //    sort: { field: 'ProductName', dir: 'desc' },
-      //    page: 3,
-      //    pageSize: 20
-      //});
-
-      callback = arguments[arguments.length - 1];
-      if (!options || blocks.isFunction(options)) {
-        options = {};
       }
-
-      options.__updateData__ = false;
-      this.read(options, callback);
-      return this;
     },
 
     read: function (options, callback) {
-      var that = this,
-          requiresEntireData = that._requiresEntireData();
+      var _this = this;
 
       callback = arguments[arguments.length - 1];
       if (blocks.isFunction(options)) {
@@ -213,48 +93,38 @@
       }
       options = options || {};
 
-      if (requiresEntireData) {
-        options.page = 1;
-        options.pageSize = Number.POSITIVE_INFINITY;
-      }
-
-      that._ajax('read', options, function (data) {
+      _this._ajax('read', options, function (data) {
         if (blocks.isString(data)) {
           data = JSON.parse(data);
         }
-        if (!blocks.isArray(data)) {
-          if (blocks.isArray(data.value)) {
-            data = data.value;
-          } else if (blocks.isObject(data)) {
-            blocks.each(data, function (value) {
-              if (blocks.isArray(value)) {
-                data = value;
-                return false;
-              }
-            });
-          }
-
+        
+        if (_this.options.mode == DataSource.ArrayMode) {
           if (!blocks.isArray(data)) {
-            data = [data];
+            if (blocks.isArray(data.value)) {
+              data = data.value;
+            } else if (blocks.isObject(data)) {
+              blocks.each(data, function (value) {
+                if (blocks.isArray(value)) {
+                  data = value;
+                  return false;
+                }
+              });
+            }   
           }
         }
+        
+        if (!blocks.isArray(data)) {
+          data = [data];
+        }
+        
         if (!options || options.__updateData__ !== false) {
-          that._updateData(data, requiresEntireData);
+          _this._updateData(data);
         }
         if (callback && blocks.isFunction(callback)) {
           callback(data);
         }
       });
-      return that;
-    },
-
-    fetch: function (callback) {
-      callback = callback || blocks.noop;
-      if (this._haveData()) {
-        this._updateData(this._data);
-      } else {
-        this.read(callback);
-      }
+      return _this;
     },
 
     // should accept dataItem only
@@ -302,9 +172,6 @@
           if (item.__id__) {
             delete item.__id__;
           }
-          //if (change.type == DESTROY && blocks.isObject(item) && _this.options.idAttr) {
-          //  data = item[_this.options.idAttr];
-          //}
           _this._ajax(change.type, {
             data: data
           }, function () {
@@ -348,67 +215,10 @@
       });
     },
 
-    removeWhere: function () {
-
-    },
-
-    //#region Advanced
-
-    aggregates: function () {
-      if (!this._aggregates) {
-        this._aggregates = this.data.aggregate(this._aggregateExpressions);
-      }
-      return this._aggregates;
-    },
-
-    getById: function () {
-
-    },
-
-    add: function () {
-      return this.data.add.apply(this.data, blocks.toArray(arguments));
-    },
-
-    remove: function () {
-      this.data.remove.apply(this.data, blocks.toArray(arguments));
-      return this;
-    },
-
-    removeAt: function (index, count) {
-      this.data.removeAt(index, count);
-      return this;
-    },
-
-    page: createProperty('_page'),
-    pageSize: createProperty('_pageSize'),
-    sortExpressions: createProperty('_sortExpressions'),
-    filterExpressions: createProperty('_filterExpressions'),
-    groupExpressions: createProperty('_groupExpressions'),
-    aggregateExpressions: createProperty('_aggregateExpressions'),
-    //#endregion
-
-    _updateData: function (data, requiresEntireData) {
-      data = blocks.unwrapObservable(data);
-      var pageSize = this._pageSize;
-      var startIndex;
-
-      requiresEntireData = arguments.length > 1 ? requiresEntireData : this._requiresEntireData();
-
-      this.view.removeAll();
-      if (requiresEntireData) {
-        startIndex = (this._page - 1) * pageSize;
-        this._haveAllData = true;
-        data = blocks.sortBy(data, this._sortExpressions);
-
-        if (this.data().length === 0) {
-          this.data.addMany(data);
-        }
-        this.view.addMany(data.slice(startIndex, startIndex + pageSize));
-      } else {
-        this.data.removeAll();
-        this.data.addMany(data);
-        this.view.addMany(data);
-      }
+    _updateData: function (data) {
+      this.data.removeAll();
+      this.data.addMany(data);
+      
       this.clearChanges();
       this._trigger('change');
     },
@@ -418,7 +228,7 @@
       if (type == 'remove') {
         this._remove(args.items);
       } else if (type == 'removeAt') {
-        this._remove(this.view.slice(args.index, args.index + args.count));
+        this._remove(this.data.slice(args.index, args.index + args.count));
       } else if (type == 'add') {
         this._add(args.items);
       }
@@ -482,22 +292,6 @@
         items: items
       });
       this._onChangePush();
-    },
-
-    _haveData: function () {
-      var startIndex = (this._page + 1) * this._pageSize;
-      var data = this.data();
-
-      return this._haveAllData || (data[startIndex] && data[startIndex + this._pageSize]);
-    },
-
-    _requiresEntireData: function () {
-      var options = this.options;
-      return (!options.serverPaging && this._pageSize != Number.POSITIVE_INFINITY) ||
-          (!options.serverSorting && !blocks.isEmpty(options.sortExpressions)) ||
-          (!options.serverFiltering && !blocks.isEmpty(options.filterExpressions)) ||
-          (!options.serverGrouping && !blocks.isEmpty(options.groupExpressions)) ||
-          (!options.serverAggregates && !blocks.isEmpty(options.aggregateExpressions));
     },
 
     _subscribeToEvents: function () {

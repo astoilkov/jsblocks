@@ -31,101 +31,6 @@
       });
     });
 
-    describe('view()', function () {
-      it('view() returns empty array by default', function () {
-        var dataSource = new blocks.DataSource();
-        expect(dataSource.view().length).toBe(0);
-      });
-
-      it('is observable', function () {
-        var dataSource = new blocks.DataSource();
-        expect(blocks.isObservable(dataSource.view)).toBe(true);
-      });
-    });
-
-    describe('query()', function () {
-      it('without parameters gets default options', function () {
-        var dataSource = new blocks.DataSource();
-        dataSource.query(function (data) {
-          expect(data.length).toBe(2);
-          expect(data[0].FirstName).toBe('Antonio');
-        });
-      });
-
-      it('does not populate the view()', function () {
-        var dataSource = new blocks.DataSource();
-        dataSource.query();
-        expect(dataSource.view().length).toBe(0);
-      });
-
-      it('does not populate the data()', function () {
-        var dataSource = new blocks.DataSource();
-        dataSource.query();
-        expect(dataSource.data().length).toBe(0);
-      });
-
-      it('the callback is called', function () {
-        var dataSource = new blocks.DataSource();
-        var isCallbackCalled = false;
-        dataSource.query(function () {
-          isCallbackCalled = true;
-        });
-        expect(isCallbackCalled).toBe(true);
-      });
-    });
-
-    describe('fetch()', function () {
-      it('fetch callback is called', function () {
-        var isFetchCalled = false;
-        var dataSource = new blocks.DataSource();
-        dataSource.fetch(function () {
-          isFetchCalled = true;
-        });
-        expect(isFetchCalled).toBe(true);
-      });
-
-      it('fetch() populates the view correctly', function () {
-        var dataSource = new blocks.DataSource();
-        dataSource.fetch();
-        expect(dataSource.view().length).toBe(2);
-        expect(dataSource.view()[0].FirstName).toBe('Antonio');
-      });
-
-      it('fetch() populates the data correctly', function () {
-        var dataSource = new blocks.DataSource();
-        dataSource.fetch();
-        expect(dataSource.data().length).toBe(2);
-        expect(dataSource.data()[0].FirstName).toBe('Antonio');
-      });
-
-      it('fetch() retrieves paged data for the first page', function () {
-        var dataSource = new blocks.DataSource();
-        dataSource.pageSize(1);
-        dataSource.fetch();
-        expect(dataSource.data().length).toBe(2);
-        expect(dataSource.view().length).toBe(1);
-        expect(dataSource.data()[0].FirstName).toBe('Antonio');
-        expect(dataSource.data()[1].FirstName).toBe('Mihaela');
-        expect(dataSource.view()[0].FirstName).toBe('Antonio');
-      });
-
-      it('fetch() retieves paged data for the second page', function () {
-        var dataSource = new blocks.DataSource();
-        dataSource.page(2);
-        dataSource.pageSize(1);
-        dataSource.fetch();
-        expect(dataSource.data().length).toBe(2);
-        expect(dataSource.view().length).toBe(1);
-        expect(dataSource.data()[0].FirstName).toBe('Antonio');
-        expect(dataSource.data()[1].FirstName).toBe('Mihaela');
-        expect(dataSource.view()[0].FirstName).toBe('Mihaela');
-      });
-
-      it('fetch() ', function () {
-
-      });
-    });
-
     describe('read()', function () {
       it('returns the dataSource object', function () {
         var dataSource = new blocks.DataSource();
@@ -137,20 +42,17 @@
         dataSource.read();
         expect(dataSource.data().length).toBe(2);
         expect(dataSource.data.at(0)['FirstName']).toBe('Antonio');
-        expect(dataSource.view().length).toBe(2);
-        expect(dataSource.view.at(0)['FirstName']).toBe('Antonio');
       });
 
       it('without calling read() data is not selected', function () {
         var dataSource = new blocks.DataSource();
         expect(dataSource.data().length).toBe(0);
-        expect(dataSource.view().length).toBe(0);
       });
 
       it('changes are automatically cleared after read repopulation', function () {
         var dataSource = new blocks.DataSource();
         dataSource.read();
-        dataSource.add({
+        dataSource.data.add({
           FirstName: 'Test'
         });
         expect(dataSource.hasChanges()).toBe(true);
@@ -196,7 +98,7 @@
       it('when there are changes hasChanges returns true', function () {
         var dataSource = new blocks.DataSource();
         dataSource.read();
-        dataSource.add({
+        dataSource.data.add({
           FirstName: 'Test'
         });
         expect(dataSource.hasChanges()).toBe(true);
@@ -205,17 +107,17 @@
       it('returns false when adding a new record and then removing it', function () {
         var dataSource = new blocks.DataSource();
         dataSource.read();
-        dataSource.add({
+        dataSource.data.add({
           FirstName: 'Test'
         });
-        dataSource.remove(dataSource.data.last());
+        dataSource.data.remove(dataSource.data.last());
         expect(dataSource.hasChanges()).toBe(false);
       });
 
       it('after sync() is called the changes are cleared', function () {
         var dataSource = new blocks.DataSource();
         dataSource.read();
-        dataSource.add({
+        dataSource.data.add({
           FirstName: 'Test'
         });
         dataSource.sync();
@@ -231,7 +133,7 @@
 
       it('clearChanges() clears all changes', function () {
         var dataSource = new blocks.DataSource();
-        dataSource.add({
+        dataSource.data.add({
           FirstName: 'Test'
         });
         expect(dataSource.hasChanges()).toBe(true);
@@ -241,10 +143,10 @@
       it('clearChanges() clears multiple changes', function () {
         var dataSource = new blocks.DataSource();
         dataSource.read();
-        dataSource.add({
+        dataSource.data.add({
           FirstName: 'Test'
         });
-        dataSource.remove(0);
+        dataSource.data.remove(0);
         var item = dataSource.data.first();
         item.City = 'Sofia';
         dataSource.update(item);
@@ -265,10 +167,10 @@
           }
         });
         dataSource.read();
-        dataSource.add({
+        dataSource.data.add({
           FirstName: 'Test'
         });
-        dataSource.remove(0);
+        dataSource.data.remove(0);
         var item = dataSource.data.first();
         item.City = 'Sofia';
         dataSource.update(item);
@@ -336,7 +238,7 @@
           }
         });
 
-        dataSource.add({
+        dataSource.data.add({
           FirstName: 'Test'
         });
 
@@ -358,7 +260,7 @@
             url: 'SyncTest'
           }
         });
-        dataSource.add({
+        dataSource.data.add({
           FirstName: 'Antonio',
           LastName: 'Stoilkov'
         });
@@ -380,8 +282,8 @@
             url: 'SyncTest'
           }
         });
-        dataSource.fetch();
-        var item = dataSource.view.first();
+        dataSource.read();
+        var item = dataSource.data.first();
         item.City = 'Sofia';
         dataSource.update(item);
         dataSource.sync();

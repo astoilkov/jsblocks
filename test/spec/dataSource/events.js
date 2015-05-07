@@ -46,17 +46,6 @@
         expect(isChangeCalled).toBe(true);
       });
 
-      it('is called after fetch() have retrieved the data', function () {
-        var isChangeCalled = false;
-        var dataSource = new blocks.DataSource();
-        dataSource.change(function () {
-          isChangeCalled = true;
-        });
-        expect(isChangeCalled).toBe(false);
-        dataSource.fetch();
-        expect(isChangeCalled).toBe(true);
-      });
-
       it('is not called when there is an error', function () {
         var isChangeCalled = false;
         var dataSource = new blocks.DataSource({
@@ -111,7 +100,7 @@
         dataSource.on('sync', function () {
           isSyncCalled = true;
         });
-        dataSource.add({
+        dataSource.data.add({
           FirstName: 'Antonio'
         });
         expect(isSyncCalled).toBe(false);
@@ -131,7 +120,7 @@
           isSyncCalled = true;
         });
         expect(isSyncCalled).toBe(false);
-        dataSource.remove(obj);
+        dataSource.data.remove(obj);
         dataSource.sync();
         expect(isSyncCalled).toBe(true);
       });
@@ -240,30 +229,6 @@
         expect(isRequestStartCalled).toBe(true);
       });
 
-      it('is called before an ajax request is made (through "fetch" method)', function () {
-        var isRequestStartCalled = false;
-        var dataSource = new blocks.DataSource({
-          requestStart: function () {
-            isRequestStartCalled = true;
-          }
-        });
-        expect(isRequestStartCalled).toBe(false);
-        dataSource.fetch();
-        expect(isRequestStartCalled).toBe(true);
-      });
-
-      it('is called before an ajax request is made (through "query" method)', function () {
-        var isRequestStartCalled = false;
-        var dataSource = new blocks.DataSource({
-          requestStart: function () {
-            isRequestStartCalled = true;
-          }
-        });
-        expect(isRequestStartCalled).toBe(false);
-        dataSource.fetch();
-        expect(isRequestStartCalled).toBe(true);
-      });
-
       it('is called before an ajax request is made (through "add" method)', function () {
         var isRequestStartCalled = false;
         var dataSource = new blocks.DataSource();
@@ -271,7 +236,7 @@
           isRequestStartCalled = true;
         });
         expect(isRequestStartCalled).toBe(false);
-        dataSource.add({
+        dataSource.data.add({
           FirstName: 'Antonio'
         });
         dataSource.sync();
@@ -290,7 +255,7 @@
           isRequestStartCalled = true;
         });
         expect(isRequestStartCalled).toBe(false);
-        dataSource.remove(obj);
+        dataSource.data.remove(obj);
         dataSource.sync();
         expect(isRequestStartCalled).toBe(true);
       });
@@ -333,30 +298,6 @@
         expect(isRequestEndCalled).toBe(true);
       });
 
-      it('is called before an ajax request is made (through "fetch" method)', function () {
-        var isRequestEndCalled = false;
-        var dataSource = new blocks.DataSource({
-          requestEnd: function () {
-            isRequestEndCalled = true;
-          }
-        });
-        expect(isRequestEndCalled).toBe(false);
-        dataSource.fetch();
-        expect(isRequestEndCalled).toBe(true);
-      });
-
-      it('is called before an ajax request is made (through "query" method)', function () {
-        var isRequestEndCalled = false;
-        var dataSource = new blocks.DataSource({
-          requestEnd: function () {
-            isRequestEndCalled = true;
-          }
-        });
-        expect(isRequestEndCalled).toBe(false);
-        dataSource.fetch();
-        expect(isRequestEndCalled).toBe(true);
-      });
-
       it('is called before an ajax request is made (through "add" method)', function () {
         var isRequestEndCalled = false;
         var dataSource = new blocks.DataSource();
@@ -364,7 +305,7 @@
           isRequestEndCalled = true;
         });
         expect(isRequestEndCalled).toBe(false);
-        dataSource.add({
+        dataSource.data.add({
           FirstName: 'Antonio'
         });
         dataSource.sync();
@@ -383,7 +324,7 @@
           isRequestEndCalled = true;
         });
         expect(isRequestEndCalled).toBe(false);
-        dataSource.remove(obj);
+        dataSource.data.remove(obj);
         dataSource.sync();
         expect(isRequestEndCalled).toBe(true);
       });

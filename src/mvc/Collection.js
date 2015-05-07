@@ -228,6 +228,10 @@ define([
       var newItems = [];
       var i = 0;
       var item;
+      
+      if (this._internalChanging) {
+        return;
+      }
 
       for (; i < items.length; i++) {
         item = items[i];
@@ -237,14 +241,16 @@ define([
       }
 
       if (type == 'remove') {
-        this._dataSource.removeAt(args.index, args.items.length);
+        this._dataSource.data.removeAt(args.index, args.items.length);
       } else if (type == 'add') {
-        this._dataSource.add(newItems);
+        this._dataSource.data.addMany(newItems);
       }
     },
 
     _onDataSourceChange: function () {
-      this.reset(this._dataSource.view());
+      this._internalChanging = true;
+      this.reset(this._dataSource.data());
+      this._internalChanging = false;
       this.clearChanges();
       if (this._view) {
         this._view.trigger('ready');

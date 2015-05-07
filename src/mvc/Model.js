@@ -33,6 +33,7 @@ define([
     if (!this.options.baseUrl) {
       this.options.baseUrl = application.options.baseUrl;
     }
+    this.options.mode = DataSource.ObjectMode;
     this._dataSource = new DataSource(this.options);
     this._dataSource.on('change', this._onDataSourceChange, this);
     this._dataSource.requestStart(function () {
@@ -164,7 +165,7 @@ define([
 
       for (key in properties) {
         property = properties[key];
-        if (key != '__id__' && this[property.propertyName]) {
+        if (key != '__id__' && blocks.isFunction(this[property.propertyName])) {
           dataItem[property.field || property.propertyName] = this[property.propertyName]();
         }
       }
@@ -329,7 +330,7 @@ define([
     },
 
     _onDataSourceChange: function () {
-      var dataItem = blocks.unwrapObservable(this._dataSource.view())[0];
+      var dataItem = blocks.unwrapObservable(this._dataSource.data())[0];
       this._ensurePropertiesCreated(dataItem);
     },
 
