@@ -46,7 +46,7 @@ define([
     body._parent = null;
     body.render(domQuery);
 
-    server.onReady('started', function () {
+    server.await(function () {
       if (head) {
         head.children().splice(0, 0, getServerDataScript());
       }

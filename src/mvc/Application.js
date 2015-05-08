@@ -311,11 +311,7 @@ define([
         this._started = true;
         this._serverData = window.__blocksServerData__;
         this._createViews();
-        if (document.__mock__ && window.__mock__) {
-          this._ready(element);
-        } else {
-          blocks.domReady(blocks.bind(this._ready, this, element));
-        }
+        blocks.domReady(blocks.bind(this._ready, this, element));
       }
     },
 
@@ -326,13 +322,17 @@ define([
         }, this));
       }, this);
     },
-
-    _ready: function (element) {
-      this._serverData = window.__blocksServerData__;
+    
+    _startHistory: function () {
       this._history = new History(this.options);
       this._history
           .on('urlChange', blocks.bind(this._urlChange, this))
           .start();
+    },
+
+    _ready: function (element) {
+      this._serverData = window.__blocksServerData__;
+      this._startHistory();
       blocks.query(this, element);
       this._viewsReady(this._views);
     },

@@ -28,7 +28,7 @@ define([
 
       funcs[code].call(this, blocks, env.document, env.window, require);
 
-      server.onReady('init', function () {
+      server.await(function () {
         handleResult(env, callback);
       });
     });
@@ -45,7 +45,7 @@ define([
 
     callback();
 
-    server.onReady('sent', function () {
+    server.await(function () {
       blocks.each(obj, function (val, name) {
         _this[name] = values[name];
       });
@@ -57,18 +57,23 @@ define([
     var hasActive = false;
     var application = env.server.application;
     if (application) {
-      application.start();
-      blocks.each(application._views, function (view) {
-        if (blocks.has(view.options, 'route')) {
-          hasRoute = true;
-        }
-        if (view.isActive()) {
-          hasActive = true;
-        }
+      application._createViews();
+      application._startHistory();
+      
+      server.await(function () {
+        blocks.query(application);
+        blocks.each(application._views, function (view) {
+          if (blocks.has(view.options, 'route')) {
+            hasRoute = true;
+          }
+          if (view.isActive()) {
+            hasActive = true;
+          }
+        });  
       });
     }
-
-    server.onReady('ready', function () {
+    
+    server.await(function () {
       if (hasRoute && !hasActive) {
         callback('not found', null);
       }
@@ -79,35 +84,31 @@ define([
         callback('no query', env.server.html);
       }
     });
-
-    if (server.isReady()) {
-      server.trigger('ready');
-    }
   }
 
 
-  //function executeCode(browserEnv, html, code) {
-  //  var context = vm.createContext(browserEnv.getObject());
-  //  var script = vm.createScript(code);
-  //
-  //  blocks.extend(context, {
-  //    server: {
-  //      html: html,
-  //      data: {},
-  //      rendered: '',
-  //      applications: []
-  //    },
-  //    require: require
-  //  });
-  //
-  //  script.runInContext(context);
-  //
-  //  blocks.each(context.server.applications, function (application) {
-  //    application.start();
-  //  });
-  //
-  //  return context.server.rendered || html;
-  //}
+//  function executeCode(browserEnv, html, code) {
+//    var context = vm.createContext(browserEnv.getObject());
+//    var script = vm.createScript(code);
+//  
+//    blocks.extend(context, {
+//      server: {
+//        html: html,
+//        data: {},
+//        rendered: '',
+//        applications: []
+//      },
+//      require: require
+//    });
+//  
+//    script.runInContext(context);
+//  
+//    blocks.each(context.server.applications, function (application) {
+//      application.start();
+//    });
+//  
+//    return context.server.rendered || html;
+//  }
 
   return executePageScripts;
 });

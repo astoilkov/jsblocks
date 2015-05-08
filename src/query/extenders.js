@@ -38,22 +38,6 @@ define([
       filter: callback
     });
 
-    observable.on('add', function () {
-      if (observable.view._initialized) {
-        observable.view._connections = {};
-        observable.view.reset();
-        ExtenderHelper.executeOperations(observable);
-      }
-    });
-
-    observable.on('remove', function () {
-      if (observable.view._initialized) {
-        observable.view._connections = {};
-        observable.view.reset();
-        ExtenderHelper.executeOperations(observable);
-      }
-    });
-
     return observable;
   };
 

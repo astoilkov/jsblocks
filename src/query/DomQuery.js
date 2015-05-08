@@ -151,8 +151,12 @@ define([
           elementData.haveData = true;
           if (!elementData.execute) {
             elementData.execute = [];
+            elementData.executeHash = {};
           }
-          elementData.execute.push(methods[i]);
+          if (!elementData.executeHash[methods[i].query]) {
+             elementData.execute.push(methods[i]);
+             elementData.executeHash[methods[i].query] = true;
+          }
           continue;
         }
         Observer.startObserving();

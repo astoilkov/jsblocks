@@ -18,6 +18,22 @@ define([
       newObservable.view._initialized = false;
 
       newObservable.view.on('get', newObservable._getter);
+      
+      newObservable.on('add', function () {
+        if (newObservable.view._initialized) {
+          newObservable.view._connections = {};
+          newObservable.view.reset();
+          ExtenderHelper.executeOperations(newObservable);
+        }
+      });
+  
+      newObservable.on('remove', function () {
+        if (newObservable.view._initialized) {
+          newObservable.view._connections = {};
+          newObservable.view.reset();
+          ExtenderHelper.executeOperations(newObservable);
+        }
+      });
 
       return newObservable;
     },

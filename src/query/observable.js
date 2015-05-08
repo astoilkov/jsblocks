@@ -158,6 +158,7 @@ define([
          */
         update: function () {
           var elements = this._elements;
+          var elementData;
           var domQuery;
           var context;
           var element;
@@ -169,7 +170,8 @@ define([
             context = expression.context;
 
             if (!element) {
-              element = expression.element = ElementsData.data(expression.elementId).dom;
+              elementData = ElementsData.data(expression.elementId);
+              element = expression.element = elementData.dom;
             }
 
             try {
@@ -183,15 +185,22 @@ define([
             offset = expression.length - value.length;
             expression.length = value.length;
 
-            if (expression.attr) {
-              element.setAttribute(expression.attr, Expression.GetValue(context, null, expression.entire));
-            } else {
-              if (element.nextSibling) {
-                element = element.nextSibling;
-                element.nodeValue = value + element.nodeValue.substring(expression.length + offset);
+            if (element) {
+              if (expression.attr) {
+                element.setAttribute(expression.attr, Expression.GetValue(context, null, expression.entire));
               } else {
-                element.parentNode.appendChild(document.createTextNode(value));
-              }
+                if (element.nextSibling) {
+                  element = element.nextSibling;
+                  element.nodeValue = value + element.nodeValue.substring(expression.length + offset);
+                } else {
+                  element.parentNode.appendChild(document.createTextNode(value));
+                }
+              }  
+            } else {
+             element = elementData.virtual;
+             if (expression.attr) {
+               element.attr(expression.attr, Expression.GetValue(context, null, expression.entire));
+             }
             }
           });
 
@@ -324,12 +333,13 @@ define([
             return this;
           }
           
+          array = blocks.unwrap(array);
+          
           var current = this.__value__;
           var chunkManager = this._chunkManager;
           var addCount = array.length - current.length;
           var removeCount = Math.max(current.length - array.length, 0);
-          
-          array = blocks.unwrap(array);
+          var updateCount = array.length - addCount;
           
           Events.trigger(this, 'removing', {
             type: 'removing',
@@ -342,12 +352,12 @@ define([
             items: array,
             index: 0
           });
-
+          
           chunkManager.each(function (domElement, virtualElement) {
             var domQuery = blocks.domQuery(domElement);
             
             domQuery.contextBubble(blocks.context(domElement), function () {
-                virtualElement.updateChildren(domQuery, array, domElement);
+                virtualElement.updateChildren(array, updateCount, domQuery, domElement);
             });
           });
           

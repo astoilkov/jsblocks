@@ -93,7 +93,7 @@ define([
      */
     read: function (params, callback) {
       // TODO: Write tests for the callback checking if it is being called
-      var context = this.__context__;
+      var _this = this;
 
       if (blocks.isFunction(params)) {
         callback = params;
@@ -102,7 +102,7 @@ define([
       this._dataSource.read({
         data: params
       }, callback ? function () {
-        callback.call(context);
+        callback.call(_this.__context__);
       } : blocks.noop);
 
       return this;

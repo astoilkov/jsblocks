@@ -445,7 +445,7 @@ define([
       }
     },
     
-    updateChildren: function (domQuery, collection, domElement) {
+    updateChildren: function (collection, updateCount, domQuery, domElement) {
       var template = this._template;
       var child = template[0];
       var isOneChild = template.length === 1 && VirtualElement.Is(child);
@@ -453,11 +453,10 @@ define([
       var syncIndex = domQuery.getSyncIndex();
       var childContexts = domQuery._context.childs;
       var chunkLength = this._length();
-      var length = Math.min(collection.length, childNodes.length);
       var index = -1;
       var context;
       
-      while (++index < length) {
+      while (++index < updateCount) {
         domQuery._context = context = childContexts[index];
         context.$this = collection[index];
         context.$parent = context.$parentContext.$this;

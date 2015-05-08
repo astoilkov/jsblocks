@@ -4985,7 +4985,7 @@ return result;
       }
     },
     
-    updateChildren: function (domQuery, collection, domElement) {
+    updateChildren: function (collection, updateCount, domQuery, domElement) {
       var template = this._template;
       var child = template[0];
       var isOneChild = template.length === 1 && VirtualElement.Is(child);
@@ -4993,11 +4993,10 @@ return result;
       var syncIndex = domQuery.getSyncIndex();
       var childContexts = domQuery._context.childs;
       var chunkLength = this._length();
-      var length = Math.min(collection.length, childNodes.length);
       var index = -1;
       var context;
       
-      while (++index < length) {
+      while (++index < updateCount) {
         domQuery._context = context = childContexts[index];
         context.$this = collection[index];
         context.$parent = context.$parentContext.$this;
@@ -5886,8 +5885,12 @@ return result;
           elementData.haveData = true;
           if (!elementData.execute) {
             elementData.execute = [];
+            elementData.executeHash = {};
           }
-          elementData.execute.push(methods[i]);
+          if (!elementData.executeHash[methods[i].query]) {
+             elementData.execute.push(methods[i]);
+             elementData.executeHash[methods[i].query] = true;
+          }
           continue;
         }
         Observer.startObserving();
@@ -7281,6 +7284,7 @@ return result;
          */
         update: function () {
           var elements = this._elements;
+          var elementData;
           var domQuery;
           var context;
           var element;
@@ -7292,7 +7296,8 @@ return result;
             context = expression.context;
 
             if (!element) {
-              element = expression.element = ElementsData.data(expression.elementId).dom;
+              elementData = ElementsData.data(expression.elementId);
+              element = expression.element = elementData.dom;
             }
 
             try {
@@ -7306,15 +7311,22 @@ return result;
             offset = expression.length - value.length;
             expression.length = value.length;
 
-            if (expression.attr) {
-              element.setAttribute(expression.attr, Expression.GetValue(context, null, expression.entire));
-            } else {
-              if (element.nextSibling) {
-                element = element.nextSibling;
-                element.nodeValue = value + element.nodeValue.substring(expression.length + offset);
+            if (element) {
+              if (expression.attr) {
+                element.setAttribute(expression.attr, Expression.GetValue(context, null, expression.entire));
               } else {
-                element.parentNode.appendChild(document.createTextNode(value));
-              }
+                if (element.nextSibling) {
+                  element = element.nextSibling;
+                  element.nodeValue = value + element.nodeValue.substring(expression.length + offset);
+                } else {
+                  element.parentNode.appendChild(document.createTextNode(value));
+                }
+              }  
+            } else {
+             element = elementData.virtual;
+             if (expression.attr) {
+               element.attr(expression.attr, Expression.GetValue(context, null, expression.entire));
+             }
             }
           });
 
@@ -7447,12 +7459,13 @@ return result;
             return this;
           }
           
+          array = blocks.unwrap(array);
+          
           var current = this.__value__;
           var chunkManager = this._chunkManager;
           var addCount = array.length - current.length;
           var removeCount = Math.max(current.length - array.length, 0);
-          
-          array = blocks.unwrap(array);
+          var updateCount = array.length - addCount;
           
           Events.trigger(this, 'removing', {
             type: 'removing',
@@ -7465,12 +7478,12 @@ return result;
             items: array,
             index: 0
           });
-
+          
           chunkManager.each(function (domElement, virtualElement) {
             var domQuery = blocks.domQuery(domElement);
             
             domQuery.contextBubble(blocks.context(domElement), function () {
-                virtualElement.updateChildren(domQuery, array, domElement);
+                virtualElement.updateChildren(array, updateCount, domQuery, domElement);
             });
           });
           
@@ -8000,6 +8013,22 @@ return result;
       newObservable.view._initialized = false;
 
       newObservable.view.on('get', newObservable._getter);
+      
+      newObservable.on('add', function () {
+        if (newObservable.view._initialized) {
+          newObservable.view._connections = {};
+          newObservable.view.reset();
+          ExtenderHelper.executeOperations(newObservable);
+        }
+      });
+  
+      newObservable.on('remove', function () {
+        if (newObservable.view._initialized) {
+          newObservable.view._connections = {};
+          newObservable.view.reset();
+          ExtenderHelper.executeOperations(newObservable);
+        }
+      });
 
       return newObservable;
     },
@@ -8215,22 +8244,6 @@ return result;
     observable._operations.push({
       type: 'filter',
       filter: callback
-    });
-
-    observable.on('add', function () {
-      if (observable.view._initialized) {
-        observable.view._connections = {};
-        observable.view.reset();
-        ExtenderHelper.executeOperations(observable);
-      }
-    });
-
-    observable.on('remove', function () {
-      if (observable.view._initialized) {
-        observable.view._connections = {};
-        observable.view.reset();
-        ExtenderHelper.executeOperations(observable);
-      }
     });
 
     return observable;
@@ -10534,7 +10547,7 @@ return result;
      */
     read: function (params, callback) {
       // TODO: Write tests for the callback checking if it is being called
-      var context = this.__context__;
+      var _this = this;
 
       if (blocks.isFunction(params)) {
         callback = params;
@@ -10543,7 +10556,7 @@ return result;
       this._dataSource.read({
         data: params
       }, callback ? function () {
-        callback.call(context);
+        callback.call(_this.__context__);
       } : blocks.noop);
 
       return this;
@@ -11219,11 +11232,7 @@ return result;
         this._started = true;
         this._serverData = window.__blocksServerData__;
         this._createViews();
-        if (document.__mock__ && window.__mock__) {
-          this._ready(element);
-        } else {
-          blocks.domReady(blocks.bind(this._ready, this, element));
-        }
+        blocks.domReady(blocks.bind(this._ready, this, element));
       }
     },
 
@@ -11234,13 +11243,17 @@ return result;
         }, this));
       }, this);
     },
-
-    _ready: function (element) {
-      this._serverData = window.__blocksServerData__;
+    
+    _startHistory: function () {
       this._history = new History(this.options);
       this._history
           .on('urlChange', blocks.bind(this._urlChange, this))
           .start();
+    },
+
+    _ready: function (element) {
+      this._serverData = window.__blocksServerData__;
+      this._startHistory();
       blocks.query(this, element);
       this._viewsReady(this._views);
     },
@@ -11628,7 +11641,7 @@ return result;
 
       funcs[code].call(this, blocks, env.document, env.window, require);
 
-      server.onReady('init', function () {
+      server.await(function () {
         handleResult(env, callback);
       });
     });
@@ -11645,7 +11658,7 @@ return result;
 
     callback();
 
-    server.onReady('sent', function () {
+    server.await(function () {
       blocks.each(obj, function (val, name) {
         _this[name] = values[name];
       });
@@ -11657,18 +11670,23 @@ return result;
     var hasActive = false;
     var application = env.server.application;
     if (application) {
-      application.start();
-      blocks.each(application._views, function (view) {
-        if (blocks.has(view.options, 'route')) {
-          hasRoute = true;
-        }
-        if (view.isActive()) {
-          hasActive = true;
-        }
+      application._createViews();
+      application._startHistory();
+      
+      server.await(function () {
+        blocks.query(application);
+        blocks.each(application._views, function (view) {
+          if (blocks.has(view.options, 'route')) {
+            hasRoute = true;
+          }
+          if (view.isActive()) {
+            hasActive = true;
+          }
+        });  
       });
     }
-
-    server.onReady('ready', function () {
+    
+    server.await(function () {
       if (hasRoute && !hasActive) {
         callback('not found', null);
       }
@@ -11679,35 +11697,31 @@ return result;
         callback('no query', env.server.html);
       }
     });
-
-    if (server.isReady()) {
-      server.trigger('ready');
-    }
   }
 
 
-  //function executeCode(browserEnv, html, code) {
-  //  var context = vm.createContext(browserEnv.getObject());
-  //  var script = vm.createScript(code);
-  //
-  //  blocks.extend(context, {
-  //    server: {
-  //      html: html,
-  //      data: {},
-  //      rendered: '',
-  //      applications: []
-  //    },
-  //    require: require
-  //  });
-  //
-  //  script.runInContext(context);
-  //
-  //  blocks.each(context.server.applications, function (application) {
-  //    application.start();
-  //  });
-  //
-  //  return context.server.rendered || html;
-  //}
+//  function executeCode(browserEnv, html, code) {
+//    var context = vm.createContext(browserEnv.getObject());
+//    var script = vm.createScript(code);
+//  
+//    blocks.extend(context, {
+//      server: {
+//        html: html,
+//        data: {},
+//        rendered: '',
+//        applications: []
+//      },
+//      require: require
+//    });
+//  
+//    script.runInContext(context);
+//  
+//    blocks.each(context.server.applications, function (application) {
+//      application.start();
+//    });
+//  
+//    return context.server.rendered || html;
+//  }
 
   function getElementsById(elements, result) {
     result = result || {};
@@ -11728,12 +11742,8 @@ return result;
     this.options = options;
     this.html = html;
     this.data = {};
-    this._callbacks = {
-      init: [],
-      started: [],
-      ready: [],
-      sent: []
-    };
+    this._root = this._createBubbleNode();
+    this._node = this._root;
 
     this.on('ready', blocks.bind(this._ready, this));
   }
@@ -11741,16 +11751,10 @@ return result;
   ServerEnv.prototype = {
     _waiting: 0,
 
-    _processing: false,
-
-    _stages: ['init', 'started', 'ready', 'sent'],
-
-    _currentStageIndex: 0,
-
     rendered: '',
 
     isReady: function () {
-      return this._waiting === 0 && !this._processing;
+      return this._waiting === 0;
     },
 
     wait: function () {
@@ -11766,32 +11770,54 @@ return result;
       }
     },
 
-    onReady: function (stage, callback) {
-      var currentStage = this._stages[this._currentStageIndex];
-
-      if (this.isReady() && currentStage === stage) {
+    await: function (callback) {
+      if (this.isReady()) {
         callback();
       } else {
-        this._callbacks[stage].push(callback);
+        this._createBubbleNode(this._node, callback);
       }
     },
 
     _ready: function () {
-      var callbacks = this._callbacks[this._stages[this._currentStageIndex]];
-
-      this._processing = true;
-      blocks.each(callbacks, function (callback) {
-        callback();
-      });
-      callbacks.splice(0, callbacks.length);
-      this._processing = false;
-
-      if (this._currentStageIndex < this._stages.length - 1) {
-        this._currentStageIndex += 1;
-        if (this.isReady()) {
-          this.trigger('ready');
+      var node = this._node;
+      
+      while (this.isReady()) {
+        if (!node.isRoot) {
+          node.callback();  
+        }
+        this._node = node = this._next(node);
+        
+        if (node === this._root) {
+          break;
         }
       }
+    },
+    
+    _next: function (node) {
+      var parent = node;
+      var next;
+      
+      while (!next && parent) {
+        next = parent.nodes.pop();
+        parent = parent.parent;
+      }
+      
+      return next || this._root;
+    },
+    
+    _createBubbleNode: function (parent, callback) {
+      var node = {
+        isRoot: !parent,
+        parent: parent,
+        callback: callback,
+        nodes: []
+      };
+      
+      if (parent) {
+        parent.nodes.unshift(node);
+      }
+      
+      return node;
     }
   };
 
@@ -12199,7 +12225,7 @@ return result;
     body._parent = null;
     body.render(domQuery);
 
-    server.onReady('started', function () {
+    server.await(function () {
       if (head) {
         head.children().splice(0, 0, getServerDataScript());
       }
