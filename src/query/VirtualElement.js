@@ -624,18 +624,18 @@ define([
   };
 
   VirtualElement.CssNumbers = {
-    'columnCount': true,
-    'fillOpacity': true,
-    'flexGrow': true,
-    'flexShrink': true,
-    'fontWeight': true,
-    'lineHeight': true,
-    'opacity': true,
-    'order': true,
-    'orphans': true,
-    'widows': true,
-    'zIndex': true,
-    'zoom': true
+    columnCount: true,
+    fillOpacity: true,
+    flexGrow: true,
+    flexShrink: true,
+    fontWeight: true,
+    lineHeight: true,
+    opacity: true,
+    order: true,
+    orphans: true,
+    widows: true,
+    zIndex: true,
+    zoom: true
   };
 
   function generateStyleAttribute(style, state) {
