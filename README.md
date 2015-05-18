@@ -1,8 +1,8 @@
-# jsblocks [![Build Status](https://travis-ci.org/astoilkov/jsblocks.svg?branch=master)](https://travis-ci.org/astoilkov/jsblocks)
+# [![jsblocks](http://jsblocks.com/img/logoBeta.png)](http://jsblocks.com) &nbsp;&nbsp; [![Build Status](https://travis-ci.org/astoilkov/jsblocks.svg?branch=master)](https://travis-ci.org/astoilkov/jsblocks)
 
-Better MV-ish Framework
+### Better MV-ish Framework
 
-From simple user interfaces to complex single-page applications using faster, server-side rendered and easy to learn framework.
+##### From simple user interfaces to complex single-page applications using faster, server-side rendered and easy to learn framework.
 
 [[ official website ]](http://jsblocks.com)
 

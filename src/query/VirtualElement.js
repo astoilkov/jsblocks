@@ -50,6 +50,13 @@ define([
       return this._tagName;
     },
 
+    /**
+     * Gets or sets the inner HTML of the element.
+     * 
+     * @param {String} [html] - The new html that will be set. Provide the parameter only if you want to set new html.
+     * @returns {String|VirtualElement} - returns itself if it is used as a setter(no parameters specified)
+     * and returns the inner HTML of the element if it used as a getter .
+     */
     html: function (html) {
       if (arguments.length > 0) {
         html = html == null ? '' : html;
@@ -68,6 +75,13 @@ define([
       return this._innerHTML || '';
     },
 
+    /**
+     * Gets or sets the inner text of the element.
+     * 
+     * @param {String} [html] - The new text that will be set. Provide the parameter only if you want to set new text.
+     * @returns {String|VirtualElement} - returns itself if it is used as a setter(no parameters specified)
+     * and returns the inner text of the element if it used as a getter. 
+     */
     text: function (text) {
       if (arguments.length > 0) {
         if (text != null) {
@@ -79,6 +93,11 @@ define([
       return this.html();
     },
 
+    /**
+     * Gets the parent of the VirtualElement
+     * 
+     * @returns {VirtualElement} - The parent VirtualElement
+     */
     parent: function () {
       return this._parent;
     },
@@ -89,15 +108,15 @@ define([
       }
       return this._children;
     },
-
-    // Note!
-    // The attributes could be optimized by using array instead of object
-    // firstly this could sound insane. However, when generating the html
-    // output for each elements the attributes object is looped with for...in
-    // loop which is slow because the browser should construct an internal collection
-    // to loop for.
-    // However, this should be investigated further in order to be sure it is an
-    // optimization rather than the opposite
+    
+    /**
+     * Gets or sets an attribute value
+     * 
+     * @param {String} attributeName - The attribute name to be set or retrieved.
+     * @param {String} [attributeValue] - The value to be set to the attribute.
+     * @returns {VirtualElement|String} - Returns the VirtualElement itself if you set an attribute.
+     * Returns the attribute name value if only the first parameter is specified.
+     */
     attr: function (attributeName, attributeValue) {
       var _this = this;
       var returnValue;
@@ -166,7 +185,13 @@ define([
 
       return this;
     },
-
+    
+    /**
+     * Removes a particular attribute from the VirtualElement
+     * 
+     * @param {String} attributeName - The attributeName which will be removed
+     * @returns {VirtualElement} - The VirtualElement itself
+     */
     removeAttr: function (attributeName) {
       this._attributes[attributeName] = null;
       dom.removeAttr(this._el, attributeName);
