@@ -94,7 +94,7 @@ define([
     },
 
     /**
-     * Gets the parent of the VirtualElement
+     * Gets the parent VirtualElement
      * 
      * @returns {VirtualElement} - The parent VirtualElement
      */
@@ -198,6 +198,14 @@ define([
       return this;
     },
 
+    /**
+     * Gets or sets a CSS property
+     * 
+     * @param {String} name - The CSS property name to be set or retrieved
+     * @param {String} [value] - The value to be set to the CSS property
+     * @returns {VirtualElement|String} - Returns the VirtualElement itself if you use the method as a setter.
+     * Returns the CSS property value if only the first parameter is specified.
+     */
     css: function (propertyName, value) {
       var _this = this;
 
