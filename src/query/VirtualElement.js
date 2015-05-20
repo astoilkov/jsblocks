@@ -52,7 +52,7 @@ define([
 
     /**
      * Gets or sets the inner HTML of the element.
-     * 
+     *
      * @param {String} [html] - The new html that will be set. Provide the parameter only if you want to set new html.
      * @returns {String|VirtualElement} - returns itself if it is used as a setter(no parameters specified)
      * and returns the inner HTML of the element if it used as a getter .
@@ -77,10 +77,10 @@ define([
 
     /**
      * Gets or sets the inner text of the element.
-     * 
+     *
      * @param {String} [html] - The new text that will be set. Provide the parameter only if you want to set new text.
      * @returns {String|VirtualElement} - returns itself if it is used as a setter(no parameters specified)
-     * and returns the inner text of the element if it used as a getter. 
+     * and returns the inner text of the element if it used as a getter.
      */
     text: function (text) {
       if (arguments.length > 0) {
@@ -95,7 +95,7 @@ define([
 
     /**
      * Gets the parent VirtualElement
-     * 
+     *
      * @returns {VirtualElement} - The parent VirtualElement
      */
     parent: function () {
@@ -108,10 +108,10 @@ define([
       }
       return this._children;
     },
-    
+
     /**
      * Gets or sets an attribute value
-     * 
+     *
      * @param {String} attributeName - The attribute name to be set or retrieved.
      * @param {String} [attributeValue] - The value to be set to the attribute.
      * @returns {VirtualElement|String} - Returns the VirtualElement itself if you set an attribute.
@@ -185,10 +185,10 @@ define([
 
       return this;
     },
-    
+
     /**
      * Removes a particular attribute from the VirtualElement
-     * 
+     *
      * @param {String} attributeName - The attributeName which will be removed
      * @returns {VirtualElement} - The VirtualElement itself
      */
@@ -200,7 +200,7 @@ define([
 
     /**
      * Gets or sets a CSS property
-     * 
+     *
      * @param {String} name - The CSS property name to be set or retrieved
      * @param {String} [value] - The value to be set to the CSS property
      * @returns {VirtualElement|String} - Returns the VirtualElement itself if you use the method as a setter.
@@ -255,14 +255,14 @@ define([
     addChild: function (element, index) {
       var children = this._template || this._children;
       var fragment;
-      
+
       if (element) {
         element._parent = this;
         if (this._childrenEach || this._each) {
           element._each = true;
         } else if (this._el) {
           fragment = createFragment(element.render(blocks.domQuery(this)));
-          element._el = fragment.childNodes[0]; 
+          element._el = fragment.childNodes[0];
           if (typeof index === 'number') {
             this._el.insertBefore(fragment, this._el.childNodes[index]);
           } else {
@@ -278,15 +278,27 @@ define([
       return this;
     },
 
-    addClass: function (className) {
-      setClass('add', this, className);
-      dom.addClass(this._el, className);
+    /**
+     * Adds a class to the element
+     * @param {string|Array} classNames - A single className,
+     * multiples separated by space or array of class names.
+     * @returns {VirtualElement} - Returns the VirtualElement itself to allow chaining.
+     */
+    addClass: function (classNames) {
+      setClass('add', this, classNames);
+      dom.addClass(this._el, classNames);
       return this;
     },
 
-    removeClass: function (className) {
-      setClass('remove', this, className);
-      dom.removeClass(this._el, className);
+    /**
+     * Removes a class from the element
+     * @param {string|Array} classNames - A single className,
+     * multiples separated by space or array of class names.
+     * @returns {VirtualElement} - Returns the VirtualElement itself to allow chaining.
+     */
+    removeClass: function (classNames) {
+      setClass('remove', this, classNames);
+      dom.removeClass(this._el, classNames);
       return this;
     },
 
@@ -298,6 +310,11 @@ define([
       }
     },
 
+    /** Checks whether the element has the specified class name
+     * @param {string} className - The class name to check for
+     * @returns {boolean} - Returns a boolean determining if element has
+     * the specified class name
+     */
     hasClass: function (className) {
       return getClassIndex(this._attributes[classAttr], className) != -1;
     },
@@ -411,7 +428,7 @@ define([
         this._each = false;
         this._sync = true;
       }
-      
+
       this._execute(domQuery);
 
       this.renderBeginTag();
@@ -421,7 +438,7 @@ define([
       }
 
       this.renderEndTag();
-      
+
       if (syncIndex) {
         this._state = null;
         this._el = undefined;
@@ -439,13 +456,13 @@ define([
       var elementForDeletion;
       var expression;
       var child;
-      
+
       while (++index < length) {
         child = children[index];
         if (child.isExpression) {
           if (domQuery) {
             expression = Expression.GetValue(domQuery._context, null, child, state ? Expression.ValueOnly : Expression.Html);
-            
+
             if (!state || (state && state.expressions[index] !== expression)) {
               if (state) {
                 state.expressions[index] = expression;
@@ -470,14 +487,14 @@ define([
           child._each = child._each || this._each;
 
           child.sync(domQuery, syncIndex, element);
-          
+
           element = element.nextSibling;
         } else {
           element = element.nextSibling;
         }
       }
     },
-    
+
     updateChildren: function (collection, updateCount, domQuery, domElement) {
       var template = this._template;
       var child = template[0];
@@ -488,7 +505,7 @@ define([
       var chunkLength = this._length();
       var index = -1;
       var context;
-      
+
       while (++index < updateCount) {
         domQuery._context = context = childContexts[index];
         context.$this = collection[index];
@@ -502,26 +519,26 @@ define([
 
       domQuery.popContext();
     },
-    
+
     _length: function () {
       var template = this._template;
       var index = -1;
       var length = 0;
-      
+
       while (++index < template.length) {
         if (template[index]._renderMode !== VirtualElement.RenderMode.None) {
           length += 1;
         }
       }
-      
+
       return length;
     },
-    
+
     _getAttr: function (name) {
       var state = this._state;
       return state && state.attributes[name] !== undefined ? state.attributes[name] : this._attributes[name];
     },
-    
+
     _getCss: function (name) {
       var state = this._state;
       return state && state.style[name] !== undefined ? state.style[name] : this._style[name];
@@ -546,15 +563,15 @@ define([
           id = this._attributes[dataIdAttr];
           data = ElementsData.byId(id);
         }
-        
+
         if (this._attributeExpressions.length) {
-          this._executeAttributeExpressions(domQuery._context);  
+          this._executeAttributeExpressions(domQuery._context);
         }
-        
+
         domQuery.executeQuery(this, this._attributes[dataQueryAttr]);
-        
+
         if (data && !data.haveData) {
-          ElementsData.clear(this);  
+          ElementsData.clear(this);
         }
       }
     },
@@ -568,9 +585,9 @@ define([
 
       if (this._tagName == 'option' && this._parent._values) {
         if (state) {
-          state.attributes.selected = this._parent._values[state.attributes.value] ? 'selected' : null;  
+          state.attributes.selected = this._parent._values[state.attributes.value] ? 'selected' : null;
         } else {
-          attributes.selected = this._parent._values[attributes.value] ? 'selected' : null;  
+          attributes.selected = this._parent._values[attributes.value] ? 'selected' : null;
         }
       }
 
@@ -630,7 +647,7 @@ define([
       for (var i = 0; i < expressions.length; i++) {
         expression = expressions[i];
         value = Expression.GetValue(context, elementData, expression);
-        attributeName = expression.attributeName; 
+        attributeName = expression.attributeName;
         if ((attributes && attributes[attributeName] !== value) || !attributes) {
           if (isVirtual) {
             if (this._state) {
@@ -639,7 +656,7 @@ define([
               this._attributes[attributeName] = value;
             }
           } else {
-            dom.attr(this._el, attributeName, value);  
+            dom.attr(this._el, attributeName, value);
           }
         }
       }
@@ -691,7 +708,7 @@ define([
         html += ';';
       }
     }
-    
+
     if (state) {
       for (key in state.style) {
         value = state.style[key];
@@ -703,7 +720,7 @@ define([
           html += value;
           html += ';';
         }
-      }  
+      }
     }
 
     html += '"';
