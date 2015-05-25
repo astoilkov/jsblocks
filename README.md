@@ -52,5 +52,6 @@ and the [jsblocks starter template project](https://github.com/astoilkov/jsblock
 
 > We are ready to answer your questions quickly.
 
+* [Gitter](https://gitter.im/astoilkov/jsblocks?utm_source=github_link)
 * [Stack Overflow](http://stackoverflow.com/questions/tagged/jsblocks)
 * [Github Issue](https://github.com/astoilkov/jsblocks/issues/new)
