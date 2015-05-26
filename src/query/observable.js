@@ -118,7 +118,7 @@ define([
       : observable._dependencyType == 2 ? observable.__value__.get.call(context)
       : observable.__value__;
   }
-  
+
   var observableIndexes = {};
 
   blocks.extend(blocks.observable, {
@@ -195,7 +195,7 @@ define([
                 } else {
                   element.parentNode.appendChild(document.createTextNode(value));
                 }
-              }  
+              }
             } else {
              element = elementData.virtual;
              if (expression.attr) {
@@ -213,7 +213,7 @@ define([
                 element = ElementsData.data(value.elementId).virtual;
               }
             }
-            if (document.body.contains(element) || VirtualElement.Is(element)) {
+            if (VirtualElement.Is(element) || document.body.contains(element)) {
               domQuery = blocks.domQuery(element);
               domQuery.contextBubble(value.context, function () {
                 domQuery.executeMethods(element, value.cache);
@@ -332,55 +332,55 @@ define([
             this.removeAll();
             return this;
           }
-          
+
           array = blocks.unwrap(array);
-          
+
           var current = this.__value__;
           var chunkManager = this._chunkManager;
-          var addCount = array.length - current.length;
+          var addCount = Math.max(array.length - current.length, 0);
           var removeCount = Math.max(current.length - array.length, 0);
           var updateCount = array.length - addCount;
-          
+
           Events.trigger(this, 'removing', {
             type: 'removing',
             items: current,
             index: 0
           });
-          
+
           Events.trigger(this, 'adding', {
             type: 'adding',
             items: array,
             index: 0
           });
-          
+
           chunkManager.each(function (domElement, virtualElement) {
             var domQuery = blocks.domQuery(domElement);
-            
+
             domQuery.contextBubble(blocks.context(domElement), function () {
                 virtualElement.updateChildren(array, updateCount, domQuery, domElement);
             });
           });
-          
+
           if (addCount > 0) {
             chunkManager.add(array.slice(current.length), current.length);
           } else if (removeCount > 0) {
             chunkManager.remove(array.length, removeCount);
           }
-          
+
           this.__value__ = array;
-          
+
           Events.trigger(this, 'remove', {
             type: 'remove',
             items: current,
             index: 0
           });
-          
+
           Events.trigger(this, 'add', {
             type: 'add',
             items: array,
             index: 0
           });
-          
+
           return this;
         },
 
@@ -823,7 +823,7 @@ define([
             });
 
             chunkManager.remove(index, howMany);
-            
+
             returnValue = array.splice(index, howMany);
             Events.trigger(this, 'remove', {
               type: 'remove',
@@ -840,9 +840,9 @@ define([
               index: index,
               items: addItems
             });
-            
+
             chunkManager.add(addItems, index);
-            
+
             array.splice.apply(array, [index, 0].concat(addItems));
             Events.trigger(this, 'add', {
               type: 'add',

@@ -503,6 +503,7 @@ define([
       var syncIndex = domQuery.getSyncIndex();
       var childContexts = domQuery._context.childs;
       var chunkLength = this._length();
+      var offset = this._headers ? this._headers.length : 0;
       var index = -1;
       var context;
 
@@ -511,9 +512,9 @@ define([
         context.$this = collection[index];
         context.$parent = context.$parentContext.$this;
         if (isOneChild) {
-          child.sync(domQuery, syncIndex + index, childNodes[index]);
+          child.sync(domQuery, syncIndex + index, childNodes[index + offset]);
         } else {
-          this.syncChildren(domQuery, syncIndex + index, index * chunkLength);
+          this.syncChildren(domQuery, syncIndex + index, (index * chunkLength) + offset);
         }
       }
 
