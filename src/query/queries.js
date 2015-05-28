@@ -323,7 +323,7 @@ define([
         var html;
         
         if (this._sync) {
-          element.updateChildren(domQuery, collection, this._el);
+          element.updateChildren(collection, collection.length, domQuery, this._el);
           return;
         }
 
