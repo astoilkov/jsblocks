@@ -4243,7 +4243,7 @@ return result;
           dom.comment.html(element, html);
         } else if (browser.IE < 10) {
           while (element.firstChild) {
-            element.removeChild(this._element.firstChild);
+            element.removeChild(element.firstChild);
           }
           element.appendChild(createFragment(html));
         } else {
@@ -6489,7 +6489,7 @@ return result;
         var html;
         
         if (this._sync) {
-          element.updateChildren(domQuery, collection, this._el);
+          element.updateChildren(collection, collection.length, domQuery, this._el);
           return;
         }
 
@@ -10141,7 +10141,7 @@ return result;
      */
     sync: function () {
       if (this.isNew()) {
-        this._dataSource.add(this.dataItem());
+        this._dataSource.data.add(this.dataItem());
       }
       this._dataSource.sync();
       return this;

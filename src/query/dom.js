@@ -79,7 +79,7 @@ define([
           dom.comment.html(element, html);
         } else if (browser.IE < 10) {
           while (element.firstChild) {
-            element.removeChild(this._element.firstChild);
+            element.removeChild(element.firstChild);
           }
           element.appendChild(createFragment(html));
         } else {
