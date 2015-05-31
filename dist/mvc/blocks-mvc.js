@@ -7888,6 +7888,7 @@
         if (blocks.isObservable(value)) {
           // clone the observable and also its value by passing true to the clone method
           object[key] = value.clone(true);
+          object[key].__context__ = object;
         } else if (blocks.isFunction(value)) {
           object[key] = blocks.bind(value, object);
         } else if (Model.prototype.isPrototypeOf(value)) {
