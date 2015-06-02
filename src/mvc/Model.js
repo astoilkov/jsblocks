@@ -245,7 +245,7 @@ define([
      */
     sync: function () {
       if (this.isNew()) {
-        this._dataSource.add(this.dataItem());
+        this._dataSource.data.add(this.dataItem());
       }
       this._dataSource.sync();
       return this;

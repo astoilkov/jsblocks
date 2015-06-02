@@ -4246,7 +4246,7 @@ return result;
           dom.comment.html(element, html);
         } else if (browser.IE < 10) {
           while (element.firstChild) {
-            element.removeChild(this._element.firstChild);
+            element.removeChild(element.firstChild);
           }
           element.appendChild(createFragment(html));
         } else {
@@ -6520,7 +6520,7 @@ return result;
         var html;
         
         if (this._sync) {
-          element.updateChildren(domQuery, collection, this._el);
+          element.updateChildren(collection, collection.length, domQuery, this._el);
           return;
         }
 
