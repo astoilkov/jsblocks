@@ -23,10 +23,12 @@ define([
         return;
       }
       var src;
+      var clientOnly;
 
       if (child.tagName() == 'script' && (!child.attr('type') || child.attr('type') == 'text/javascript')) {
         src = child.attr('src');
-        if (src) {
+        clientOnly = child.attr('data-client-only');
+        if (src && !clientOnly) {
           src = path.join(args.static, src);
           if (blocks.contains(src, 'blocks') && blocks.endsWith(src, '.js')) {
             src = 'node_modules/blocks/blocks.js';
