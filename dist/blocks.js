@@ -1094,7 +1094,7 @@ blocks.debug = {
     }
 
     message
-      .addSpan('Arguments missmatch:', { background: 'yellow'})
+      .addSpan('Arguments mismatch:', { background: 'yellow'})
       .addText(' ');
 
     if (one) {
@@ -1846,6 +1846,7 @@ var highlightjs = {
     color: '#e7635f'
   }
 };
+
 })();
 (function () {
 blocks.debug.queries = {
