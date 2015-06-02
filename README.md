@@ -1,26 +1,26 @@
-# [![jsblocks](http://jsblocks.com/img/logoBeta.png)](http://jsblocks.com) &nbsp;&nbsp; [![Build Status](https://travis-ci.org/astoilkov/jsblocks.svg?branch=master)](https://travis-ci.org/astoilkov/jsblocks)
+# [![jsblocks](http://jsblocks.com/img/logoBeta.png)](http://jsblocks.com?ref=github_readme) &nbsp;&nbsp; [![Build Status](https://travis-ci.org/astoilkov/jsblocks.svg?branch=master)](https://travis-ci.org/astoilkov/jsblocks)
 
 ### Better MV-ish Framework
 
 ##### From simple user interfaces to complex single-page applications using faster, server-side rendered and easy to learn framework.
 
-[[ official website ]](http://jsblocks.com)
+[[ official website ]](http://jsblocks.com?ref=github_readme)
 
 ### Features
 
- * [Server-side rendering](http://jsblocks.com/learn/introduction-why-jsblocks#server-side-rendering)
- * [Debugging experience](http://jsblocks.com/learn/introduction-why-jsblocks#debugging-experience)
- * [Faster](http://jsblocks.com/#performance)
- * [MV-ish](http://jsblocks.com/learn/introduction-why-jsblocks#mv-ish)
- * [Modular](http://jsblocks.com/learn/introduction-why-jsblocks#modular)
- * [Built-in utility library](http://jsblocks.com/learn/introduction-why-jsblocks#built-in-utility-library)
- * [Forward thinking](http://jsblocks.com/learn/introduction-why-jsblocks#forward-thinking)
- * [... and many more](http://jsblocks.com/learn/introduction-why-jsblocks#feature-rich)
+ * [Server-side rendering](http://jsblocks.com/learn/introduction-why-jsblocks#server-side-rendering?ref=github_readme)
+ * [Debugging experience](http://jsblocks.com/learn/introduction-why-jsblocks#debugging-experience?ref=github_readme)
+ * [Faster](http://jsblocks.com/#performance?ref=github_readme)
+ * [MV-ish](http://jsblocks.com/learn/introduction-why-jsblocks#mv-ish?ref=github_readme)
+ * [Modular](http://jsblocks.com/learn/introduction-why-jsblocks#modular?ref=github_readme)
+ * [Built-in utility library](http://jsblocks.com/learn/introduction-why-jsblocks#built-in-utility-library?ref=github_readme)
+ * [Forward thinking](http://jsblocks.com/learn/introduction-why-jsblocks#forward-thinking?ref=github_readme)
+ * [... and many more](http://jsblocks.com/learn/introduction-why-jsblocks#feature-rich?ref=github_readme)
 
 ### Getting started
 
 Just copy and paste the code below for your first jsblocks application.
-Continue with the [documentation](http://jsblocks.com/learn)
+Continue with the [documentation](http://jsblocks.com/learn?ref=github_readme)
 and the [jsblocks starter template project](https://github.com/astoilkov/jsblocks-seed)
 
 ```html
