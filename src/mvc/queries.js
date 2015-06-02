@@ -87,13 +87,13 @@
      *
      * @example {html}
      * <!-- will navigate to /contactus because the ContactUs View have /contactus route -->
-     * <a data-query="navigate(ContactUs)">Contact Us</a>
+     * <a data-query="navigateTo(ContactUs)">Contact Us</a>
      *
      * <!-- will navigate to /products/t-shirts because the Products View have /products/{{category}} route -->
-     * <a data-query="navigate(Products, { category: 't-shirts' })">T-Shirts</a>
+     * <a data-query="navigateTo(Products, { category: 't-shirts' })">T-Shirts</a>
      *
      * <!-- the same example as above but the route is directly specifying instead of using the View instance -->
-     * <a data-query="navigate('/products/{{category}}', { category: 't-shirts' })">T-Shirts</a>
+     * <a data-query="navigateTo('/products/{{category}}', { category: 't-shirts' })">T-Shirts</a>
      */
     navigateTo: {
       update: function (viewOrRoute, params) {
