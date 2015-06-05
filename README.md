@@ -27,18 +27,18 @@ and the [jsblocks starter template project](https://github.com/astoilkov/jsblock
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="http://jsblocks.com/jsblocks/blocks.js"></script>
+    <script src="http://jsblocks.com/blocks/0.3.2/blocks.js"></script>
     <script>
       blocks.query({
-        name: blocks.observable()
+        firstName: blocks.observable()
       });
     </script>
   </head>
   <body>
     Name:
-    <input data-query="val(name)" placeholder="Enter your name here" />
+    <input data-query="val(firstName)" placeholder="Enter your name here" />
     <hr />
-    <h1>Hello {{name}}!</h1>
+    <h1>Hello {{firstName}}!</h1>
   </body>
 </html>
 ```
