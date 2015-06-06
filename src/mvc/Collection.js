@@ -203,8 +203,12 @@ define([
       return this;
     },
 
-    clone: function () {
-      return createCollectionObservable(this._Model, this._prototype, this._application, this.__value__);
+    clone: function (cloneValue) {
+      return createCollectionObservable(
+        this._Model,
+        this._prototype,
+        this._application,
+        cloneValue ? blocks.clone(this.__value__) : this.__value__);
     },
 
     // TODO: Add a test which adds to the center of the collection or the start
@@ -228,7 +232,7 @@ define([
       var newItems = [];
       var i = 0;
       var item;
-      
+
       if (this._internalChanging) {
         return;
       }
