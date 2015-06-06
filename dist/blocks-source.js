@@ -4091,6 +4091,8 @@ return result;
     };
   })();
 
+
+	// addEventListener implementation that fixes old browser issues
   function on(element, eventName, handler) {
     if (Workarounds[eventName]) {
       Workarounds[eventName](element, handler, function (eventName, callback) {
@@ -4102,6 +4104,7 @@ return result;
   }
 
   var Workarounds = {
+		// support for "oninput" in legacy browsers
     input: function (element, handler, subscribe) {
       var timeout;
 
@@ -8620,13 +8623,13 @@ return result;
      *
      * @example {html}
      * <!-- will navigate to /contactus because the ContactUs View have /contactus route -->
-     * <a data-query="navigate(ContactUs)">Contact Us</a>
+     * <a data-query="navigateTo(ContactUs)">Contact Us</a>
      *
      * <!-- will navigate to /products/t-shirts because the Products View have /products/{{category}} route -->
-     * <a data-query="navigate(Products, { category: 't-shirts' })">T-Shirts</a>
+     * <a data-query="navigateTo(Products, { category: 't-shirts' })">T-Shirts</a>
      *
      * <!-- the same example as above but the route is directly specifying instead of using the View instance -->
-     * <a data-query="navigate('/products/{{category}}', { category: 't-shirts' })">T-Shirts</a>
+     * <a data-query="navigateTo('/products/{{category}}', { category: 't-shirts' })">T-Shirts</a>
      */
     navigateTo: {
       update: function (viewOrRoute, params) {
@@ -10705,8 +10708,12 @@ return result;
       return this;
     },
 
-    clone: function () {
-      return createCollectionObservable(this._Model, this._prototype, this._application, this.__value__);
+    clone: function (cloneValue) {
+      return createCollectionObservable(
+        this._Model,
+        this._prototype,
+        this._application,
+        cloneValue ? blocks.clone(this.__value__) : this.__value__);
     },
 
     // TODO: Add a test which adds to the center of the collection or the start
@@ -10730,7 +10737,7 @@ return result;
       var newItems = [];
       var i = 0;
       var item;
-      
+
       if (this._internalChanging) {
         return;
       }

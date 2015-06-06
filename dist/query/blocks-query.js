@@ -1689,6 +1689,8 @@
     };
   })();
 
+
+	// addEventListener implementation that fixes old browser issues
   function on(element, eventName, handler) {
     if (Workarounds[eventName]) {
       Workarounds[eventName](element, handler, function (eventName, callback) {
@@ -1700,6 +1702,7 @@
   }
 
   var Workarounds = {
+		// support for "oninput" in legacy browsers
     input: function (element, handler, subscribe) {
       var timeout;
 
