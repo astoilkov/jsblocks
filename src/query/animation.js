@@ -208,7 +208,7 @@
 
 
   // cache the willAnimate results
-  // each element with identical className and style attribute
+  // each element with identical className, style attribute and tagName
   // can be cached because the result will always be the same
   var willAnimateCache = {};
 
@@ -216,9 +216,9 @@
   // check if the transitionProperty changes after applying b-type and b-type-end classes
   // if it changes this means that the element have styles for animating the element
   function willAnimate(element, type) {
-    // cache key is unique combination between className and inline styles
+    // cache key is unique combination between className, style attribute and tagName
     // which ensures the element will have the same styles
-    var fromCache = willAnimateCache[element.className + element.getAttribute('style')];
+    var fromCache = willAnimateCache[element.className + element.getAttribute('style') + element.tagName];
     var result = false;
     var transitionProperties;
     var startStyle;
@@ -262,7 +262,7 @@
 
     setClass('remove', element, 'b-' + type + '-end');
 
-    willAnimateCache[element.className + element.getAttribute('style')] = result;
+    willAnimateCache[element.className + element.getAttribute('style') + element.tagName] = result;
 
     return result;
   }
