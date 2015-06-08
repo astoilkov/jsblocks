@@ -134,7 +134,7 @@
       disposeCallback();
       return;
     }
-    
+
     if (type == 'show') {
       element.style.display = '';
     }
@@ -177,8 +177,9 @@
     var animationDuration = parseFloat(computedStyle[prefix + 'animation-duration']) || 0;
     var animationDelay = parseFloat(computedStyle[prefix + 'animation-delay']) || 0;
 
-    if (transitionDuration <= 0 && transitionDelay <= 0 &&
-      animationDuration <= 0 && animationDelay <= 0) {
+    if ((transitionDuration <= 0 && transitionDelay <= 0 &&
+      animationDuration <= 0 && animationDelay <= 0) ||
+      !willAnimate(element, type)) {
 
       setClass('remove', element, 'b-' + type);
       disposeCallback();
@@ -203,6 +204,67 @@
     }
 
     return true;
+  }
+
+
+  // cache the willAnimate results
+  // each element with identical className and style attribute
+  // can be cached because the result will always be the same
+  var willAnimateCache = {};
+
+  // determines if the element will be transitioned or animated
+  // check if the transitionProperty changes after applying b-type and b-type-end classes
+  // if it changes this means that the element have styles for animating the element
+  function willAnimate(element, type) {
+    // cache key is unique combination between className and inline styles
+    // which ensures the element will have the same styles
+    var fromCache = willAnimateCache[element.className + element.getAttribute('style')];
+    var result = false;
+    var transitionProperties;
+    var startStyle;
+    var endStyle;
+
+    if (fromCache || fromCache === false) {
+      return fromCache;
+    }
+
+    setClass('remove', element, 'b-' + type);
+
+    startStyle = blocks.extend({}, window.getComputedStyle(element));
+
+    setClass('add', element, 'b-' + type);
+    setClass('add', element, 'b-' + type + '-end');
+
+    endStyle = window.getComputedStyle(element);
+
+    // transitionProperty could return multiple properties - "color, opacity, font-size"
+    transitionProperties = endStyle.transitionProperty.split(',');
+
+    blocks.each(transitionProperties, function (property) {
+      property = property.trim().replace(/-\w/g, function (match) {
+        return match.charAt(1).toUpperCase();
+      });
+
+      if (property == 'all') {
+        for (var key in endStyle) {
+          if (endStyle[key] != startStyle[key]) {
+            result = true;
+          }
+        }
+        return false;
+      } else {
+        if (endStyle[property] != startStyle[property]) {
+          result = true;
+          return false;
+        }
+      }
+    });
+
+    setClass('remove', element, 'b-' + type + '-end');
+
+    willAnimateCache[element.className + element.getAttribute('style')] = result;
+
+    return result;
   }
 
   return animation;
