@@ -1122,7 +1122,7 @@ blocks.debug = {
   },
 
   checkQuery: function (name, args, query, element) {
-    if (!blocks.debug.enabled) {
+    if (!blocks.debug.enabled || name == 'if' || name == 'ifnot') {
       return;
     }
     var method = blocks.debug.queries[name];
@@ -1437,6 +1437,7 @@ function checkArgsTypes(method, args) {
   var params = method.params;
   var maxOptionals = params.length - (params.length - getOptionalParamsCount(method.params));
   var paramIndex = 0;
+  var passDetailValues = blocks.queries[method.name].passDetailValues;
   var currentErrors;
   var param;
   var value;
@@ -1447,6 +1448,10 @@ function checkArgsTypes(method, args) {
 
     if (!param) {
       break;
+    }
+
+    if (passDetailValues) {
+      value = value.rawValue;
     }
 
     if (param.optional) {
@@ -8415,7 +8420,7 @@ return result;
       disposeCallback();
       return;
     }
-    
+
     if (type == 'show') {
       element.style.display = '';
     }
@@ -8458,8 +8463,9 @@ return result;
     var animationDuration = parseFloat(computedStyle[prefix + 'animation-duration']) || 0;
     var animationDelay = parseFloat(computedStyle[prefix + 'animation-delay']) || 0;
 
-    if (transitionDuration <= 0 && transitionDelay <= 0 &&
-      animationDuration <= 0 && animationDelay <= 0) {
+    if ((transitionDuration <= 0 && transitionDelay <= 0 &&
+      animationDuration <= 0 && animationDelay <= 0) ||
+      !willAnimate(element, type)) {
 
       setClass('remove', element, 'b-' + type);
       disposeCallback();
@@ -8484,6 +8490,67 @@ return result;
     }
 
     return true;
+  }
+
+
+  // cache the willAnimate results
+  // each element with identical className, style attribute and tagName
+  // can be cached because the result will always be the same
+  var willAnimateCache = {};
+
+  // determines if the element will be transitioned or animated
+  // check if the transitionProperty changes after applying b-type and b-type-end classes
+  // if it changes this means that the element have styles for animating the element
+  function willAnimate(element, type) {
+    // cache key is unique combination between className, style attribute and tagName
+    // which ensures the element will have the same styles
+    var fromCache = willAnimateCache[element.className + element.getAttribute('style') + element.tagName];
+    var result = false;
+    var transitionProperties;
+    var startStyle;
+    var endStyle;
+
+    if (fromCache || fromCache === false) {
+      return fromCache;
+    }
+
+    setClass('remove', element, 'b-' + type);
+
+    startStyle = blocks.extend({}, window.getComputedStyle(element));
+
+    setClass('add', element, 'b-' + type);
+    setClass('add', element, 'b-' + type + '-end');
+
+    endStyle = window.getComputedStyle(element);
+
+    // transitionProperty could return multiple properties - "color, opacity, font-size"
+    transitionProperties = endStyle.transitionProperty.split(',');
+
+    blocks.each(transitionProperties, function (property) {
+      property = property.trim().replace(/-\w/g, function (match) {
+        return match.charAt(1).toUpperCase();
+      });
+
+      if (property == 'all') {
+        for (var key in endStyle) {
+          if (endStyle[key] != startStyle[key]) {
+            result = true;
+          }
+        }
+        return false;
+      } else {
+        if (endStyle[property] != startStyle[property]) {
+          result = true;
+          return false;
+        }
+      }
+    });
+
+    setClass('remove', element, 'b-' + type + '-end');
+
+    willAnimateCache[element.className + element.getAttribute('style') + element.tagName] = result;
+
+    return result;
   }
 
   function VirtualComment(commentText) {
@@ -8751,7 +8818,6 @@ return result;
 
   function DomQuery(options) {
     this._options = options || {};
-    this._contextProperties = {};
   }
 
   DomQuery.QueryCache = {};
@@ -8804,24 +8870,25 @@ return result;
         $parent: context ? context.$this : null,
         $parents: context ? models : [],
         $index: this._dataIndex || null,
-        $parentContext: context || null
+        $parentContext: context || null,
+        __props__: context && context.__props__
       };
       newContext.$context = newContext;
       this._context = newContext;
-      this.applyDefinedContextProperties();
+      this.applyProperties();
 
       return newContext;
     },
-    
+
     getSyncIndex: function () {
       var context = this._context;
       var index = '';
-      
+
       while (context && context.$index) {
         index = context.$index.__value__ + '_' + index;
         context = context.$parentContext;
       }
-      
+
       return index;
     },
 
@@ -8833,21 +8900,19 @@ return result;
     },
 
     addProperty: function (name, value) {
-      this._contextProperties[name] = value;
-      this.applyDefinedContextProperties();
-    },
-
-    removeProperty: function (name) {
-      delete this._contextProperties[name];
-    },
-
-    applyDefinedContextProperties: function () {
       var context = this._context;
-      var contextProperties = this._contextProperties;
+
+      context.__props__ = context.__props__ || {};
+      context.__props__[name] = value;
+      this.applyProperties();
+    },
+
+    applyProperties: function () {
+      var properties = this._context.__props__;
       var key;
 
-      for (key in contextProperties) {
-        context[key] = contextProperties[key];
+      for (key in properties) {
+        this._context[key] = properties[key];
       }
     },
 
@@ -8862,7 +8927,7 @@ return result;
 
     executeQuery: function (element, query) {
       var cache = DomQuery.QueryCache[query] || createCache(query, element);
-      
+
       this.executeMethods(element, cache);
     },
 
@@ -9038,7 +9103,7 @@ return result;
           }
         }
       }
-      
+
       this._context = null;
     },
 
@@ -9121,7 +9186,7 @@ return result;
       }
     }
   };
-  
+
   function createCache(query, element) {
     var cache = DomQuery.QueryCache[query] = [];
 
@@ -9145,7 +9210,7 @@ return result;
         blocks.debug.queryNotExists(methodObj, element);
       }
     });
-    
+
     return cache;
   }
 
@@ -9290,11 +9355,11 @@ return result;
           var newContext = domQuery.cloneContext(currentContext);
           var renderEndTag = this.renderEndTag;
 
+          ElementsData.data(this).context = newContext;
           domQuery.context(newContext);
           domQuery.addProperty(propertyName, propertyValue);
 
           this.renderEndTag = function () {
-            domQuery.removeProperty(propertyName);
             domQuery.context(currentContext);
             return renderEndTag.call(this);
           };
@@ -9345,9 +9410,6 @@ return result;
           domQuery.pushContext(value);
 
           this.renderEndTag = function () {
-            if (name) {
-              domQuery.removeProperty(name);
-            }
             domQuery.popContext();
             return renderEndTag.call(this);
           };
@@ -9453,7 +9515,7 @@ return result;
         var staticHtml;
         var childs;
         var html;
-        
+
         if (this._sync) {
           element.updateChildren(collection, collection.length, domQuery, this._el);
           return;
@@ -9489,13 +9551,13 @@ return result;
         rawCollection = blocks.unwrapObservable(collection);
 
         childs = domQuery._context.childs = [];
-        
+
         if (blocks.isArray(rawCollection)) {
           for (index = 0; index < rawCollection.length; index++) {
             domQuery.dataIndex(blocks.observable.getIndex(collection, index));
-            childs.push(domQuery.pushContext(rawCollection[index])); 
+            childs.push(domQuery.pushContext(rawCollection[index]));
             html += this.renderChildren(domQuery, syncIndex + index);
-            domQuery.popContext(); 
+            domQuery.popContext();
             domQuery.dataIndex(undefined);
           }
         } else if (blocks.isObject(rawCollection)) {
@@ -9589,8 +9651,8 @@ return result;
     * The render query allows elements to be skipped from rendering and not to exist in the HTML result
     *
     * @memberof blocks.queries
-    * @param {boolean} condition The value determines if the element will be rendered or not
-    * @param {boolean} [renderChildren=false] The value indicates if the children will be rendered
+    * @param {boolean} condition - The value determines if the element will be rendered or not
+    * @param {boolean} [renderChildren=false] - The value indicates if the children will be rendered
     *
     * @example {html}
     * <div data-query="render(true)">Visible</div>

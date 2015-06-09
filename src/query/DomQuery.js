@@ -15,7 +15,6 @@ define([
              ElementsData, Observer, VirtualElement, VirtualComment) {
   function DomQuery(options) {
     this._options = options || {};
-    this._contextProperties = {};
   }
 
   DomQuery.QueryCache = {};
