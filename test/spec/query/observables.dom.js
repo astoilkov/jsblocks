@@ -491,6 +491,35 @@
         expect($('.testElement').length).toBe(0);
         expect($('#wrapperElement')).toHaveHtml('');
       });
+
+      it('define() in each() is immediately accessible', function () {
+        var items = getItems();
+
+        setQuery('define(\'item\', $this).setClass(item.field)');
+
+        query({
+          items: items
+        });
+
+        items.push({});
+      });
+
+      it('parent define() is accessible when rendering new items', function () {
+        var items = getItems();
+
+        $('#wrapperElement').attr('data-query', 'define(\'$message\', message).each(items)');
+
+        setQuery('setClass($message.text)');
+
+        query({
+          message: {
+            text: 'hello'
+          },
+          items: items
+        });
+
+        items.push({});
+      });
     });
 
     describe('blocks.observable (Array) - not bound to each statement', function () {
@@ -683,7 +712,7 @@
         var model = getData();
 
         query(model);
-        
+
         model.columns.splice(0, 0, {
           field: 'Title'
         });
@@ -762,7 +791,6 @@
 
         var model = getData();
 
-debugger;
         query(model);
 
         model.columns.splice(0, 0, {
@@ -897,7 +925,6 @@ debugger;
         $tr.append($td);
 
         setFixtures(fixture);
-
 
         var items = blocks.observable([1, 2, 3]);
 
@@ -1061,7 +1088,7 @@ debugger;
           expect($('#testElement2').find('.firstName').eq(i)).toHaveAttr('data-index', i);
           expect($('#testElement2').find('.lastName').eq(i)).toHaveHtml('LastName' + indexes[i]);
           if (i % 2 == 0) {
-            expect($('#testElement2').find('.firstName').eq(i)).toBeVisible();  
+            expect($('#testElement2').find('.firstName').eq(i)).toBeVisible();
           } else {
             expect($('#testElement2').find('.firstName').eq(i)).not.toBeVisible();
           }

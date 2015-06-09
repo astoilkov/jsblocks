@@ -68,24 +68,25 @@ define([
         $parent: context ? context.$this : null,
         $parents: context ? models : [],
         $index: this._dataIndex || null,
-        $parentContext: context || null
+        $parentContext: context || null,
+        __props__: context && context.__props__
       };
       newContext.$context = newContext;
       this._context = newContext;
-      this.applyDefinedContextProperties();
+      this.applyProperties();
 
       return newContext;
     },
-    
+
     getSyncIndex: function () {
       var context = this._context;
       var index = '';
-      
+
       while (context && context.$index) {
         index = context.$index.__value__ + '_' + index;
         context = context.$parentContext;
       }
-      
+
       return index;
     },
 
@@ -97,21 +98,19 @@ define([
     },
 
     addProperty: function (name, value) {
-      this._contextProperties[name] = value;
-      this.applyDefinedContextProperties();
-    },
-
-    removeProperty: function (name) {
-      delete this._contextProperties[name];
-    },
-
-    applyDefinedContextProperties: function () {
       var context = this._context;
-      var contextProperties = this._contextProperties;
+
+      context.__props__ = context.__props__ || {};
+      context.__props__[name] = value;
+      this.applyProperties();
+    },
+
+    applyProperties: function () {
+      var properties = this._context.__props__;
       var key;
 
-      for (key in contextProperties) {
-        context[key] = contextProperties[key];
+      for (key in properties) {
+        this._context[key] = properties[key];
       }
     },
 
@@ -126,7 +125,7 @@ define([
 
     executeQuery: function (element, query) {
       var cache = DomQuery.QueryCache[query] || createCache(query, element);
-      
+
       this.executeMethods(element, cache);
     },
 
@@ -305,7 +304,7 @@ define([
           }
         }
       }
-      
+
       this._context = null;
     },
 
@@ -388,7 +387,7 @@ define([
       }
     }
   };
-  
+
   function createCache(query, element) {
     var cache = DomQuery.QueryCache[query] = [];
 
@@ -414,7 +413,7 @@ define([
       }
       /* @endif */
     });
-    
+
     return cache;
   }
 

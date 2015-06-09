@@ -158,11 +158,11 @@ define([
           var newContext = domQuery.cloneContext(currentContext);
           var renderEndTag = this.renderEndTag;
 
+          ElementsData.data(this).context = newContext;
           domQuery.context(newContext);
           domQuery.addProperty(propertyName, propertyValue);
 
           this.renderEndTag = function () {
-            domQuery.removeProperty(propertyName);
             domQuery.context(currentContext);
             return renderEndTag.call(this);
           };
@@ -213,9 +213,6 @@ define([
           domQuery.pushContext(value);
 
           this.renderEndTag = function () {
-            if (name) {
-              domQuery.removeProperty(name);
-            }
             domQuery.popContext();
             return renderEndTag.call(this);
           };
@@ -321,7 +318,7 @@ define([
         var staticHtml;
         var childs;
         var html;
-        
+
         if (this._sync) {
           element.updateChildren(collection, collection.length, domQuery, this._el);
           return;
@@ -357,13 +354,13 @@ define([
         rawCollection = blocks.unwrapObservable(collection);
 
         childs = domQuery._context.childs = [];
-        
+
         if (blocks.isArray(rawCollection)) {
           for (index = 0; index < rawCollection.length; index++) {
             domQuery.dataIndex(blocks.observable.getIndex(collection, index));
-            childs.push(domQuery.pushContext(rawCollection[index])); 
+            childs.push(domQuery.pushContext(rawCollection[index]));
             html += this.renderChildren(domQuery, syncIndex + index);
-            domQuery.popContext(); 
+            domQuery.popContext();
             domQuery.dataIndex(undefined);
           }
         } else if (blocks.isObject(rawCollection)) {
@@ -457,8 +454,8 @@ define([
     * The render query allows elements to be skipped from rendering and not to exist in the HTML result
     *
     * @memberof blocks.queries
-    * @param {boolean} condition The value determines if the element will be rendered or not
-    * @param {boolean} [renderChildren=false] The value indicates if the children will be rendered
+    * @param {boolean} condition - The value determines if the element will be rendered or not
+    * @param {boolean} [renderChildren=false] - The value indicates if the children will be rendered
     *
     * @example {html}
     * <div data-query="render(true)">Visible</div>
