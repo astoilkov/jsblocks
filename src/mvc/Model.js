@@ -82,9 +82,26 @@ define([
      * });
      */
     init: blocks.noop,
-
+    
+    /**
+     * Returns the `Collection` instance the model is part of.
+     * If it is not part of a collection it returns null.
+     * 
+     * @returns {Collection|null} - The `Collection` or null.
+     * 
+     * @example {javascript}
+     * var App = blocks.Application();
+     * 
+     * var User = App.Model({
+     *   init: function () {
+     *     if (this.collection()) {
+     *       this.collection().on('add remove', function handle() {});
+     *     }
+     *   }
+     * });
+     */
     collection: function () {
-      return this._collection;
+      return this._collection || null;
     },
 
     /**
