@@ -1,7 +1,6 @@
 module.exports = function (grunt) {
   var bowerJSON = {
     name: 'blocks',
-    version: grunt.config.get('version'),
     main: 'dist/blocks.js',
     license: 'MIT',
     author: {
