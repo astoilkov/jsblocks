@@ -19,13 +19,11 @@ define([
   };
 
   /**
-   * [Application description]
+   * MVC Application Class
    *
    * @namespace Application
    * @module mvc
-   * @param {[type]} data -
-   *
-   * @example {javascript}
+   * @param {Object} options - The options for the application
    */
   function Application(options) {
     this._router = new Router(this);
@@ -47,28 +45,6 @@ define([
     options: {
       history: true
     },
-
-    // /**
-    //  * An function that returns an observable determining if a particular View is active.
-    //  * Conditions using the isViewActive
-    //  *
-    //  * @memberof Application
-    //  * @param {string} viewName - The name of the view will be checked if it is active
-    //  *
-    //  * @example {html}
-    //  */
-    // isViewActive: function (viewName) {
-    //   //#region blocks
-    //   if (!this._started) {
-    //     throw new Error('Application not started. Please start the application before using this method');
-    //   }
-    //
-    //   if (!this._views[viewName]) {
-    //     throw new Error('View with ' + viewName + ' name does not exists');
-    //   }
-    //   //#endregion
-    //   return this._views[viewName].isActive;
-    // },
 
     /**
      * Creates an application property for a Model
@@ -305,7 +281,6 @@ define([
       return true;
     },
 
-
     start: function (element) {
       if (!this._started) {
         this._started = true;
@@ -322,7 +297,7 @@ define([
         }, this));
       }, this);
     },
-    
+
     _startHistory: function () {
       this._history = new History(this.options);
       this._history
@@ -475,26 +450,18 @@ define([
       this.Model.Defaults = blocks.observable({
         options: {}
       }).extend();
+
       this.Collection.Defaults = blocks.observable({
         options: {}
       }).extend();
+
       this.Property.Defaults = blocks.observable({
         isObservable: true,
-
-        // defaultValue: undefined,
-        // field: NULL,
-        // changing: NULL,
-        // change: NULL,
-        // value: NULL, // value:function () { this.FirstName + this.LastName }
-
-        validateOnChange: false,
-        maxErrors: 1,
-        validateInitially: false
+        maxErrors: 1
       }).extend();
+
       this.View.Defaults = blocks.observable({
-        options: {
-          // haveHistory: false
-        }
+        options: { }
       }).extend();
     }
   };
