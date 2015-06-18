@@ -13,6 +13,9 @@
   },
   "devDependencies": {
     "blocks": "^0.1.4",
+    "escodegen": "^1.6.1",
+    "esprima": "^2.3.0",
+    "estraverse": "^4.1.0",
     "grunt": "^0.4.5",
     "grunt-contrib-jshint": "^0.11.0",
     "grunt-contrib-requirejs": "^0.4.4",
@@ -21,6 +24,7 @@
     "grunt-karma": "^0.10.1",
     "grunt-notify": "^0.4.1",
     "grunt-preprocess": "^4.1.0",
+    "highlight.js": "^8.6.0",
     "jasmine-core": "^2.2.0",
     "karma": "^0.12.31",
     "karma-chrome-launcher": "^0.1.7",
