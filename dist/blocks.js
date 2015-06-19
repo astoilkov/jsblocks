@@ -2150,11 +2150,23 @@ blocks.debug.queries = {
                   children: ['script']
                 }, '>']
             }, {
-              name: 'javascript',
-              children: ['\n  blocks.query({\n    name: ', {
+              name: 'less',
+              children: ['\n  ', {
+                  name: 'hljs-tag',
+                  children: ['blocks']
+                }, {
+                  name: 'hljs-class',
+                  children: ['.query']
+                }, '({\n    ', {
+                  name: 'hljs-attribute',
+                  children: ['name']
+                }, ': ', {
                   name: 'hljs-string',
                   children: ['\'John Doe\'']
-                }, ',\n    age: ', {
+                }, ',\n    ', {
+                  name: 'hljs-attribute',
+                  children: ['age']
+                }, ': ', {
                   name: 'hljs-number',
                   children: ['22']
                 }, '\n  });\n']
@@ -2183,11 +2195,53 @@ blocks.debug.queries = {
                   children: ['"blocks-template"']
                 }, '>']
             }, {
-              name: 'javascript',
-              children: ['\n  <h3>{{name}}<', {
-                  name: 'hljs-regexp',
-                  children: ['/h3>\n  <p>I am {{age}} years old.</']
-                }, 'p>\n']
+              name: 'handlebars',
+              children: [{
+                  name: 'xml',
+                  children: ['\n  ', {
+                      name: 'hljs-tag',
+                      children: ['<', {
+                          name: 'hljs-title',
+                          children: ['h3']
+                        }, '>']
+                    }]
+                }, {
+                  name: 'hljs-expression',
+                  children: ['{{', {
+                      name: 'hljs-variable',
+                      children: ['name']
+                    }, '}}']
+                }, {
+                  name: 'xml',
+                  children: [{
+                      name: 'hljs-tag',
+                      children: ['</', {
+                          name: 'hljs-title',
+                          children: ['h3']
+                        }, '>']
+                    }, '\n  ', {
+                      name: 'hljs-tag',
+                      children: ['<', {
+                          name: 'hljs-title',
+                          children: ['p']
+                        }, '>']
+                    }, 'I am ']
+                }, {
+                  name: 'hljs-expression',
+                  children: ['{{', {
+                      name: 'hljs-variable',
+                      children: ['age']
+                    }, '}}']
+                }, {
+                  name: 'xml',
+                  children: [' years old.', {
+                      name: 'hljs-tag',
+                      children: ['</', {
+                          name: 'hljs-title',
+                          children: ['p']
+                        }, '>']
+                    }, '\n']
+                }]
             }, {
               name: 'hljs-tag',
               children: ['</', {
@@ -2298,8 +2352,23 @@ blocks.debug.queries = {
                   children: ['script']
                 }, '>']
             }, {
-              name: 'javascript',
-              children: ['\n  blocks.query({\n    strings: {\n      title: {\n        text: ', {
+              name: 'less',
+              children: ['\n  ', {
+                  name: 'hljs-tag',
+                  children: ['blocks']
+                }, {
+                  name: 'hljs-class',
+                  children: ['.query']
+                }, '({\n    ', {
+                  name: 'hljs-tag',
+                  children: ['strings']
+                }, ': {\n      ', {
+                  name: 'hljs-tag',
+                  children: ['title']
+                }, ': {\n        ', {
+                  name: 'hljs-attribute',
+                  children: ['text']
+                }, ': ', {
                   name: 'hljs-string',
                   children: ['\'Hello World!\'']
                 }, '\n      }\n    }\n  });\n']
@@ -2389,11 +2458,29 @@ blocks.debug.queries = {
                   children: ['script']
                 }, '>']
             }, {
-              name: 'javascript',
-              children: ['\n  blocks.query({\n    ProfilePage: {\n      user: {\n        name: ', {
+              name: 'less',
+              children: ['\n  ', {
+                  name: 'hljs-tag',
+                  children: ['blocks']
+                }, {
+                  name: 'hljs-class',
+                  children: ['.query']
+                }, '({\n    ', {
+                  name: 'hljs-tag',
+                  children: ['ProfilePage']
+                }, ': {\n      ', {
+                  name: 'hljs-tag',
+                  children: ['user']
+                }, ': {\n        ', {
+                  name: 'hljs-attribute',
+                  children: ['name']
+                }, ': ', {
                   name: 'hljs-string',
                   children: ['\'John Doe\'']
-                }, ',\n        age: ', {
+                }, ',\n        ', {
+                  name: 'hljs-attribute',
+                  children: ['age']
+                }, ': ', {
                   name: 'hljs-number',
                   children: ['22']
                 }, '\n      }\n    }\n  });\n']
@@ -2474,14 +2561,32 @@ blocks.debug.queries = {
                   children: ['script']
                 }, '>']
             }, {
-              name: 'javascript',
-              children: ['\n  blocks.query({\n    items: [', {
-                  name: 'hljs-string',
-                  children: ['\'John\'']
-                }, ', ', {
-                  name: 'hljs-string',
-                  children: ['\'Doe\'']
-                }, ']\n  });\n']
+              name: 'css',
+              children: ['\n  ', {
+                  name: 'hljs-tag',
+                  children: ['blocks']
+                }, {
+                  name: 'hljs-class',
+                  children: ['.query']
+                }, '(', {
+                  name: 'hljs-rules',
+                  children: ['{\n    ', {
+                      name: 'hljs-rule',
+                      children: [{
+                          name: 'hljs-attribute',
+                          children: ['items']
+                        }, ':', {
+                          name: 'hljs-value',
+                          children: [' [', {
+                              name: 'hljs-string',
+                              children: ['\'John\'']
+                            }, ', ', {
+                              name: 'hljs-string',
+                              children: ['\'Doe\'']
+                            }, ']\n  })']
+                        }]
+                    }, ';\n']
+                }]
             }, {
               name: 'hljs-tag',
               children: ['</', {
@@ -2604,23 +2709,41 @@ blocks.debug.queries = {
                   children: ['script']
                 }, '>']
             }, {
-              name: 'javascript',
-              children: ['\nblocks.query({\n  caption: ', {
-                  name: 'hljs-string',
-                  children: ['\'Select user\'']
-                }, '\n  data: [\n    { name: ', {
-                  name: 'hljs-string',
-                  children: ['\'John\'']
-                }, ', id: ', {
-                  name: 'hljs-number',
-                  children: ['1']
-                }, ' },\n    { name: ', {
-                  name: 'hljs-string',
-                  children: ['\'Doe\'']
-                }, ', id: ', {
-                  name: 'hljs-number',
-                  children: ['2']
-                }, ' }\n  ]\n});\n']
+              name: 'css',
+              children: ['\n', {
+                  name: 'hljs-tag',
+                  children: ['blocks']
+                }, {
+                  name: 'hljs-class',
+                  children: ['.query']
+                }, '(', {
+                  name: 'hljs-rules',
+                  children: ['{\n  ', {
+                      name: 'hljs-rule',
+                      children: [{
+                          name: 'hljs-attribute',
+                          children: ['caption']
+                        }, ':', {
+                          name: 'hljs-value',
+                          children: [' ', {
+                              name: 'hljs-string',
+                              children: ['\'Select user\'']
+                            }, '\n  data: [\n    { name: ', {
+                              name: 'hljs-string',
+                              children: ['\'John\'']
+                            }, ', id: ', {
+                              name: 'hljs-number',
+                              children: ['1']
+                            }, ' },\n    { name: ', {
+                              name: 'hljs-string',
+                              children: ['\'Doe\'']
+                            }, ', id: ', {
+                              name: 'hljs-number',
+                              children: ['2']
+                            }, ' }\n  ]\n})']
+                        }]
+                    }, ';\n']
+                }]
             }, {
               name: 'hljs-tag',
               children: ['</', {
@@ -2837,44 +2960,26 @@ blocks.debug.queries = {
                   children: ['script']
                 }, '>']
             }, {
-              name: 'javascript',
+              name: 'nimrod',
               children: ['\nblocks.query({\n  visible: blocks.observable(', {
                   name: 'hljs-literal',
                   children: ['true']
-                }, '),\n  toggleVisibility: ', {
-                  name: 'hljs-function',
-                  children: [{
-                      name: 'hljs-keyword',
-                      children: ['function']
-                    }, ' ', {
-                      name: 'hljs-params',
-                      children: ['()']
-                    }, ' ']
-                }, '{\n    ', {
-                  name: 'hljs-comment',
-                  children: ['// this points to the model object passed to blocks.query() method']
-                }, '\n    ', {
+                }, '),\n  toggleVisibility: function () {\n    // this points to the model ', {
                   name: 'hljs-keyword',
-                  children: ['this']
-                }, '.visible(!', {
+                  children: ['object']
+                }, ' passed to blocks.query() ', {
                   name: 'hljs-keyword',
-                  children: ['this']
-                }, '.visible());\n  },\n\n  fade: ', {
-                  name: 'hljs-function',
-                  children: [{
-                      name: 'hljs-keyword',
-                      children: ['function']
-                    }, ' ', {
-                      name: 'hljs-params',
-                      children: ['(element, ready)']
-                    }, ' ']
-                }, '{\n    Velocity(element, {\n      ', {
-                  name: 'hljs-comment',
-                  children: ['// this points to the model object passed to blocks.query() method']
-                }, '\n      opacity: ', {
+                  children: ['method']
+                }, '\n    this.visible(!this.visible());\n  },\n\n  fade: function (element, ready) {\n    ', {
+                  name: 'hljs-type',
+                  children: ['Velocity']
+                }, '(element, {\n      // this points to the model ', {
                   name: 'hljs-keyword',
-                  children: ['this']
-                }, '.visible() ? ', {
+                  children: ['object']
+                }, ' passed to blocks.query() ', {
+                  name: 'hljs-keyword',
+                  children: ['method']
+                }, '\n      opacity: this.visible() ? ', {
                   name: 'hljs-number',
                   children: ['1']
                 }, ' : ', {
@@ -2886,10 +2991,7 @@ blocks.debug.queries = {
                 }, ',\n      queue: ', {
                   name: 'hljs-literal',
                   children: ['false']
-                }, ',\n\n      ', {
-                  name: 'hljs-comment',
-                  children: ['// setting the ready callback to the complete callback']
-                }, '\n      complete: ready\n    });\n  }\n});\n']
+                }, ',\n\n      // setting the ready callback to the complete callback\n      complete: ready\n    });\n  }\n});\n']
             }, {
               name: 'hljs-tag',
               children: ['</', {
@@ -3392,11 +3494,32 @@ blocks.debug.queries = {
                   children: ['script']
                 }, '>']
             }, {
-              name: 'javascript',
-              children: ['\nblocks.query({\n  name: blocks.observable(', {
-                  name: 'hljs-string',
-                  children: ['\'John Doe\'']
-                }, ')\n});\n']
+              name: 'css',
+              children: ['\n', {
+                  name: 'hljs-tag',
+                  children: ['blocks']
+                }, {
+                  name: 'hljs-class',
+                  children: ['.query']
+                }, '(', {
+                  name: 'hljs-rules',
+                  children: ['{\n  ', {
+                      name: 'hljs-rule',
+                      children: [{
+                          name: 'hljs-attribute',
+                          children: ['name']
+                        }, ':', {
+                          name: 'hljs-value',
+                          children: [' blocks.', {
+                              name: 'hljs-function',
+                              children: ['observable']
+                            }, '(', {
+                              name: 'hljs-string',
+                              children: ['\'John Doe\'']
+                            }, ')\n})']
+                        }]
+                    }, ';\n']
+                }]
             }, {
               name: 'hljs-tag',
               children: ['</', {
@@ -3601,8 +3724,17 @@ blocks.debug.queries = {
                   children: ['script']
                 }, '>']
             }, {
-              name: 'javascript',
-              children: ['\n  blocks.query({\n    h1FontSize: ', {
+              name: 'less',
+              children: ['\n  ', {
+                  name: 'hljs-tag',
+                  children: ['blocks']
+                }, {
+                  name: 'hljs-class',
+                  children: ['.query']
+                }, '({\n    ', {
+                  name: 'hljs-attribute',
+                  children: ['h1FontSize']
+                }, ': ', {
                   name: 'hljs-number',
                   children: ['12']
                 }, '\n  });\n']
@@ -3883,10 +4015,10 @@ blocks.debug.queries = {
               children: [{
                   name: 'hljs-keyword',
                   children: ['function']
-                }, ' ', {
+                }, ' (', {
                   name: 'hljs-params',
-                  children: ['(e)']
-                }, ' ']
+                  children: ['e']
+                }, ') ']
             }, '{\n    ', {
               name: 'hljs-comment',
               children: ['// ...stuff...']
@@ -9309,10 +9441,17 @@ return result;
             blocks.queries['with'].preprocess.call(this, domQuery, value, '$template');
           }
           if (!serverData || !serverData.templates || !serverData.templates[ElementsData.id(this)]) {
-            this.html(html);
-            if (!this._each && this._el) {
-              this._children = createVirtual(this._el.childNodes[0], this);
+            if (!this._el) {
+              var element = document.createElement('div');
+              element.innerHTML = html;
+              this._children = createVirtual(element.childNodes[0], this);
               this._innerHTML = null;
+            } else {
+              this.html(html);
+              if (!this._each) {
+                this._children = createVirtual(this._el.childNodes[0], this);
+                this._innerHTML = null;
+              }
             }
           }
         }
@@ -12557,6 +12696,8 @@ return result;
     }
   }
 
+  /* global JSON */
+
   var CREATE = 'create';
   var UPDATE = 'update';
   var DESTROY = 'destroy';
@@ -12600,7 +12741,7 @@ return result;
   }
 
   blocks.DataSource = DataSource;
-  
+
   DataSource.ArrayMode = 1;
   DataSource.ObjectMode = 2;
 
@@ -12648,7 +12789,7 @@ return result;
         if (blocks.isString(data)) {
           data = JSON.parse(data);
         }
-        
+
         if (_this.options.mode == DataSource.ArrayMode) {
           if (!blocks.isArray(data)) {
             if (blocks.isArray(data.value)) {
@@ -12660,14 +12801,14 @@ return result;
                   return false;
                 }
               });
-            }   
+            }
           }
         }
-        
+
         if (!blocks.isArray(data)) {
           data = [data];
         }
-        
+
         if (!options || options.__updateData__ !== false) {
           _this._updateData(data);
         }
@@ -12769,7 +12910,7 @@ return result;
     _updateData: function (data) {
       this.data.removeAll();
       this.data.addMany(data);
-      
+
       this.clearChanges();
       this._trigger('change');
     },
@@ -13006,9 +13147,26 @@ return result;
      * });
      */
     init: blocks.noop,
-
+    
+    /**
+     * Returns the `Collection` instance the model is part of.
+     * If it is not part of a collection it returns null.
+     * 
+     * @returns {Collection|null} - The `Collection` or null.
+     * 
+     * @example {javascript}
+     * var App = blocks.Application();
+     * 
+     * var User = App.Model({
+     *   init: function () {
+     *     if (this.collection()) {
+     *       this.collection().on('add remove', function handle() {});
+     *     }
+     *   }
+     * });
+     */
     collection: function () {
-      return this._collection;
+      return this._collection || null;
     },
 
     /**
@@ -14031,13 +14189,11 @@ return result;
   };
 
   /**
-   * [Application description]
+   * MVC Application Class
    *
    * @namespace Application
    * @module mvc
-   * @param {[type]} data -
-   *
-   * @example {javascript}
+   * @param {Object} options - The options for the application
    */
   function Application(options) {
     this._router = new Router(this);
@@ -14059,28 +14215,6 @@ return result;
     options: {
       history: true
     },
-
-    // /**
-    //  * An function that returns an observable determining if a particular View is active.
-    //  * Conditions using the isViewActive
-    //  *
-    //  * @memberof Application
-    //  * @param {string} viewName - The name of the view will be checked if it is active
-    //  *
-    //  * @example {html}
-    //  */
-    // isViewActive: function (viewName) {
-    //   //#region blocks
-    //   if (!this._started) {
-    //     throw new Error('Application not started. Please start the application before using this method');
-    //   }
-    //
-    //   if (!this._views[viewName]) {
-    //     throw new Error('View with ' + viewName + ' name does not exists');
-    //   }
-    //   //#endregion
-    //   return this._views[viewName].isActive;
-    // },
 
     /**
      * Creates an application property for a Model
@@ -14317,7 +14451,6 @@ return result;
       return true;
     },
 
-
     start: function (element) {
       if (!this._started) {
         this._started = true;
@@ -14334,7 +14467,7 @@ return result;
         }, this));
       }, this);
     },
-    
+
     _startHistory: function () {
       this._history = new History(this.options);
       this._history
@@ -14487,26 +14620,18 @@ return result;
       this.Model.Defaults = blocks.observable({
         options: {}
       }).extend();
+
       this.Collection.Defaults = blocks.observable({
         options: {}
       }).extend();
+
       this.Property.Defaults = blocks.observable({
         isObservable: true,
-
-        // defaultValue: undefined,
-        // field: NULL,
-        // changing: NULL,
-        // change: NULL,
-        // value: NULL, // value:function () { this.FirstName + this.LastName }
-
-        validateOnChange: false,
-        maxErrors: 1,
-        validateInitially: false
+        maxErrors: 1
       }).extend();
+
       this.View.Defaults = blocks.observable({
-        options: {
-          // haveHistory: false
-        }
+        options: { }
       }).extend();
     }
   };

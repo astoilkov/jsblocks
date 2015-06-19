@@ -6341,10 +6341,17 @@ return result;
             blocks.queries['with'].preprocess.call(this, domQuery, value, '$template');
           }
           if (!serverData || !serverData.templates || !serverData.templates[ElementsData.id(this)]) {
-            this.html(html);
-            if (!this._each && this._el) {
-              this._children = createVirtual(this._el.childNodes[0], this);
+            if (!this._el) {
+              var element = document.createElement('div');
+              element.innerHTML = html;
+              this._children = createVirtual(element.childNodes[0], this);
               this._innerHTML = null;
+            } else {
+              this.html(html);
+              if (!this._each) {
+                this._children = createVirtual(this._el.childNodes[0], this);
+                this._innerHTML = null;
+              }
             }
           }
         }
@@ -9589,6 +9596,8 @@ return result;
     }
   }
 
+  /* global JSON */
+
   var CREATE = 'create';
   var UPDATE = 'update';
   var DESTROY = 'destroy';
@@ -9632,7 +9641,7 @@ return result;
   }
 
   blocks.DataSource = DataSource;
-  
+
   DataSource.ArrayMode = 1;
   DataSource.ObjectMode = 2;
 
@@ -9680,7 +9689,7 @@ return result;
         if (blocks.isString(data)) {
           data = JSON.parse(data);
         }
-        
+
         if (_this.options.mode == DataSource.ArrayMode) {
           if (!blocks.isArray(data)) {
             if (blocks.isArray(data.value)) {
@@ -9692,14 +9701,14 @@ return result;
                   return false;
                 }
               });
-            }   
+            }
           }
         }
-        
+
         if (!blocks.isArray(data)) {
           data = [data];
         }
-        
+
         if (!options || options.__updateData__ !== false) {
           _this._updateData(data);
         }
@@ -9801,7 +9810,7 @@ return result;
     _updateData: function (data) {
       this.data.removeAll();
       this.data.addMany(data);
-      
+
       this.clearChanges();
       this._trigger('change');
     },
@@ -10038,9 +10047,26 @@ return result;
      * });
      */
     init: blocks.noop,
-
+    
+    /**
+     * Returns the `Collection` instance the model is part of.
+     * If it is not part of a collection it returns null.
+     * 
+     * @returns {Collection|null} - The `Collection` or null.
+     * 
+     * @example {javascript}
+     * var App = blocks.Application();
+     * 
+     * var User = App.Model({
+     *   init: function () {
+     *     if (this.collection()) {
+     *       this.collection().on('add remove', function handle() {});
+     *     }
+     *   }
+     * });
+     */
     collection: function () {
-      return this._collection;
+      return this._collection || null;
     },
 
     /**
@@ -11056,13 +11082,11 @@ return result;
   };
 
   /**
-   * [Application description]
+   * MVC Application Class
    *
    * @namespace Application
    * @module mvc
-   * @param {[type]} data -
-   *
-   * @example {javascript}
+   * @param {Object} options - The options for the application
    */
   function Application(options) {
     this._router = new Router(this);
@@ -11084,28 +11108,6 @@ return result;
     options: {
       history: true
     },
-
-    // /**
-    //  * An function that returns an observable determining if a particular View is active.
-    //  * Conditions using the isViewActive
-    //  *
-    //  * @memberof Application
-    //  * @param {string} viewName - The name of the view will be checked if it is active
-    //  *
-    //  * @example {html}
-    //  */
-    // isViewActive: function (viewName) {
-    //   //#region blocks
-    //   if (!this._started) {
-    //     throw new Error('Application not started. Please start the application before using this method');
-    //   }
-    //
-    //   if (!this._views[viewName]) {
-    //     throw new Error('View with ' + viewName + ' name does not exists');
-    //   }
-    //   //#endregion
-    //   return this._views[viewName].isActive;
-    // },
 
     /**
      * Creates an application property for a Model
@@ -11342,7 +11344,6 @@ return result;
       return true;
     },
 
-
     start: function (element) {
       if (!this._started) {
         this._started = true;
@@ -11359,7 +11360,7 @@ return result;
         }, this));
       }, this);
     },
-    
+
     _startHistory: function () {
       this._history = new History(this.options);
       this._history
@@ -11512,26 +11513,18 @@ return result;
       this.Model.Defaults = blocks.observable({
         options: {}
       }).extend();
+
       this.Collection.Defaults = blocks.observable({
         options: {}
       }).extend();
+
       this.Property.Defaults = blocks.observable({
         isObservable: true,
-
-        // defaultValue: undefined,
-        // field: NULL,
-        // changing: NULL,
-        // change: NULL,
-        // value: NULL, // value:function () { this.FirstName + this.LastName }
-
-        validateOnChange: false,
-        maxErrors: 1,
-        validateInitially: false
+        maxErrors: 1
       }).extend();
+
       this.View.Defaults = blocks.observable({
-        options: {
-          // haveHistory: false
-        }
+        options: { }
       }).extend();
     }
   };

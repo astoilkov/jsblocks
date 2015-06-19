@@ -6372,10 +6372,17 @@ return result;
             blocks.queries['with'].preprocess.call(this, domQuery, value, '$template');
           }
           if (!serverData || !serverData.templates || !serverData.templates[ElementsData.id(this)]) {
-            this.html(html);
-            if (!this._each && this._el) {
-              this._children = createVirtual(this._el.childNodes[0], this);
+            if (!this._el) {
+              var element = document.createElement('div');
+              element.innerHTML = html;
+              this._children = createVirtual(element.childNodes[0], this);
               this._innerHTML = null;
+            } else {
+              this.html(html);
+              if (!this._each) {
+                this._children = createVirtual(this._el.childNodes[0], this);
+                this._innerHTML = null;
+              }
             }
           }
         }
