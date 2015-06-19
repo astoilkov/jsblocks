@@ -844,7 +844,11 @@
         id: 'testElement'
       }));
 
-      $fixture.append($('<script>').attr('type', 'text/blocks-template').attr('id', 'testTemplate'));
+      $fixture.append(
+        $('<script>')
+          .attr('type', 'text/blocks-template')
+          .attr('id', 'testTemplate')
+      );
 
       setFixtures($fixture);
     });
@@ -940,6 +944,75 @@
       expect($ul.children().eq(2)).toHaveText(3);
       expect($ul.children().eq(3)).toHaveText(5);
       expect($ul.children().eq(4)).toHaveText(6);
+    });
+
+    it('executes queries passed as string', function () {
+      setQuery('template("{{value}}")');
+
+      query({
+        value: 'some content'
+      });
+
+      expect($('#testElement')).toHaveHtml('some content');
+    });
+
+    it('executes with the specified context instead of the current one', function () {
+      setTemplate('{{first}} + {{second}}');
+
+      setQuery('template(testTemplate, inner)');
+
+      query({
+        inner: {
+          first: 'once',
+          second: 'twice'
+        }
+      });
+
+      expect($('#testElement')).toHaveHtml('once + twice');
+    });
+
+    it('execute template in each() statement', function () {
+      setQuery('each([1, 2, 3])');
+
+      setTemplate('{{$this}}')
+
+      $('<div>')
+        .addClass('number')
+        .attr('data-query', 'template(testTemplate)')
+        .appendTo('#testElement');
+
+      query({});
+
+      expect($('#testElement .number').eq(0)).toHaveHtml('1');
+      expect($('#testElement .number').eq(1)).toHaveHtml('2');
+      expect($('#testElement .number').eq(2)).toHaveHtml('3');
+    });
+
+    it('template can perform a recursion', function () {
+      setTemplate('<ul data-query="each($this)"><li class="name">{{name}}</li><li data-query="template(testTemplate, items)"></li></ul>');
+
+      setQuery('template(testTemplate, items)');
+
+      query({
+        items: [{
+          name: 'first',
+          items: [{
+            name: 'first_first',
+            items: [{
+              name: 'first_first_first',
+              items: []
+            }]
+          }]
+        }, {
+          name: 'second',
+          items: []
+        }]
+      });
+
+      expect($('#testElement .name').eq(0)).toHaveHtml('first');
+      expect($('#testElement .name').eq(1)).toHaveHtml('first_first');
+      expect($('#testElement .name').eq(2)).toHaveHtml('first_first_first');
+      expect($('#testElement .name').eq(3)).toHaveHtml('second');
     });
   });
 

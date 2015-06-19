@@ -6,6 +6,8 @@
   '../modules/Events',
   '../modules/Router'
 ], function (blocks, createProperty, uniqueId, ajax, Events, Router) {
+  /* global JSON */
+
   var CREATE = 'create';
   var UPDATE = 'update';
   var DESTROY = 'destroy';
@@ -49,7 +51,7 @@
   }
 
   blocks.DataSource = DataSource;
-  
+
   DataSource.ArrayMode = 1;
   DataSource.ObjectMode = 2;
 
@@ -97,7 +99,7 @@
         if (blocks.isString(data)) {
           data = JSON.parse(data);
         }
-        
+
         if (_this.options.mode == DataSource.ArrayMode) {
           if (!blocks.isArray(data)) {
             if (blocks.isArray(data.value)) {
@@ -109,14 +111,14 @@
                   return false;
                 }
               });
-            }   
+            }
           }
         }
-        
+
         if (!blocks.isArray(data)) {
           data = [data];
         }
-        
+
         if (!options || options.__updateData__ !== false) {
           _this._updateData(data);
         }
@@ -218,7 +220,7 @@
     _updateData: function (data) {
       this.data.removeAll();
       this.data.addMany(data);
-      
+
       this.clearChanges();
       this._trigger('change');
     },
