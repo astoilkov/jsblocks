@@ -161,7 +161,6 @@ define([
       priority: 139,
       validate: function (value, options, option) {
         return blocks.equals(value, blocks.unwrap(option));
-        //return value === blocks.unwrap(option);
       }
     }
   };
