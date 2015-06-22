@@ -475,7 +475,7 @@ define([
                 } else {
                   this._el.textContent = expression;
                 }
-              } else {
+              } else (element) {
                 this._el.insertBefore(createFragment(expression), element);
                 elementForDeletion = element;
                 element = element.nextSibling;
