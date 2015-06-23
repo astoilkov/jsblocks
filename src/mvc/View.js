@@ -107,6 +107,15 @@ define([
      * });
      */
     routed: blocks.noop,
+    
+    /**
+     * Observable which value is true when the View html
+     * is being loaded using ajax request. It could be used
+     * to show a loading indicator.
+     * 
+     * @memberof View
+     */
+    loading: blocks.observable(false),
 
     parentView: function () {
       return this._parentView;
