@@ -556,7 +556,7 @@ define([
               index: 0
             });
 
-            chunkManager.removeAll();
+            chunkManager.remove(0, array.length);
 
             //this._indexes.splice(0, array.length);
             this._indexes = [];
