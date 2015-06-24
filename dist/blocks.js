@@ -10226,46 +10226,28 @@ return result;
         blocks.isArray(chunk) ? chunk : [chunk]);
     },
 
-    removeAt: function (wrapper, index) {
-      var chunkLength = this.chunkLength(wrapper);
-
-      animation.remove(
-        wrapper,
-        chunkLength * index + this.startIndex,
-        chunkLength);
-    },
-    
     remove: function (index, howMany) {
       var _this = this;
-      
+
       this.each(function (domElement) {
+        blocks.context(domElement).childs.splice(index, howMany);
+
         for (var j = 0; j < howMany; j++) {
-          _this.removeAt(domElement, index);
+          _this._removeAt(domElement, index);
         }
       });
 
       ElementsData.collectGarbage();
-      
+
       this.dispose();
-  
+
       this.observable._indexes.splice(index, howMany);
     },
 
-    removeAll: function () {
-      var _this = this;
-      var array = this.observable.__value__;
-
-      this.each(function (parent) {
-        blocks.each(array, function () {
-          _this.removeAt(parent, 0);
-        });
-      });
-    },
-    
     add: function (addItems, index) {
       var _this = this;
       var observable = this.observable;
-      
+
       blocks.each(addItems, function (item, i) {
         observable._indexes.splice(index + i, 0, blocks.observable(index + i));
       });
@@ -10275,7 +10257,7 @@ return result;
         var context = blocks.context(domElement);
         var html = '';
         var syncIndex;
-        
+
         domQuery.contextBubble(context, function () {
           syncIndex = domQuery.getSyncIndex();
           for (var i = 0; i < addItems.length; i++) {
@@ -10295,7 +10277,7 @@ return result;
           _this.insertAt(domElement, index, fragment);
         }
       });
-      
+
       this.dispose();
     },
 
@@ -10353,6 +10335,15 @@ return result;
         this.setChildNodesCount(commentIndex - this.startIndex);
         callback(domElement.parentNode, element, domElement);
       }
+    },
+
+    _removeAt: function (wrapper, index) {
+      var chunkLength = this.chunkLength(wrapper);
+
+      animation.remove(
+        wrapper,
+        chunkLength * index + this.startIndex,
+        chunkLength);
     }
   };
 
@@ -10900,7 +10891,7 @@ return result;
               index: 0
             });
 
-            chunkManager.removeAll();
+            chunkManager.remove(0, array.length);
 
             //this._indexes.splice(0, array.length);
             this._indexes = [];
