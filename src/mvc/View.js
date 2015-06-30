@@ -117,6 +117,12 @@ define([
      */
     loading: blocks.observable(false),
 
+    /**
+     * Gets the parent view.
+     * Returns null if the view is not a child of another view.
+     * 
+     * @memberof View
+     */
     parentView: function () {
       return this._parentView;
     },
