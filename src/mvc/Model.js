@@ -82,16 +82,16 @@ define([
      * });
      */
     init: blocks.noop,
-    
+
     /**
      * Returns the `Collection` instance the model is part of.
      * If it is not part of a collection it returns null.
-     * 
+     *
      * @returns {Collection|null} - The `Collection` or null.
-     * 
+     *
      * @example {javascript}
      * var App = blocks.Application();
-     * 
+     *
      * var User = App.Model({
      *   init: function () {
      *     if (this.collection()) {
@@ -142,7 +142,7 @@ define([
 
       for (key in properties) {
         property = this[key];
-        if (blocks.isObservable(property) && !property.validate()) {
+        if (blocks.isObservable(property) && blocks.isFunction(property.validate) && !property.validate()) {
           isValid = false;
         }
       }
@@ -331,7 +331,7 @@ define([
           var isValid = true;
           var key;
           for (key in properties) {
-            if (!_this[key].valid()) {
+            if (blocks.isFunction(_this[key].valid) && !_this[key].valid()) {
               isValid = false;
               break;
             }

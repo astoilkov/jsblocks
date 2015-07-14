@@ -57,6 +57,20 @@
       expect(dataItem.FirstName).toBe('Antonio');
     });
 
+    describe('validate()', function () {
+      it('', function () {
+        var Product = Application.Model({
+          property: Application.Property(),
+          observable: blocks.observable()
+        });
+        var product = new Product({
+          property: 'property',
+          observable: 'observable'
+        });
+        expect(product.validate).not.toThrow();
+      });
+    });
+
     describe('reset()', function () {
       it('sets correctly the dataItem after initialization', function () {
         var Product = Application.Model();

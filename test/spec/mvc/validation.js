@@ -55,11 +55,6 @@
       });
     });
 
-    // TODO: Think whether it should be here or in model.js
-    describe('Model.validate()', function () {
-
-    });
-
     describe('Property.errorMessage', function () {
       it('errorMessage is empty string when property is valid', function () {
         var Product = Application.Model({
