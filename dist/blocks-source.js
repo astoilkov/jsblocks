@@ -8870,7 +8870,6 @@ return result;
       priority: 139,
       validate: function (value, options, option) {
         return blocks.equals(value, blocks.unwrap(option));
-        //return value === blocks.unwrap(option);
       }
     }
   };
@@ -9373,7 +9372,7 @@ return result;
   var uniqueId = (function () {
     var timeStamp = Date.now();
     return function () {
-      return 'blocks-' + blocks.version + '-' + timeStamp++;
+      return 'blocks_' + blocks.version + '_' + timeStamp++;
     };
   })();
 
@@ -10034,16 +10033,16 @@ return result;
      * });
      */
     init: blocks.noop,
-    
+
     /**
      * Returns the `Collection` instance the model is part of.
      * If it is not part of a collection it returns null.
-     * 
+     *
      * @returns {Collection|null} - The `Collection` or null.
-     * 
+     *
      * @example {javascript}
      * var App = blocks.Application();
-     * 
+     *
      * var User = App.Model({
      *   init: function () {
      *     if (this.collection()) {
@@ -10094,7 +10093,7 @@ return result;
 
       for (key in properties) {
         property = this[key];
-        if (blocks.isObservable(property) && !property.validate()) {
+        if (blocks.isObservable(property) && blocks.isFunction(property.validate) && !property.validate()) {
           isValid = false;
         }
       }
@@ -10283,7 +10282,7 @@ return result;
           var isValid = true;
           var key;
           for (key in properties) {
-            if (!_this[key].valid()) {
+            if (blocks.isFunction(_this[key].valid) && !_this[key].valid()) {
               isValid = false;
               break;
             }
@@ -10944,7 +10943,22 @@ return result;
      * });
      */
     routed: blocks.noop,
+    
+    /**
+     * Observable which value is true when the View html
+     * is being loaded using ajax request. It could be used
+     * to show a loading indicator.
+     * 
+     * @memberof View
+     */
+    loading: blocks.observable(false),
 
+    /**
+     * Gets the parent view.
+     * Returns null if the view is not a child of another view.
+     * 
+     * @memberof View
+     */
     parentView: function () {
       return this._parentView;
     },
