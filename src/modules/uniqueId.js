@@ -4,7 +4,7 @@
   var uniqueId = (function () {
     var timeStamp = Date.now();
     return function () {
-      return 'blocks-' + blocks.version + '-' + timeStamp++;
+      return 'blocks_' + blocks.version + '_' + timeStamp++;
     };
   })();
 
