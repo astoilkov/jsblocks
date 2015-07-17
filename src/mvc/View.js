@@ -11,7 +11,6 @@ define([
     var _this = this;
     var options = this.options;
     var views = this._views = [];
-    var hasRoute = blocks.has(options, 'route');
 
     clonePrototype(prototype, this);
 
@@ -21,13 +20,8 @@ define([
     this._html = undefined;
 
     this.loading = blocks.observable(false);
-    this.isActive = blocks.observable(!hasRoute);
+    this.isActive = blocks.observable(!blocks.has(options, 'route'));
     this.isActive.on('changing', function (oldValue, newValue) {
-      blocks.each(views, function (view) {
-        if (!hasRoute) {
-          view.isActive(newValue);
-        }
-      });
       _this._tryInitialize(newValue);
     });
 
@@ -71,10 +65,10 @@ define([
     /**
      * Override the ready method to perform actions when the DOM is ready and
      * all data-query have been executed.
-     * 
+     *
      * @memberof View
      * @type {Function}
-     * 
+     *
      * @example {javascript}
      * var App = blocks.Application();
      *
@@ -107,12 +101,12 @@ define([
      * });
      */
     routed: blocks.noop,
-    
+
     /**
      * Observable which value is true when the View html
      * is being loaded using ajax request. It could be used
      * to show a loading indicator.
-     * 
+     *
      * @memberof View
      */
     loading: blocks.observable(false),
@@ -120,7 +114,7 @@ define([
     /**
      * Gets the parent view.
      * Returns null if the view is not a child of another view.
-     * 
+     *
      * @memberof View
      */
     parentView: function () {
@@ -177,7 +171,7 @@ define([
       this._tryInitialize(true);
       this.routed(params, metadata);
       blocks.each(this._views, function (view) {
-        if (view.isActive()) {
+        if (!view.options.route) {
           view._routed(params, metadata);
         }
       });
