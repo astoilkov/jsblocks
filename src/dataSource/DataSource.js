@@ -162,7 +162,7 @@
       return this;
     },
 
-    sync: function () {
+    sync: function (callback) {
       var _this = this;
       var changes = this._changes;
       var changesLeft = changes.length;
@@ -179,11 +179,15 @@
           }, function () {
             changesLeft--;
             if (!changesLeft) {
+              if (blocks.isFunction(callback)) {
+                callback();
+              }
               _this._trigger('sync');
             }
           });
         });
       });
+
       return this.clearChanges();
     },
 

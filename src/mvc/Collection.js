@@ -145,6 +145,8 @@ define([
      * with a database.
      *
      * @memberof Collection
+     * @param {Function} [callback] - Optional callback which will be executed
+     * when all sync operations have been successfully completed
      * @returns {Collection} - Chainable. Returns the Collection itself - return this;
      *
      * @example {javascript}
@@ -170,8 +172,8 @@ define([
      *   }
      * });
      */
-    sync: function () {
-      this._dataSource.sync();
+    sync: function (callback) {
+      this._dataSource.sync(callback);
       return this;
     },
 

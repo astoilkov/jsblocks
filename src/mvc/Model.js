@@ -258,13 +258,15 @@ define([
      * Synchronizes the changes with the server by sending requests to the provided URL's
      *
      * @memberof Model
+     * @param {Function} [callback] - Optional callback which will be executed
+     * when all sync operations have been successfully completed
      * @returns {Model} - Returns the Model itself - return this;
      */
-    sync: function () {
+    sync: function (callback) {
       if (this.isNew()) {
         this._dataSource.data.add(this.dataItem());
       }
-      this._dataSource.sync();
+      this._dataSource.sync(callback);
       return this;
     },
 
