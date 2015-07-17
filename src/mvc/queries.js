@@ -67,6 +67,8 @@
             blocks.each(createVirtual(this.childNodes[0]), function (element) {
               if (VirtualElement.Is(element)) {
                 element.sync(domQuery);
+              } else if (element && element.isExpression && element.element) {
+                element.element.nodeValue = Expression.GetValue(domQuery._context, null, element);
               }
             });
             domQuery.createElementObservableDependencies(this.childNodes);
