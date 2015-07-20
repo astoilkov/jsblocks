@@ -4,8 +4,9 @@
   '../query/animation',
   '../query/addListener',
   '../query/createVirtual',
-  '../query/VirtualElement'
-], function (blocks, queries, animation, addListener, createVirtual, VirtualElement) {
+  '../query/VirtualElement',
+  '../query/Expression'
+], function (blocks, queries, animation, addListener, createVirtual, VirtualElement, Expression) {
   blocks.extend(blocks.queries, {
     /**
      * Associates the element with the particular view and creates a $view context property.

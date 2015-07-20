@@ -37,7 +37,7 @@
     return value;
   };
 
-  blocks.version = '0.3.2';
+  blocks.version = '0.3.3';
   blocks.core = core;
 
   /**
@@ -8662,6 +8662,8 @@ return result;
             blocks.each(createVirtual(this.childNodes[0]), function (element) {
               if (VirtualElement.Is(element)) {
                 element.sync(domQuery);
+              } else if (element && element.isExpression && element.element) {
+                element.element.nodeValue = Expression.GetValue(domQuery._context, null, element);
               }
             });
             domQuery.createElementObservableDependencies(this.childNodes);
@@ -9742,7 +9744,7 @@ return result;
       return this;
     },
 
-    sync: function () {
+    sync: function (callback) {
       var _this = this;
       var changes = this._changes;
       var changesLeft = changes.length;
@@ -9759,11 +9761,15 @@ return result;
           }, function () {
             changesLeft--;
             if (!changesLeft) {
+              if (blocks.isFunction(callback)) {
+                callback();
+              }
               _this._trigger('sync');
             }
           });
         });
       });
+
       return this.clearChanges();
     },
 
@@ -10213,13 +10219,15 @@ return result;
      * Synchronizes the changes with the server by sending requests to the provided URL's
      *
      * @memberof Model
+     * @param {Function} [callback] - Optional callback which will be executed
+     * when all sync operations have been successfully completed
      * @returns {Model} - Returns the Model itself - return this;
      */
-    sync: function () {
+    sync: function (callback) {
       if (this.isNew()) {
         this._dataSource.data.add(this.dataItem());
       }
-      this._dataSource.sync();
+      this._dataSource.sync(callback);
       return this;
     },
 
@@ -10727,6 +10735,8 @@ return result;
      * with a database.
      *
      * @memberof Collection
+     * @param {Function} [callback] - Optional callback which will be executed
+     * when all sync operations have been successfully completed
      * @returns {Collection} - Chainable. Returns the Collection itself - return this;
      *
      * @example {javascript}
@@ -10752,8 +10762,8 @@ return result;
      *   }
      * });
      */
-    sync: function () {
-      this._dataSource.sync();
+    sync: function (callback) {
+      this._dataSource.sync(callback);
       return this;
     },
 
@@ -10850,24 +10860,18 @@ return result;
   function View(application, parentView, prototype) {
     var _this = this;
     var options = this.options;
-    var views = this._views = [];
-    var hasRoute = blocks.has(options, 'route');
 
     clonePrototype(prototype, this);
 
+    this._views = [];
     this._application = application;
     this._parentView = parentView || null;
     this._initCalled = false;
     this._html = undefined;
 
     this.loading = blocks.observable(false);
-    this.isActive = blocks.observable(!hasRoute);
+    this.isActive = blocks.observable(!blocks.has(options, 'route'));
     this.isActive.on('changing', function (oldValue, newValue) {
-      blocks.each(views, function (view) {
-        if (!hasRoute) {
-          view.isActive(newValue);
-        }
-      });
       _this._tryInitialize(newValue);
     });
 
@@ -10911,10 +10915,10 @@ return result;
     /**
      * Override the ready method to perform actions when the DOM is ready and
      * all data-query have been executed.
-     * 
+     *
      * @memberof View
      * @type {Function}
-     * 
+     *
      * @example {javascript}
      * var App = blocks.Application();
      *
@@ -10947,12 +10951,12 @@ return result;
      * });
      */
     routed: blocks.noop,
-    
+
     /**
      * Observable which value is true when the View html
      * is being loaded using ajax request. It could be used
      * to show a loading indicator.
-     * 
+     *
      * @memberof View
      */
     loading: blocks.observable(false),
@@ -10960,7 +10964,7 @@ return result;
     /**
      * Gets the parent view.
      * Returns null if the view is not a child of another view.
-     * 
+     *
      * @memberof View
      */
     parentView: function () {
@@ -11017,7 +11021,7 @@ return result;
       this._tryInitialize(true);
       this.routed(params, metadata);
       blocks.each(this._views, function (view) {
-        if (view.isActive()) {
+        if (!view.options.route) {
           view._routed(params, metadata);
         }
       });

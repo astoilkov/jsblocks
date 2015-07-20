@@ -10,10 +10,10 @@ define([
   function View(application, parentView, prototype) {
     var _this = this;
     var options = this.options;
-    var views = this._views = [];
 
     clonePrototype(prototype, this);
 
+    this._views = [];
     this._application = application;
     this._parentView = parentView || null;
     this._initCalled = false;

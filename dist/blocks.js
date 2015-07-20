@@ -37,7 +37,7 @@
     return value;
   };
 
-  blocks.version = '0.3.2';
+  blocks.version = '0.3.3';
   blocks.core = core;
 
   /**
@@ -1043,7 +1043,7 @@
   }
 
   (function () {
-    
+
 (function () {
 
 var customTypes = {};
@@ -4130,7 +4130,7 @@ blocks.debug.queries = {
   })();
 
   (function () {
-    
+
 (function () {
 
 
@@ -4201,7 +4201,7 @@ blocks.debug.queries = {
 
     /**
     * @memberof BaseExpression
-    * @param {(String|Array)} types - 
+    * @param {(String|Array)} types -
     * @returns {boolean}
     */
     is: function (types) {
@@ -4228,7 +4228,7 @@ blocks.debug.queries = {
     },
 
     /**
-    * @memberof 
+    * @memberof
     */
     or: function () {
       var expression = new this._expression(this._value, this);
@@ -4495,7 +4495,7 @@ blocks.debug.queries = {
   }
 
   var core = blocks.core;
-  
+
   var PrepareValues = {
     parseCallback: function (callback, thisArg) {
       if (typeof callback == 'string') {
@@ -4832,7 +4832,7 @@ inLoop: 'flatten' + index + '(shallow' + index + ',value,result' + index + ');'}
  * @param {*} searchValue - The value to search for
  * @param {number|boolean} fromIndex - The index to search from or true to perform a binary search on a sorted array
  * @returns {number} - Returns the index of the matched value or -1
- * 
+ *
  * @example {javascript}
  * blocks.indexOf([1, 2, 3, 1, 2, 3], 2);
  * // → 1
@@ -6480,7 +6480,7 @@ return result;
         };
         return expression;
     }
-    
+
 
     function create(name) {
         var descriptor = descriptors[name];
@@ -6493,7 +6493,7 @@ return result;
             }
         }
     }
-    
+
     for (var key in descriptors) {
         create(key);
     }
@@ -7056,7 +7056,7 @@ return result;
   var ElementsData = (function () {
     var data = {};
     var globalId = 1;
-    
+
     function getDataId(element) {
       var result = element ? VirtualElement.Is(element) ? element._state ? element._state.attributes[dataIdAttr] : element._attributes[dataIdAttr] :
         element.nodeType == 1 ? element.getAttribute(dataIdAttr) :
@@ -7092,7 +7092,7 @@ return result;
         var isVirtual = element && element.__identity__ == virtualElementIdentity;
         var currentData;
         var id;
-        
+
         if (isVirtual) {
           currentData = data[element._getAttr(dataIdAttr)];
         } else {
@@ -7255,7 +7255,7 @@ return result;
     };
   })();
 
-  
+
   var dom = blocks.dom = {
     valueTagNames: {
       input: true,
@@ -7308,13 +7308,13 @@ return result;
 
     addClass: function (element, className) {
       if (element) {
-        setClass('add', element, className);  
+        setClass('add', element, className);
       }
     },
 
     removeClass: function (element, className) {
       if (element) {
-        setClass('remove', element, className);  
+        setClass('remove', element, className);
       }
     },
 
@@ -7359,7 +7359,7 @@ return result;
 
     removeAttr: function (element, attributeName) {
       if (element && attributeName) {
-        dom.attr(element, attributeName, null);  
+        dom.attr(element, attributeName, null);
       }
     },
 
@@ -7373,7 +7373,7 @@ return result;
         !element) {
         return;
       }
-      
+
       if (element.nodeType == 8) {
         dom.comment.attr(element, attributeName, attributeValue);
         return;
@@ -7497,7 +7497,7 @@ return result;
   var Expression = {
     Html: 0,
     ValueOnly: 2,
-    
+
     Create: function (text, attributeName, element) {
       var index = -1;
       var endIndex = 0;
@@ -7560,7 +7560,7 @@ return result;
       if (!context) {
         return expression.text;
       }
-      
+
       if (length == 1) {
         value = Expression.Execute(context, elementData, expression[0], expression, type);
       } else {
@@ -7571,7 +7571,7 @@ return result;
           } else {
             value += Expression.Execute(context, elementData, chunk, expression, type);
           }
-        }  
+        }
       }
 
       expression.lastResult = value;
@@ -7638,7 +7638,7 @@ return result;
           result = '<!-- ' + elementData.id + ':blocks -->' + result;
         }
       }
-      
+
       return result;
     }
   };
@@ -8414,7 +8414,7 @@ return result;
         if (element._state) {
           element._state.attributes[classAttr] = classAttribute;
         } else {
-         element._attributes[classAttr] = classAttribute; 
+         element._attributes[classAttr] = classAttribute;
         }
       } else {
         element.className = classAttribute;
@@ -11222,7 +11222,7 @@ return result;
       newObservable.view._initialized = false;
 
       newObservable.view.on('get', newObservable._getter);
-      
+
       newObservable.on('add', function () {
         if (newObservable.view._initialized) {
           newObservable.view._connections = {};
@@ -11230,7 +11230,7 @@ return result;
           ExtenderHelper.executeOperations(newObservable);
         }
       });
-  
+
       newObservable.on('remove', function () {
         if (newObservable.view._initialized) {
           newObservable.view._connections = {};
@@ -11762,6 +11762,8 @@ return result;
             blocks.each(createVirtual(this.childNodes[0]), function (element) {
               if (VirtualElement.Is(element)) {
                 element.sync(domQuery);
+              } else if (element && element.isExpression && element.element) {
+                element.element.nodeValue = Expression.GetValue(domQuery._context, null, element);
               }
             });
             domQuery.createElementObservableDependencies(this.childNodes);
@@ -12842,7 +12844,7 @@ return result;
       return this;
     },
 
-    sync: function () {
+    sync: function (callback) {
       var _this = this;
       var changes = this._changes;
       var changesLeft = changes.length;
@@ -12859,11 +12861,15 @@ return result;
           }, function () {
             changesLeft--;
             if (!changesLeft) {
+              if (blocks.isFunction(callback)) {
+                callback();
+              }
               _this._trigger('sync');
             }
           });
         });
       });
+
       return this.clearChanges();
     },
 
@@ -13313,13 +13319,15 @@ return result;
      * Synchronizes the changes with the server by sending requests to the provided URL's
      *
      * @memberof Model
+     * @param {Function} [callback] - Optional callback which will be executed
+     * when all sync operations have been successfully completed
      * @returns {Model} - Returns the Model itself - return this;
      */
-    sync: function () {
+    sync: function (callback) {
       if (this.isNew()) {
         this._dataSource.data.add(this.dataItem());
       }
-      this._dataSource.sync();
+      this._dataSource.sync(callback);
       return this;
     },
 
@@ -13827,6 +13835,8 @@ return result;
      * with a database.
      *
      * @memberof Collection
+     * @param {Function} [callback] - Optional callback which will be executed
+     * when all sync operations have been successfully completed
      * @returns {Collection} - Chainable. Returns the Collection itself - return this;
      *
      * @example {javascript}
@@ -13852,8 +13862,8 @@ return result;
      *   }
      * });
      */
-    sync: function () {
-      this._dataSource.sync();
+    sync: function (callback) {
+      this._dataSource.sync(callback);
       return this;
     },
 
@@ -13950,24 +13960,18 @@ return result;
   function View(application, parentView, prototype) {
     var _this = this;
     var options = this.options;
-    var views = this._views = [];
-    var hasRoute = blocks.has(options, 'route');
 
     clonePrototype(prototype, this);
 
+    this._views = [];
     this._application = application;
     this._parentView = parentView || null;
     this._initCalled = false;
     this._html = undefined;
 
     this.loading = blocks.observable(false);
-    this.isActive = blocks.observable(!hasRoute);
+    this.isActive = blocks.observable(!blocks.has(options, 'route'));
     this.isActive.on('changing', function (oldValue, newValue) {
-      blocks.each(views, function (view) {
-        if (!hasRoute) {
-          view.isActive(newValue);
-        }
-      });
       _this._tryInitialize(newValue);
     });
 
@@ -14011,10 +14015,10 @@ return result;
     /**
      * Override the ready method to perform actions when the DOM is ready and
      * all data-query have been executed.
-     * 
+     *
      * @memberof View
      * @type {Function}
-     * 
+     *
      * @example {javascript}
      * var App = blocks.Application();
      *
@@ -14047,12 +14051,12 @@ return result;
      * });
      */
     routed: blocks.noop,
-    
+
     /**
      * Observable which value is true when the View html
      * is being loaded using ajax request. It could be used
      * to show a loading indicator.
-     * 
+     *
      * @memberof View
      */
     loading: blocks.observable(false),
@@ -14060,7 +14064,7 @@ return result;
     /**
      * Gets the parent view.
      * Returns null if the view is not a child of another view.
-     * 
+     *
      * @memberof View
      */
     parentView: function () {
@@ -14117,7 +14121,7 @@ return result;
       this._tryInitialize(true);
       this.routed(params, metadata);
       blocks.each(this._views, function (view) {
-        if (view.isActive()) {
+        if (!view.options.route) {
           view._routed(params, metadata);
         }
       });
