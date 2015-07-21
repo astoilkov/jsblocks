@@ -222,8 +222,7 @@
     },
 
     _updateData: function (data) {
-      this.data.removeAll();
-      this.data.addMany(data);
+      this.data.reset(data);
 
       this.clearChanges();
       this._trigger('change');
