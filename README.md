@@ -52,5 +52,9 @@ and the [jsblocks starter template project](https://github.com/astoilkov/jsblock
 
 > We are ready to answer your questions quickly.
 
-* [Gitter](https://gitter.im/astoilkov/jsblocks?utm_source=github_link)
-* [Github Issue](https://github.com/astoilkov/jsblocks/issues/new)
+ * [Gitter](https://gitter.im/astoilkov/jsblocks?utm_source=github_link)
+ * [Github Issue](https://github.com/astoilkov/jsblocks/issues/new)
+
+### Contribute
+
+ * Documentation can be found under [jsblocks-docs](https://github.com/astoilkov/jsblocks-docs)
