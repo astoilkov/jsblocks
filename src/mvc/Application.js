@@ -313,23 +313,29 @@ define([
     },
 
     _viewsReady: function (views) {
+      var callReady = this._callReady;
+
       blocks.each(views, function (view) {
         if (view.ready !== blocks.noop) {
           if (view.isActive()) {
-            view.ready();
+            callReady(view);
           } else {
             view.isActive.once('change', function () {
-              if (view.loading()) {
-                view.loading.once('change', function () {
-                  view.ready();
-                });
-              } else {
-                view.ready();
-              }
+              callReady(view);
             });
           }
         }
       });
+    },
+
+    _callReady: function (view) {
+      if (view.loading()) {
+        view.loading.once('change', function () {
+          view.ready();
+        });
+      } else {
+        view.ready();
+      }
     },
 
     _urlChange: function (data) {
