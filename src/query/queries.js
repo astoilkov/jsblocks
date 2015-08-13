@@ -795,13 +795,15 @@ define([
         if (!events || !callbacks) {
           return;
         }
+        var element = this;
+        var context = blocks.context(this);
+        var thisArg;
 
         callbacks = blocks.toArray(callbacks);
 
-        var element = this;
         var handler = function (e) {
-          var context = blocks.context(this);
-          var thisArg = context.$template || context.$view || context.$root;
+          context = blocks.context(this) || context;
+          thisArg = context.$template || context.$view || context.$root;
           blocks.each(callbacks, function (callback) {
             callback.call(thisArg, e, args);
           });
