@@ -164,6 +164,8 @@ define([
           var element;
           var offset;
           var value;
+          var isProperty;
+          var propertyName;
 
           blocks.eachRight(this._expressions, function updateExpression(expression) {
             element = expression.element;
@@ -185,9 +187,16 @@ define([
             offset = expression.length - value.length;
             expression.length = value.length;
 
+            isProperty = dom.props[expression.attr];
+            propertyName = expression.attr ? dom.propFix[expression.attr.toLowerCase()] || expression.attr : null;
+
             if (element) {
               if (expression.attr) {
-                element.setAttribute(expression.attr, Expression.GetValue(context, null, expression.entire));
+                if(isProperty) {
+                  element[propertyName] = Expression.GetValue(context, null, expression.entire);
+                } else {
+                  element.setAttribute(expression.attr, Expression.GetValue(context, null, expression.entire));
+                }
               } else {
                 if (element.nextSibling) {
                   element = element.nextSibling;
