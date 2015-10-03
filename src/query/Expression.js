@@ -145,6 +145,8 @@ define([
               observable._expressionKeys[elementData.id] = true;
               observable._expressions.push(expressionObj);
             }
+
+            elementData.observables[observable.__id__ + (attributeName || 'expression') + '[' + expression + ']'] = observable;
           });
         }
         if (!attributeName) {

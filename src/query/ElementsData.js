@@ -74,7 +74,8 @@
           // if element is not defined then treat it as expression
           if (!element) {
             currentData = data[id] = {
-              id: id
+              id: id,
+              observables: {}
             };
           } else {
             currentData = data[id] = {
@@ -114,10 +115,20 @@
         if (currentData && (!currentData.haveData || force)) {
           blocks.each(currentData.observables, function (value) {
             for (var i = 0; i < value._elements.length; i++) {
-              if (value._elements[i].elementId == data.id) {
+              if (value._elements[i].elementId == currentData.id) {
                 value._elements.splice(i, 1);
                 i--;
               }
+            }
+
+            if (value._expressionKeys[currentData.id]) {
+              for (i = 0; i < value._expressions.length; i++) {
+                if (value._expressions[i].elementId == currentData.id) {
+                  value._expressions.splice(i, 1);
+                  i--;
+                }
+              }
+              value._expressionKeys[currentData.id] = null;
             }
           });
           data[id] = undefined;
