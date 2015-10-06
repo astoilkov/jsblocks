@@ -47,7 +47,7 @@
         var element = new VirtualElement('INPUT');
 
         expect(element.tagName()).toBe('input');
-      })
+      });
     });
 
     describe('html()', function () {
@@ -301,6 +301,20 @@
         element.css('padding', 20);
 
         expect(element.render()).toBe('<div style="padding:20px;"></div>');
+      });
+
+      // Test for bug #84
+      it('should add "selected" to the selected option', function() {
+
+        var element = new VirtualElement('select').attr('value', 'second');
+
+        element.addChild(new VirtualElement('option').attr('value', 'first'));
+        element.addChild(new VirtualElement('option').attr('value', 'second'));
+
+        // needing a domQuery otherwise _state will not be set... which won't lead to the bug..
+        var _domQuery = blocks.domQuery($('div'));
+
+        expect($(element.render(_domQuery, 0)).find('[selected]').val()).toBe('second');
       });
     });
 

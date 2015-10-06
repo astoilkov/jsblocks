@@ -585,7 +585,7 @@ define([
       var value;
 
       if (this._tagName == 'option' && this._parent._values) {
-        if (state) {
+        if (state && typeof state.attributes.value !== 'undefined') {
           state.attributes.selected = this._parent._values[state.attributes.value] ? 'selected' : null;
         } else {
           attributes.selected = this._parent._values[attributes.value] ? 'selected' : null;
