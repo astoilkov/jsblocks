@@ -47,14 +47,9 @@ and the [jsblocks starter template project](https://github.com/astoilkov/jsblock
  * [TodoMVC](https://github.com/astoilkov/jsblocks-todomvc)
  * [E-shopping](https://github.com/astoilkov/jsblocks-shopping-example)
 
-
 ### Ask a question
-
-> We are ready to answer your questions quickly.
-
  * [Gitter](https://gitter.im/astoilkov/jsblocks?utm_source=github_link)
  * [Github Issue](https://github.com/astoilkov/jsblocks/issues/new)
 
 ### Contribute
-
  * Documentation can be found under [jsblocks-docs](https://github.com/astoilkov/jsblocks-docs)
