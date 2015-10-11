@@ -625,6 +625,11 @@ define([
       var expression;
 
       blocks.each(this._attributes, function (attributeValue, attributeName) {
+        if(!attributeValue) {
+          // In Serverside rendering, some attributes will be set to null in some cases
+          return;
+        }
+
         if (!each && serverData && serverData[dataId + attributeName]) {
           expression = Expression.Create(serverData[dataId + attributeName], attributeName);
         } else {
