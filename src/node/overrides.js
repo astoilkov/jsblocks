@@ -84,13 +84,14 @@ define([
     
     if (regExResult) {
       elementData = ElementsData.byId(regExResult[1]);
-      if (elementData) {
-        if (expressionData.attributeName) {
-          server.data[elementData.id + expressionData.attributeName] =  entireExpression.text;
-        } else {
-          server.data[elementData.id] = '{{' + expressionData.expression + '}}';
-        }
-      }  
+    }
+
+    if (elementData) {
+      if (expressionData.attributeName) {
+        server.data[elementData.id + expressionData.attributeName] =  entireExpression.text;
+      } else {
+        server.data[elementData.id] = '{{' + expressionData.expression + '}}';
+      }
     }
 
     return value;
