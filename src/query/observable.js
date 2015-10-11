@@ -71,7 +71,7 @@ define([
       observable._chunkManager = new ChunkManager(observable);
     } else if (blocks.isFunction(initialValue)) {
       observable._dependencyType = 1; // Function dependecy
-    } else if (initialValue && blocks.isFunction(initialValue.get) && blocks.isFunction(initialValue.set)) {
+    } else if (initialValue && !initialValue.__Class__ && blocks.isFunction(initialValue.get) && blocks.isFunction(initialValue.set)) {
       observable._dependencyType = 2; // Custom object
     }
 
