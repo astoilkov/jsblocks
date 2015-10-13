@@ -159,7 +159,7 @@ define([
         if (blocks.isObservable(value)) {
           value.__context__ = this;
         } else if (blocks.isFunction(value)) {
-          value[key] = blocks.bind(value, this);
+          this[key] = blocks.bind(value, this);
         }
       }
     },
