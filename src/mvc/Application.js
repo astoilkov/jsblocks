@@ -379,7 +379,7 @@ define([
       // }
 
       return blocks.inherit(View, function (application, parentView) {
-        this._super([application, parentView, prototype]);
+        this._super([application, parentView]);
       }, prototype);
     },
 

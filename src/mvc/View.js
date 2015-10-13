@@ -1,18 +1,15 @@
 define([
   '../core',
   '../modules/ajax',
-  '../modules/Events',
-  './clonePrototype'
-], function (blocks, ajax, Events, clonePrototype) {
+  '../modules/Events'
+], function (blocks, ajax, Events) {
   /**
    * @namespace View
    */
-  function View(application, parentView, prototype) {
+  function View(application, parentView) {
     var _this = this;
-    var options = this.options;
 
-    clonePrototype(prototype, this);
-
+    this._bindContext();
     this._views = [];
     this._application = application;
     this._parentView = parentView || null;
@@ -20,12 +17,12 @@ define([
     this._html = undefined;
 
     this.loading = blocks.observable(false);
-    this.isActive = blocks.observable(!blocks.has(options, 'route'));
+    this.isActive = blocks.observable(!blocks.has(this.options, 'route'));
     this.isActive.on('changing', function (oldValue, newValue) {
       _this._tryInitialize(newValue);
     });
 
-    if (options.preload || this.isActive()) {
+    if (this.options.preload || this.isActive()) {
       this._load();
     }
   }
@@ -150,6 +147,21 @@ define([
 
     navigateTo: function (view, params) {
       this._application.navigateTo(view, params);
+    },
+
+    _bindContext: function () {
+      var key;
+      var value;
+
+      for (key in this) {
+        value = this[key];
+
+        if (blocks.isObservable(value)) {
+          value.__context__ = this;
+        } else if (blocks.isFunction(value)) {
+          value[key] = blocks.bind(value, this);
+        }
+      }
     },
 
     _tryInitialize: function (isActive) {
