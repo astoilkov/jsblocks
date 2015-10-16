@@ -37,7 +37,7 @@
     return value;
   };
 
-  blocks.version = '0.3.3';
+  blocks.version = '0.3.4';
   blocks.core = core;
 
   /**
@@ -1043,7 +1043,7 @@
   }
 
   (function () {
-
+    
 (function () {
 
 var customTypes = {};
@@ -4130,7 +4130,7 @@ blocks.debug.queries = {
   })();
 
   (function () {
-
+    
 (function () {
 
 
@@ -4201,7 +4201,7 @@ blocks.debug.queries = {
 
     /**
     * @memberof BaseExpression
-    * @param {(String|Array)} types -
+    * @param {(String|Array)} types - 
     * @returns {boolean}
     */
     is: function (types) {
@@ -4228,7 +4228,7 @@ blocks.debug.queries = {
     },
 
     /**
-    * @memberof
+    * @memberof 
     */
     or: function () {
       var expression = new this._expression(this._value, this);
@@ -4495,7 +4495,7 @@ blocks.debug.queries = {
   }
 
   var core = blocks.core;
-
+  
   var PrepareValues = {
     parseCallback: function (callback, thisArg) {
       if (typeof callback == 'string') {
@@ -4832,7 +4832,7 @@ inLoop: 'flatten' + index + '(shallow' + index + ',value,result' + index + ');'}
  * @param {*} searchValue - The value to search for
  * @param {number|boolean} fromIndex - The index to search from or true to perform a binary search on a sorted array
  * @returns {number} - Returns the index of the matched value or -1
- *
+ * 
  * @example {javascript}
  * blocks.indexOf([1, 2, 3, 1, 2, 3], 2);
  * // → 1
@@ -6480,7 +6480,7 @@ return result;
         };
         return expression;
     }
-
+    
 
     function create(name) {
         var descriptor = descriptors[name];
@@ -6493,7 +6493,7 @@ return result;
             }
         }
     }
-
+    
     for (var key in descriptors) {
         create(key);
     }
@@ -7056,7 +7056,7 @@ return result;
   var ElementsData = (function () {
     var data = {};
     var globalId = 1;
-
+    
     function getDataId(element) {
       var result = element ? VirtualElement.Is(element) ? element._state ? element._state.attributes[dataIdAttr] : element._attributes[dataIdAttr] :
         element.nodeType == 1 ? element.getAttribute(dataIdAttr) :
@@ -7092,7 +7092,7 @@ return result;
         var isVirtual = element && element.__identity__ == virtualElementIdentity;
         var currentData;
         var id;
-
+        
         if (isVirtual) {
           currentData = data[element._getAttr(dataIdAttr)];
         } else {
@@ -7117,7 +7117,8 @@ return result;
           // if element is not defined then treat it as expression
           if (!element) {
             currentData = data[id] = {
-              id: id
+              id: id,
+              observables: {}
             };
           } else {
             currentData = data[id] = {
@@ -7157,10 +7158,20 @@ return result;
         if (currentData && (!currentData.haveData || force)) {
           blocks.each(currentData.observables, function (value) {
             for (var i = 0; i < value._elements.length; i++) {
-              if (value._elements[i].elementId == data.id) {
+              if (value._elements[i].elementId == currentData.id) {
                 value._elements.splice(i, 1);
                 i--;
               }
+            }
+
+            if (value._expressionKeys[currentData.id]) {
+              for (i = 0; i < value._expressions.length; i++) {
+                if (value._expressions[i].elementId == currentData.id) {
+                  value._expressions.splice(i, 1);
+                  i--;
+                }
+              }
+              value._expressionKeys[currentData.id] = null;
             }
           });
           data[id] = undefined;
@@ -7255,7 +7266,7 @@ return result;
     };
   })();
 
-
+  
   var dom = blocks.dom = {
     valueTagNames: {
       input: true,
@@ -7308,13 +7319,13 @@ return result;
 
     addClass: function (element, className) {
       if (element) {
-        setClass('add', element, className);
+        setClass('add', element, className);  
       }
     },
 
     removeClass: function (element, className) {
       if (element) {
-        setClass('remove', element, className);
+        setClass('remove', element, className);  
       }
     },
 
@@ -7359,7 +7370,7 @@ return result;
 
     removeAttr: function (element, attributeName) {
       if (element && attributeName) {
-        dom.attr(element, attributeName, null);
+        dom.attr(element, attributeName, null);  
       }
     },
 
@@ -7373,7 +7384,7 @@ return result;
         !element) {
         return;
       }
-
+      
       if (element.nodeType == 8) {
         dom.comment.attr(element, attributeName, attributeValue);
         return;
@@ -7497,7 +7508,7 @@ return result;
   var Expression = {
     Html: 0,
     ValueOnly: 2,
-
+    
     Create: function (text, attributeName, element) {
       var index = -1;
       var endIndex = 0;
@@ -7560,7 +7571,7 @@ return result;
       if (!context) {
         return expression.text;
       }
-
+      
       if (length == 1) {
         value = Expression.Execute(context, elementData, expression[0], expression, type);
       } else {
@@ -7571,7 +7582,7 @@ return result;
           } else {
             value += Expression.Execute(context, elementData, chunk, expression, type);
           }
-        }
+        }  
       }
 
       expression.lastResult = value;
@@ -7632,13 +7643,15 @@ return result;
               observable._expressionKeys[elementData.id] = true;
               observable._expressions.push(expressionObj);
             }
+
+            elementData.observables[observable.__id__ + (attributeName || 'expression') + '[' + expression + ']'] = observable;
           });
         }
         if (!attributeName) {
           result = '<!-- ' + elementData.id + ':blocks -->' + result;
         }
       }
-
+      
       return result;
     }
   };
@@ -8213,7 +8226,7 @@ return result;
       var value;
 
       if (this._tagName == 'option' && this._parent._values) {
-        if (state) {
+        if (state && typeof state.attributes.value !== 'undefined') {
           state.attributes.selected = this._parent._values[state.attributes.value] ? 'selected' : null;
         } else {
           attributes.selected = this._parent._values[attributes.value] ? 'selected' : null;
@@ -8253,6 +8266,11 @@ return result;
       var expression;
 
       blocks.each(this._attributes, function (attributeValue, attributeName) {
+        if(!attributeValue) {
+          // In Serverside rendering, some attributes will be set to null in some cases
+          return;
+        }
+
         if (!each && serverData && serverData[dataId + attributeName]) {
           expression = Expression.Create(serverData[dataId + attributeName], attributeName);
         } else {
@@ -8414,7 +8432,7 @@ return result;
         if (element._state) {
           element._state.attributes[classAttr] = classAttribute;
         } else {
-         element._attributes[classAttr] = classAttribute;
+         element._attributes[classAttr] = classAttribute; 
         }
       } else {
         element.className = classAttribute;
@@ -10124,13 +10142,15 @@ return result;
         if (!events || !callbacks) {
           return;
         }
+        var element = this;
+        var context = blocks.context(this);
+        var thisArg;
 
         callbacks = blocks.toArray(callbacks);
 
-        var element = this;
         var handler = function (e) {
-          var context = blocks.context(this);
-          var thisArg = context.$template || context.$view || context.$root;
+          context = blocks.context(this) || context;
+          thisArg = context.$template || context.$view || context.$root;
           blocks.each(callbacks, function (callback) {
             callback.call(thisArg, e, args);
           });
@@ -10406,7 +10426,7 @@ return result;
       observable._chunkManager = new ChunkManager(observable);
     } else if (blocks.isFunction(initialValue)) {
       observable._dependencyType = 1; // Function dependecy
-    } else if (initialValue && blocks.isFunction(initialValue.get) && blocks.isFunction(initialValue.set)) {
+    } else if (initialValue && !initialValue.__Class__ && blocks.isFunction(initialValue.get) && blocks.isFunction(initialValue.set)) {
       observable._dependencyType = 2; // Custom object
     }
 
@@ -10499,6 +10519,8 @@ return result;
           var element;
           var offset;
           var value;
+          var isProperty;
+          var propertyName;
 
           blocks.eachRight(this._expressions, function updateExpression(expression) {
             element = expression.element;
@@ -10520,9 +10542,16 @@ return result;
             offset = expression.length - value.length;
             expression.length = value.length;
 
+            isProperty = dom.props[expression.attr];
+            propertyName = expression.attr ? dom.propFix[expression.attr.toLowerCase()] || expression.attr : null;
+
             if (element) {
               if (expression.attr) {
-                element.setAttribute(expression.attr, Expression.GetValue(context, null, expression.entire));
+                if(isProperty) {
+                  element[propertyName] = Expression.GetValue(context, null, expression.entire);
+                } else {
+                  element.setAttribute(expression.attr, Expression.GetValue(context, null, expression.entire));
+                }
               } else {
                 if (element.nextSibling) {
                   element = element.nextSibling;
@@ -11222,7 +11251,7 @@ return result;
       newObservable.view._initialized = false;
 
       newObservable.view.on('get', newObservable._getter);
-
+      
       newObservable.on('add', function () {
         if (newObservable.view._initialized) {
           newObservable.view._connections = {};
@@ -11230,7 +11259,7 @@ return result;
           ExtenderHelper.executeOperations(newObservable);
         }
       });
-
+  
       newObservable.on('remove', function () {
         if (newObservable.view._initialized) {
           newObservable.view._connections = {};
@@ -13440,40 +13469,26 @@ return result;
     var key;
     var value;
 
-    if (prototype.__used__) {
-      for (key in prototype) {
-        value = prototype[key];
-        if (Property.Is(value)) {
-          continue;
-        }
-
-        if (blocks.isObservable(value)) {
-          // clone the observable and also its value by passing true to the clone method
-          object[key] = value.clone(true);
-          object[key].__context__ = object;
-        } else if (blocks.isFunction(value)) {
-          object[key] = blocks.bind(value, object);
-        } else if (Model.prototype.isPrototypeOf(value)) {
-          object[key] = value.clone(true);
-        } else if (blocks.isObject(value) && !blocks.isPlainObject(value)) {
-          object[key] = blocks.clone(value, true);
-        } else {
-          object[key] = blocks.clone(value, true);
-        }
+    for (key in prototype) {
+      value = prototype[key];
+      if (Property.Is(value)) {
+        continue;
       }
-    } else {
-      for (key in prototype) {
-        value = prototype[key];
-        if (blocks.isObservable(value)) {
-          value.__context__ = object;
-        } else if (blocks.isFunction(value)) {
-          object[key] = blocks.bind(value, object);
-          object[key].unbound = value;
-        }
+
+      if (blocks.isObservable(value)) {
+        // clone the observable and also its value by passing true to the clone method
+        object[key] = value.clone(true);
+        object[key].__context__ = object;
+      } else if (blocks.isFunction(value)) {
+        object[key] = blocks.bind(value, object);
+      } else if (Model.prototype.isPrototypeOf(value)) {
+        object[key] = value.clone(true);
+      } else if (blocks.isObject(value) && !blocks.isPlainObject(value)) {
+        object[key] = blocks.clone(value, true);
+      } else {
+        object[key] = blocks.clone(value, true);
       }
     }
-
-    prototype.__used__ = true;
   }
 
   var routeStripper = /^[#\/]|\s+$/g;
@@ -13957,12 +13972,10 @@ return result;
   /**
    * @namespace View
    */
-  function View(application, parentView, prototype) {
+  function View(application, parentView) {
     var _this = this;
-    var options = this.options;
 
-    clonePrototype(prototype, this);
-
+    this._bindContext();
     this._views = [];
     this._application = application;
     this._parentView = parentView || null;
@@ -13970,12 +13983,12 @@ return result;
     this._html = undefined;
 
     this.loading = blocks.observable(false);
-    this.isActive = blocks.observable(!blocks.has(options, 'route'));
+    this.isActive = blocks.observable(!blocks.has(this.options, 'route'));
     this.isActive.on('changing', function (oldValue, newValue) {
       _this._tryInitialize(newValue);
     });
 
-    if (options.preload || this.isActive()) {
+    if (this.options.preload || this.isActive()) {
       this._load();
     }
   }
@@ -14100,6 +14113,21 @@ return result;
 
     navigateTo: function (view, params) {
       this._application.navigateTo(view, params);
+    },
+
+    _bindContext: function () {
+      var key;
+      var value;
+
+      for (key in this) {
+        value = this[key];
+
+        if (blocks.isObservable(value)) {
+          value.__context__ = this;
+        } else if (blocks.isFunction(value)) {
+          this[key] = blocks.bind(value, this);
+        }
+      }
     },
 
     _tryInitialize: function (isActive) {
@@ -14492,23 +14520,29 @@ return result;
     },
 
     _viewsReady: function (views) {
+      var callReady = this._callReady;
+
       blocks.each(views, function (view) {
         if (view.ready !== blocks.noop) {
           if (view.isActive()) {
-            view.ready();
+            callReady(view);
           } else {
             view.isActive.once('change', function () {
-              if (view.loading()) {
-                view.loading.once('change', function () {
-                  view.ready();
-                });
-              } else {
-                view.ready();
-              }
+              callReady(view);
             });
           }
         }
       });
+    },
+
+    _callReady: function (view) {
+      if (view.loading()) {
+        view.loading.once('change', function () {
+          view.ready();
+        });
+      } else {
+        view.ready();
+      }
     },
 
     _urlChange: function (data) {
@@ -14552,7 +14586,7 @@ return result;
       // }
 
       return blocks.inherit(View, function (application, parentView) {
-        this._super([application, parentView, prototype]);
+        this._super([application, parentView]);
       }, prototype);
     },
 
