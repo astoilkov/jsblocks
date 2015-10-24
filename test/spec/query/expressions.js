@@ -254,6 +254,7 @@
         
         expect($('#testElement').text()).toBe(' 1 3 3 1 1 3 ');
       });
+
     });
 
     describe('attributes', function () {
@@ -397,6 +398,73 @@
 
         expect($('#testElement')).toHaveAttr('data-value', '&lt;input />&amp;nbsp;');
       });
+    });
+  
+    describe('array observables', function () {
+
+      it('deletes the right number of nodes on reset', function () {
+        var testcontainer = document.getElementById('testElement').appendChild(document.createElement('div'));
+        var arrayObservable = blocks.observable([]);
+
+        testcontainer.innerHTML = '<div data-query="each(tests)">{{$this.content}}</div>';
+
+        var queryContainer =  testcontainer.childNodes[0];
+
+        query({
+          tests: arrayObservable
+        });
+
+        expect(queryContainer.childNodes.length).toBe(0);
+
+        arrayObservable.reset([{
+          content: blocks.observable('content')
+        }]);
+
+        expect(queryContainer.childNodes.length).toBe(2);
+
+        arrayObservable.reset([{ 
+          content: blocks.observable('content1')
+        },{
+          content: blocks.observable('content2')
+        }]);
+
+        expect(queryContainer.childNodes.length).toBe(4);
+
+        for (var i = 0; i < queryContainer.childNodes.length; i++) {
+          var child = queryContainer.childNodes[i];
+          if (i ===  0 || i == 2) {
+            expect(child.nodeType).toBe(8);
+          } else {
+            expect(child.nodeType).toBe(3);
+            expect(child.nodeValue).toBe('content' + (i == 1 ? 1 : 2));
+          }
+        }
+
+      });
+
+      it('updates the right node when called in reset()', function () {
+        var ul = document.getElementById('testElement').appendChild(document.createElement('div')).appendChild(document.createElement('ul'));
+        ul.setAttribute('data-query', 'each(updateTests)');
+        ul.innerHTML = '<li>\n{{$this.content}}</li>';
+
+        var arr = blocks.observable([]);
+
+
+        query({
+          updateTests: arr
+        });
+
+        arr.reset([{
+          content:  blocks.observable('test')
+        }]);
+
+        arr.reset([{
+          content:  blocks.observable('test')
+        }]);
+
+        expect(ul.innerHTML).toMatch(/<li data-id="\d+">[\n\s]*<!-- \d+:blocks -->[\n\s]*test[\n\s]*<\/li>/im);
+      });
+
     });
   });
 
