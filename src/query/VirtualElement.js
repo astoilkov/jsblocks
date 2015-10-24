@@ -451,35 +451,47 @@ define([
       var children = this._template || this._children;
       var length = children.length;
       var state = this._state;
-      var element = this._el.nodeType == 8 ? this._el.nextSibling : this._el.childNodes[offset || 0];
+      var element = this._el.nodeType == 8 ? this._el : this._el.childNodes[offset || 0];
       var index = -1;
       var elementForDeletion;
+      var deletionCount;
+      var fragment;
       var expression;
       var child;
+      var lastExpression;
 
       while (++index < length) {
         child = children[index];
         if (child.isExpression) {
           if (domQuery) {
-            expression = Expression.GetValue(domQuery._context, null, child, state ? Expression.ValueOnly : Expression.Html);
+            expression = Expression.GetValue(domQuery._context, null, child, state ? Expression.NodeWise : Expression.Html);
 
             if (!state || (state && state.expressions[index] !== expression)) {
               if (state) {
+                lastExpression = state.expressions[index];
                 state.expressions[index] = expression;
                 if (element) {
-                  if (element.nodeType == 8) {
+                  blocks.each(expression, function (value, key) {
+                    // skipp comment (= null values) & unchanged nodes
+                    if (value == null || element.nodeType == 8 || (blocks.isArray(lastExpression) && lastExpression[key] == value)) {
+                      element = element.nextSibling;
+                      return;
+                    }
+                    element.nodeValue = value;
                     element = element.nextSibling;
-                  }
-                  element.nodeValue = expression;
-                  element = element.nextSibling;
+                  });
                 } else {
-                  this._el.textContent = expression;
+                  this._el.textContent = expression.join();
                 }
               } else {
-                this._el.insertBefore(createFragment(expression), element);
-                elementForDeletion = element;
-                element = element.nextSibling;
-                this._el.removeChild(elementForDeletion);
+                fragment = createFragment(expression);
+                deletionCount = syncIndex ? child.nodeLength : 1;
+                this._el.insertBefore(fragment, element);
+                while (deletionCount-- > 0) {
+                  elementForDeletion = element;
+                  element = element.nextSibling;
+                  this._el.removeChild(elementForDeletion);
+                }
               }
             }
           }
@@ -528,7 +540,11 @@ define([
 
       while (++index < template.length) {
         if (template[index]._renderMode !== VirtualElement.RenderMode.None) {
-          length += 1;
+          if (template[index].isExpression && template[index].nodeLength) {
+            length += template[index].nodeLength;
+          } else {
+            length += 1;
+          }
         }
       }
 

@@ -8,6 +8,7 @@ define([
   var Expression = {
     Html: 0,
     ValueOnly: 2,
+    NodeWise: 4,
     
     Create: function (text, attributeName, element) {
       var index = -1;
@@ -36,12 +37,16 @@ define([
 
             character = text.substring(endIndex, startIndex - 2);
             if (character) {
-              result.push(character);
+              result.push({
+                value: character,
+                nodePositions: []
+              });
             }
 
             result.push({
               expression: match,
-              attributeName: attributeName
+              attributeName: attributeName,
+              nodePositions: []
             });
 
             endIndex = index + 2;
@@ -52,35 +57,70 @@ define([
 
       character = text.substring(endIndex);
       if (character) {
-        result.push(character);
+        result.push({ 
+          value: character,
+          nodePositions: []
+        });
       }
 
       result.text = text;
       result.attributeName = attributeName;
       result.element = element;
       result.isExpression = true;
+      result.nodeLength = 0;
       return match ? result : null;
     },
 
     GetValue: function (context, elementData, expression, type) {
-      var value = '';
+      var nodeWise = type == Expression.NodeWise;
+      var value = nodeWise ? [] : '';
       var length = expression.length;
       var index = -1;
       var chunk;
+      var nodeIndex;
+      type = type||Expression.Html;
 
       if (!context) {
         return expression.text;
       }
-      
+
+      if (type == Expression.Html) {
+        expression.nodeLength = 0;
+      }
+
       if (length == 1) {
-        value = Expression.Execute(context, elementData, expression[0], expression, type);
+        if (nodeWise) {
+          value[0] = Expression.Execute(context, elementData, expression[0], expression, nodeWise ? Expression.ValueOnly : type);
+        } else {
+          value = Expression.Execute(context, elementData, expression[0], expression, nodeWise ? Expression.ValueOnly : type);
+        }
       } else {
         while (++index < length) {
           chunk = expression[index];
-          if (typeof chunk == 'string') {
-            value += chunk;
+          if (chunk.value) {
+            if (nodeWise) {
+              // static text can only have one node
+              nodeIndex = chunk.nodePositions[0];
+              value[nodeIndex] = (value[nodeIndex]||'') + chunk.value;
+            } else {
+              value += chunk.value;
+            }
+
+            if (type == Expression.Html) {
+              chunk.nodePositions = []; // resetting nodeIndecies. Seeing currently no other way for resettings for the edge case descriped in https://github.com/astoilkov/jsblocks/issues/104#issuecomment-150715660
+              chunk.nodePositions.push(expression.nodeLength === 0 ? expression.nodeLength++ : expression.nodeLength - 1);
+            }
           } else {
-            value += Expression.Execute(context, elementData, chunk, expression, type);
+            if (nodeWise)  {
+              // If more then one node (observable) update value node
+              nodeIndex = chunk.nodePositions[chunk.nodePositions.length - 1];
+              if (chunk.nodePositions.length == 2) {
+                value[nodeIndex - 1] = null; // the comment node should be skipped
+              }
+              value[nodeIndex] = (value[nodeIndex]||'') + Expression.Execute(context, elementData, chunk, expression, Expression.ValueOnly);
+            } else {
+              value += Expression.Execute(context, elementData, chunk, expression, type);
+            }
           }
         }  
       }
@@ -150,10 +190,17 @@ define([
           });
         }
         if (!attributeName) {
+          if (type == Expression.Html) {
+            expressionData.nodePositions = []; //resetting nodeIndecies. Seeing currently no other way for resettings for the edge case descriped in https://github.com/astoilkov/jsblocks/issues/104#issuecomment-150715660
+            expressionData.nodePositions.push(entireExpression.nodeLength++, entireExpression.nodeLength++); // two new nodes
+          }
           result = '<!-- ' + elementData.id + ':blocks -->' + result;
         }
+      } else if (!attributeName && type == Expression.Html) {
+        expressionData.nodePositions = [];
+        expressionData.nodePositions.push(entireExpression.nodeLength === 0 ? entireExpression.nodeLength++ : entireExpression.nodeLength - 1);
       }
-      
+
       return result;
     }
   };
