@@ -562,4 +562,21 @@
       expect(observable.update).toHaveBeenCalled();
     });
   });
+
+  it('can be JSON.stringified', function () {
+
+    var values = [42,  'some string', [1,2,3], {
+        a:'some string',
+        b: 42,
+        c: [1,2,34],
+        d: {a: 'hello'},
+        e: blocks.observable('that works ?')
+      }];
+
+    for (var i = 0; i < values.length; i++) {
+      var value = values[i];
+      expect(JSON.stringify(value)).toBe(JSON.stringify(blocks.observable(value)));
+    }
+
+  });
 })();
