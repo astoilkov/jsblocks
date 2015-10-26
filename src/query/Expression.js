@@ -111,7 +111,7 @@ define([
           }
 
           if (nodeWise) {
-            value[expression.nodeLength - 1] = (value[expression.nodeLength] || '') + tempValue;
+            value[expression.nodeLength - 1] = (value[expression.nodeLength - 1] || '') + tempValue;
           } else {
             value +=  tempValue;
           }

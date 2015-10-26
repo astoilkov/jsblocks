@@ -445,7 +445,7 @@
       it('updates the right node when called in reset()', function () {
         var ul = document.getElementById('testElement').appendChild(document.createElement('div')).appendChild(document.createElement('ul'));
         ul.setAttribute('data-query', 'each(updateTests)');
-        ul.innerHTML = '<li>\n{{$this.content}}</li>';
+        ul.innerHTML = '<li>\nsome none variable text{{$this.content}}!</li>';
 
         var arr = blocks.observable([]);
 
@@ -462,7 +462,7 @@
           content:  blocks.observable('test')
         }]);
 
-        expect(ul.innerHTML).toMatch(/<li data-id="\d+">[\n\s]*<!-- \d+:blocks -->[\n\s]*test[\n\s]*<\/li>/im);
+        expect(ul.innerHTML).toMatch(/<li data-id="\d+">[\n\s]+some none variable text<!-- \d+:blocks -->[\n\s]*test![\n\s]*<\/li>/im);
       });
 
     });
