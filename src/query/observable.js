@@ -312,6 +312,9 @@ define([
             return value.toString();
           }
           return String(value);
+        },
+        toJSON: function() {
+          return this();
         }
       },
 
