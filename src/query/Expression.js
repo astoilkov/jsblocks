@@ -38,15 +38,13 @@ define([
             character = text.substring(endIndex, startIndex - 2);
             if (character) {
               result.push({
-                value: character,
-                nodePositions: []
+                value: character
               });
             }
 
             result.push({
               expression: match,
-              attributeName: attributeName,
-              nodePositions: []
+              attributeName: attributeName
             });
 
             endIndex = index + 2;
@@ -58,8 +56,7 @@ define([
       character = text.substring(endIndex);
       if (character) {
         result.push({ 
-          value: character,
-          nodePositions: []
+          value: character
         });
       }
 
@@ -77,50 +74,46 @@ define([
       var length = expression.length;
       var index = -1;
       var chunk;
-      var nodeIndex;
+      var lastNodeIndex;
+      var tempValue;
+
       type = type||Expression.Html;
 
       if (!context) {
         return expression.text;
       }
 
-      if (type == Expression.Html) {
-        expression.nodeLength = 0;
+      if (type !== Expression.ValueOnly) {
+        expression.nodeLength = 0; // reset for recalculation
       }
 
       if (length == 1) {
         if (nodeWise) {
-          value[0] = Expression.Execute(context, elementData, expression[0], expression, nodeWise ? Expression.ValueOnly : type);
+          value[0] = Expression.Execute(context, elementData, expression[0], expression, type);
         } else {
-          value = Expression.Execute(context, elementData, expression[0], expression, nodeWise ? Expression.ValueOnly : type);
+          value = Expression.Execute(context, elementData, expression[0], expression, type);
         }
       } else {
         while (++index < length) {
+          lastNodeIndex = expression.nodeLength;
           chunk = expression[index];
+          
           if (chunk.value) {
-            if (nodeWise) {
-              // static text can only have one node
-              nodeIndex = chunk.nodePositions[0];
-              value[nodeIndex] = (value[nodeIndex]||'') + chunk.value;
-            } else {
-              value += chunk.value;
+            if (type !== Expression.ValueOnly && expression.nodeLength === 0) {
+              expression.nodeLength++;
             }
-
-            if (type == Expression.Html) {
-              chunk.nodePositions = []; // resetting nodeIndecies. Seeing currently no other way for resettings for the edge case descriped in https://github.com/astoilkov/jsblocks/issues/104#issuecomment-150715660
-              chunk.nodePositions.push(expression.nodeLength === 0 ? expression.nodeLength++ : expression.nodeLength - 1);
-            }
+            tempValue = chunk.value;
           } else {
-            if (nodeWise)  {
-              // If more then one node (observable) update value node
-              nodeIndex = chunk.nodePositions[chunk.nodePositions.length - 1];
-              if (chunk.nodePositions.length == 2) {
-                value[nodeIndex - 1] = null; // the comment node should be skipped
-              }
-              value[nodeIndex] = (value[nodeIndex]||'') + Expression.Execute(context, elementData, chunk, expression, Expression.ValueOnly);
-            } else {
-              value += Expression.Execute(context, elementData, chunk, expression, type);
+            tempValue = Expression.Execute(context, elementData, chunk, expression, type);
+            if (nodeWise && (expression.nodeLength - lastNodeIndex) == 2)  {
+              value[expression.nodeLength - 2] = null; // dom comments that got rendered in the expression
             }
+          }
+
+          if (nodeWise) {
+            value[expression.nodeLength - 1] = (value[expression.nodeLength] || '') + tempValue;
+          } else {
+            value +=  tempValue;
           }
         }  
       }
@@ -164,7 +157,7 @@ define([
 
       observables = Observer.stopObserving();
 
-      if (type != Expression.ValueOnly && (isObservable || observables.length)) {
+      if (type != Expression.ValueOnly && type != Expression.NodeWise && (isObservable || observables.length)) {
         if (!attributeName) {
           elementData = ElementsData.createIfNotExists();
         }
@@ -190,15 +183,15 @@ define([
           });
         }
         if (!attributeName) {
-          if (type == Expression.Html) {
-            expressionData.nodePositions = []; //resetting nodeIndecies. Seeing currently no other way for resettings for the edge case descriped in https://github.com/astoilkov/jsblocks/issues/104#issuecomment-150715660
-            expressionData.nodePositions.push(entireExpression.nodeLength++, entireExpression.nodeLength++); // two new nodes
-          }
+          entireExpression.nodeLength += 2;
           result = '<!-- ' + elementData.id + ':blocks -->' + result;
         }
-      } else if (!attributeName && type == Expression.Html) {
-        expressionData.nodePositions = [];
-        expressionData.nodePositions.push(entireExpression.nodeLength === 0 ? entireExpression.nodeLength++ : entireExpression.nodeLength - 1);
+      } else if (!attributeName && type !== Expression.ValueOnly) {
+        if (type == Expression.NodeWise && isObservable) {
+          entireExpression.nodeLength += 2;
+        } else if (entireExpression.nodeLength === 0) {
+          entireExpression.nodeLength++;
+        }
       }
 
       return result;
