@@ -8,7 +8,26 @@ define([
   var Expression = {
     Html: 0,
     ValueOnly: 2,
-    
+    brackets: {},
+
+    checkStartChar: function (character, text, index) {
+      for (var i = 0; i < Expression.brackets.startBracket.length; i++) {
+        if (text.charAt(index + i) != Expression.brackets.startBracket.charAt(i)){
+          return false;
+        }
+      }
+      return true;
+    },
+
+    checkLastChar: function (character, text, index) {
+      for (var i = 0; i < Expression.brackets.endBracket.length; i++) {
+        if (text.charAt(index + i) != Expression.brackets.endBracket.charAt(i)){
+          return false;
+        }
+      }
+      return true;
+    },
+
     Create: function (text, attributeName, element) {
       var index = -1;
       var endIndex = 0;
@@ -17,12 +36,17 @@ define([
       var startIndex;
       var match;
 
+      blocks.brackets = blocks.brackets || '{{ }}';
+
+      Expression.brackets.startBracket = blocks.brackets.split(' ')[0];
+      Expression.brackets.endBracket = blocks.brackets.split(' ')[1];
+
       while (text.length > ++index) {
         character = text.charAt(index);
 
-        if (character == '{' && text.charAt(index + 1) == '{') {
-          startIndex = index + 2;
-        } else if (character == '}' && text.charAt(index + 1) == '}') {
+        if (Expression.checkStartChar(character, text, index)) {
+          startIndex = index + Expression.brackets.startBracket.length;
+        } else if (Expression.checkLastChar(character, text, index)) {
           if (startIndex) {
             match = text.substring(startIndex, index);
             if (!attributeName) {
@@ -34,7 +58,7 @@ define([
                 .replace(/&gt;/g, '>');
             }
 
-            character = text.substring(endIndex, startIndex - 2);
+            character = text.substring(endIndex, startIndex - Expression.brackets.endBracket.length);
             if (character) {
               result.push(character);
             }
@@ -44,7 +68,7 @@ define([
               attributeName: attributeName
             });
 
-            endIndex = index + 2;
+            endIndex = index + Expression.brackets.endBracket.length;
           }
           startIndex = 0;
         }
@@ -71,7 +95,7 @@ define([
       if (!context) {
         return expression.text;
       }
-      
+
       if (length == 1) {
         value = Expression.Execute(context, elementData, expression[0], expression, type);
       } else {
@@ -82,7 +106,7 @@ define([
           } else {
             value += Expression.Execute(context, elementData, chunk, expression, type);
           }
-        }  
+        }
       }
 
       expression.lastResult = value;
@@ -153,7 +177,7 @@ define([
           result = '<!-- ' + elementData.id + ':blocks -->' + result;
         }
       }
-      
+
       return result;
     }
   };
