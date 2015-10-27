@@ -4,10 +4,10 @@
 
 ##### From simple user interfaces to complex single-page applications using faster, server-side rendered and easy to learn framework.
 
-[[ official website ]](http://jsblocks.com?ref=jsblocks)
+[[ official website ]](http://jsblocks.com?ref=github_readme)
 
 
-> I am also working on a [Markdown Editor](http://caret.io?ref=github_astoilkov). I will appreciate it if you check it out and [tell me](mailto:antonio.stoilkov@gmail.com) what you think.
+> I am also working on a [Markdown Editor](http://caret.io?ref=jsblocks). I will appreciate it if you check it out and [tell me](mailto:antonio.stoilkov@gmail.com) what you think.
 
 ### Features
 
