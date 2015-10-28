@@ -8,6 +8,7 @@ define([
   var Expression = {
     Html: 0,
     ValueOnly: 2,
+    NodeWise: 4,
     
     Create: function (text, attributeName, element) {
       var index = -1;
@@ -36,7 +37,9 @@ define([
 
             character = text.substring(endIndex, startIndex - 2);
             if (character) {
-              result.push(character);
+              result.push({
+                value: character
+              });
             }
 
             result.push({
@@ -52,35 +55,65 @@ define([
 
       character = text.substring(endIndex);
       if (character) {
-        result.push(character);
+        result.push({ 
+          value: character
+        });
       }
 
       result.text = text;
       result.attributeName = attributeName;
       result.element = element;
       result.isExpression = true;
+      result.nodeLength = 0;
       return match ? result : null;
     },
 
     GetValue: function (context, elementData, expression, type) {
-      var value = '';
+      var nodeWise = type == Expression.NodeWise;
+      var value = nodeWise ? [] : '';
       var length = expression.length;
       var index = -1;
       var chunk;
+      var lastNodeIndex;
+      var tempValue;
+
+      type = type||Expression.Html;
 
       if (!context) {
         return expression.text;
       }
-      
+
+      if (type !== Expression.ValueOnly) {
+        expression.nodeLength = 0; // reset for recalculation
+      }
+
       if (length == 1) {
-        value = Expression.Execute(context, elementData, expression[0], expression, type);
+        if (nodeWise) {
+          value[0] = Expression.Execute(context, elementData, expression[0], expression, type);
+        } else {
+          value = Expression.Execute(context, elementData, expression[0], expression, type);
+        }
       } else {
         while (++index < length) {
+          lastNodeIndex = expression.nodeLength;
           chunk = expression[index];
-          if (typeof chunk == 'string') {
-            value += chunk;
+          
+          if (chunk.value) {
+            if (type !== Expression.ValueOnly && expression.nodeLength === 0) {
+              expression.nodeLength++;
+            }
+            tempValue = chunk.value;
           } else {
-            value += Expression.Execute(context, elementData, chunk, expression, type);
+            tempValue = Expression.Execute(context, elementData, chunk, expression, type);
+            if (nodeWise && (expression.nodeLength - lastNodeIndex) == 2)  {
+              value[expression.nodeLength - 2] = null; // dom comments that got rendered in the expression
+            }
+          }
+
+          if (nodeWise) {
+            value[expression.nodeLength - 1] = (value[expression.nodeLength - 1] || '') + tempValue;
+          } else {
+            value +=  tempValue;
           }
         }  
       }
@@ -124,7 +157,7 @@ define([
 
       observables = Observer.stopObserving();
 
-      if (type != Expression.ValueOnly && (isObservable || observables.length)) {
+      if (type != Expression.ValueOnly && type != Expression.NodeWise && (isObservable || observables.length)) {
         if (!attributeName) {
           elementData = ElementsData.createIfNotExists();
         }
@@ -150,10 +183,17 @@ define([
           });
         }
         if (!attributeName) {
+          entireExpression.nodeLength += 2;
           result = '<!-- ' + elementData.id + ':blocks -->' + result;
         }
+      } else if (!attributeName && type !== Expression.ValueOnly) {
+        if (type == Expression.NodeWise && isObservable) {
+          entireExpression.nodeLength += 2;
+        } else if (entireExpression.nodeLength === 0) {
+          entireExpression.nodeLength++;
+        }
       }
-      
+
       return result;
     }
   };
