@@ -65,6 +65,10 @@ define([
     observable._elementKeys = {};
     observable._elements = [];
 
+    observable._getValue = function () {
+      return getObservableValue(observable);
+    };
+
     if (blocks.isArray(initialValue)) {
       blocks.extend(observable, blocks.observable.fn.array);
       observable._indexes = [];
