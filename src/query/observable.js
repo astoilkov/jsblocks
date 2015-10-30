@@ -342,6 +342,7 @@ define([
         reset: function (array) {
           if (arguments.length === 0) {
             this.removeAll();
+            this.update();
             return this;
           }
 
@@ -380,6 +381,8 @@ define([
           }
 
           this.__value__ = array;
+
+          this.update();
 
           Events.trigger(this, 'remove', {
             type: 'remove',
