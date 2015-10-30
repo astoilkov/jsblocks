@@ -171,6 +171,8 @@ define([
           var isProperty;
           var propertyName;
 
+          Observer.startObserving();
+
           blocks.eachRight(this._expressions, function updateExpression(expression) {
             element = expression.element;
             context = expression.context;
@@ -245,6 +247,8 @@ define([
           blocks.each(this._indexes, function updateIndex(observable, index) {
             observable(index);
           });
+
+          Observer.stopObserving();
 
           return this;
         },
