@@ -14,9 +14,10 @@ define([
   './ElementsData',
   './DomQuery',
   './Expression',
-  './VirtualElement'
+  './VirtualElement',
+  './dom'
 ], function (blocks, slice, trimRegExp, keys, classAttr, queries, addListener, getClassIndex, escapeValue, animation, createFragment, createVirtual,
-  ElementsData, DomQuery, Expression, VirtualElement) {
+  ElementsData, DomQuery, Expression, VirtualElement, dom) {
 
   /**
   * @namespace blocks.queries
@@ -452,8 +453,46 @@ define([
           caption._innerHTML = options.caption;
           this.addChild(caption);
         }
-
         blocks.queries.each.preprocess.call(this, domQuery, collection);
+      },
+
+      update: function (domQuery, collection) {
+        var elementData = ElementsData.data(this);
+        var rawCollection = collection();
+        var headers = elementData.virtual._headers;
+        var valueObservable = elementData.valueObservable;
+        var valueExpression = elementData.virtual._template[0]._attributeExpressions[0];
+        var rawValue = blocks.isObservable(valueObservable) ? valueObservable._getValue() : this.value;
+        var expression;
+        var value;
+
+        if (blocks.isArray(rawCollection)) {
+          for (var i = 0; i < rawCollection.length; i++) {
+            domQuery.dataIndex(blocks.observable.getIndex(collection, i));
+            domQuery.pushContext(rawCollection[i]);
+            expression = Expression.GetValue(domQuery._context, null, valueExpression, Expression.ValueOnly);
+            domQuery.popContext();
+
+            if (i === 0) {
+              value = expression;
+            }
+
+            if (expression === rawValue) {
+              return;
+            }
+          }
+        }
+
+        if (headers && headers[0]) {
+          value = headers[0]._attributes.value || headers[0]._innerHTML;
+        }
+
+        if (blocks.isObservable(valueObservable)) {
+          valueObservable(value);
+        } else {
+          dom.attr(this, 'value', value);
+        }
+
       }
     },
 
