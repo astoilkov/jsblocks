@@ -350,7 +350,6 @@ define([
         reset: function (array) {
           if (arguments.length === 0) {
             this.removeAll();
-            this.update();
             return this;
           }
 
