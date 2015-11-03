@@ -1,15 +1,16 @@
 define([
   '../core',
   '../modules/ajax',
-  '../modules/Events'
-], function (blocks, ajax, Events) {
+  '../modules/Events',
+  './bindContext'
+], function (blocks, ajax, Events, bindContext) {
   /**
    * @namespace View
    */
   function View(application, parentView) {
     var _this = this;
 
-    this._bindContext();
+    bindContext(this);
     this._views = [];
     this._application = application;
     this._parentView = parentView || null;
@@ -147,21 +148,6 @@ define([
 
     navigateTo: function (view, params) {
       this._application.navigateTo(view, params);
-    },
-
-    _bindContext: function () {
-      var key;
-      var value;
-
-      for (key in this) {
-        value = this[key];
-
-        if (blocks.isObservable(value)) {
-          value.__context__ = this;
-        } else if (blocks.isFunction(value)) {
-          this[key] = blocks.bind(value, this);
-        }
-      }
     },
 
     _tryInitialize: function (isActive) {

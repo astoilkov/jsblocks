@@ -6,8 +6,9 @@ define([
   './Model',
   './Collection',
   './View',
-  './Property'
-], function (blocks, clonePrototype, Router, History, Model, Collection, View, Property) {
+  './Property',
+  './bindContext'
+], function (blocks, clonePrototype, Router, History, Model, Collection, View, Property, bindContext) {
 
   var application;
   blocks.Application = function (options) {
@@ -269,7 +270,7 @@ define([
 
     extend: function (obj) {
       blocks.extend(this, obj);
-      clonePrototype(obj, this);
+      bindContext(this, obj);
       return this;
     },
 
