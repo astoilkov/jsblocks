@@ -65,6 +65,10 @@ define([
     observable._elementKeys = {};
     observable._elements = [];
 
+    observable._getValue = function () {
+      return getObservableValue(observable);
+    };
+
     if (blocks.isArray(initialValue)) {
       blocks.extend(observable, blocks.observable.fn.array);
       observable._indexes = [];
@@ -167,6 +171,8 @@ define([
           var isProperty;
           var propertyName;
 
+          Observer.startObserving();
+
           blocks.eachRight(this._expressions, function updateExpression(expression) {
             element = expression.element;
             context = expression.context;
@@ -241,6 +247,8 @@ define([
           blocks.each(this._indexes, function updateIndex(observable, index) {
             observable(index);
           });
+
+          Observer.stopObserving();
 
           return this;
         },
@@ -380,6 +388,8 @@ define([
           }
 
           this.__value__ = array;
+
+          this.update();
 
           Events.trigger(this, 'remove', {
             type: 'remove',

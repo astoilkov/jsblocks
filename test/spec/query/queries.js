@@ -832,6 +832,126 @@
       expect($('#testElement').children().eq(2)).toHaveText('Mihaela');
       expect($('#testElement').children().eq(2)).toHaveValue('2');
     });
+
+    it('updates correctly text and value after reset', function () {
+      setQuery('options(items, options)');
+
+      var items = blocks.observable([
+        {
+          Id: 0,
+          Name: blocks.observable('Joscha')
+        },
+        {
+          Id: 1,
+          Name: blocks.observable('Unknown')
+        }]
+      );
+
+      query({
+        items: items,
+        options: {
+          text: 'Name',
+          value: 'Id'
+        }
+      });
+
+      expect($('#testElement').children().eq(0)).toHaveText('Joscha');
+      expect($('#testElement').children().eq(0)).toHaveValue('0');
+      expect($('#testElement').children().eq(1)).toHaveText('Unknown');
+      expect($('#testElement').children().eq(1)).toHaveValue('1');
+
+      items.reset([{
+        Id: 0,
+        Name: blocks.observable('Someone else')
+      }]);
+
+      expect($('#testElement').children.length).toBe(2);
+
+      expect($('#testElement').children().eq(0)).toHaveText('Someone else');
+      expect($('#testElement').children().eq(0)).toHaveValue('0');
+
+    });
+
+    it('updates selected correctly after reset', function () {
+      setQuery('options(items, options).val(val)');
+
+      var items = blocks.observable([
+        {
+          Id: 0,
+          Name: blocks.observable('Joscha')
+        },
+        {
+          Id: 1,
+          Name: blocks.observable('Unknown')
+        }]
+      );
+
+      var val = blocks.observable('1');
+      query({
+        val: val,
+        items: items,
+        options: {
+          text: 'Name',
+          value: 'Id'
+        }
+      });
+
+      expect($('#testElement').children().eq(0)).toHaveText('Joscha');
+      expect($('#testElement').children().eq(0)).toHaveValue('0');
+      expect($('#testElement').children().eq(1)).toHaveText('Unknown');
+      expect($('#testElement').children().eq(1)).toHaveValue('1');
+
+      items.reset([{
+        Id: 0,
+        Name: blocks.observable('Someone else')
+      }]);
+
+      expect(val()).toBe('0');
+
+      expect($('#testElement').children().eq(0)).toHaveText('Someone else');
+      expect($('#testElement').children().eq(0)).toHaveValue('0');
+    });
+
+    it('updates selected correctly after reset to the caption', function () {
+      setQuery('options(items, options).val(val)');
+
+      var items = blocks.observable([
+        {
+          Id: 0,
+          Name: blocks.observable('Joscha')
+        },
+        {
+          Id: 1,
+          Name: blocks.observable('Unknown')
+        }]
+      );
+
+      var val = blocks.observable('1');
+      query({
+        val: val,
+        items: items,
+        options: {
+          caption: 'select something',
+          text: 'Name',
+          value: 'Id'
+        }
+      });
+
+      expect($('#testElement').children().eq(1)).toHaveText('Joscha');
+      expect($('#testElement').children().eq(1)).toHaveValue('0');
+      expect($('#testElement').children().eq(2)).toHaveText('Unknown');
+      expect($('#testElement').children().eq(2)).toHaveValue('1');
+
+      items.reset([{
+        Id: 0,
+        Name: blocks.observable('Someone else')
+      }]);
+
+      expect(val()).toBe('select something');
+
+      expect($('#testElement').children().eq(0)).toHaveText('select something');
+      expect($('#testElement').children().eq(0)).toHaveValue('select something');
+    });
   });
 
   describe('blocks.queries.template', function () {

@@ -89,7 +89,13 @@ define([
 
       if (length == 1) {
         if (nodeWise) {
-          value[0] = Expression.Execute(context, elementData, expression[0], expression, type);
+          lastNodeIndex = expression.nodeLength;
+          tempValue = Expression.Execute(context, elementData, expression[0], expression, type);
+
+          if ((expression.nodeLength - lastNodeIndex) == 2) {
+            value[expression.nodeLength - 2] = null;
+          }
+          value[expression.nodeLength - 1] = tempValue; 
         } else {
           value = Expression.Execute(context, elementData, expression[0], expression, type);
         }
