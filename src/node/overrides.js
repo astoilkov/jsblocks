@@ -115,7 +115,13 @@ define([
   blocks.queries.template.preprocess = function (domQuery, html, value) {
     if (VirtualElement.Is(html)) {
       html = html.html();
+    } else if (blocks.isObject(html)) {
+      html =  GLOBAL[html.rawValue] && GLOBAL[html.rawValue].html();
     }
+    if (blocks.isObject(value) && value.parameterName) {
+      value = value.rawValue;
+    }
+
     if (html) {
       if (value) {
         blocks.queries['with'].preprocess.call(this, domQuery, value, '$template');

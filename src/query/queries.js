@@ -91,17 +91,22 @@ define([
      */
     template: {
       passDomQuery: true,
-      passRawValues: true,
+      passDetailValues: true,
 
       preprocess: function (domQuery, template, value) {
         var serverData = domQuery._serverData;
         var html;
+        var templateName = template.parameterName;
+        template = template.rawValue;
+        if (value) {
+          value = value.rawValue;  
+        }
 
         template = blocks.$unwrap(template);
         if (blocks.isElement(template)) {
           html = template.innerHTML;
         } else {
-          html = document.getElementById(template);
+          html = document.getElementById( blocks.isString(template) ? template : templateName);
           if (html) {
             html = html.innerHTML;
           } else {

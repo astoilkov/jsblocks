@@ -179,6 +179,7 @@ define([
           currentParameter.value = blocks.unwrapObservable(currentParameter.rawValue);
 
           if (method.passDetailValues) {
+            currentParameter.parameterName = parameter;
             currentParameter.isObservable = blocks.isObservable(currentParameter.rawValue);
             currentParameter.containsObservable = Observer.currentObservables().length > lastObservablesLength;
             lastObservablesLength = Observer.currentObservables().length;

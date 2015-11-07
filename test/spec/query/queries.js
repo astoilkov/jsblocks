@@ -1031,6 +1031,20 @@
       expect($('#testElement')).toHaveHtml('overrides');
     });
 
+    it('grabs the script when widow does not contain the script object', function () {
+      setTemplate('This is evil!');
+      
+      $('#testTemplate').attr('id', 'alert');
+      
+      setQuery('template(alert)');
+      query();
+
+      expect($('#testElement')).toHaveHtml('This is evil!');
+
+      $('#alert').attr('id', 'testTemplate');
+
+    });
+
     it('does not override content when template value is not defined', function () {
       $('#testElement').html('some content');
 
