@@ -113,11 +113,14 @@ define([
   };
 
   blocks.queries.template.preprocess = function (domQuery, html, value) {
-    if (VirtualElement.Is(html)) {
-      html = html.html();
-    } else if (blocks.isObject(html)) {
-      html =  GLOBAL[html.rawValue] && GLOBAL[html.rawValue].html();
+    if (blocks.isObject(html)) {
+      if (VirtualElement.Is(html.rawValue)) {
+        html = html.rawValue.html();
+      } else {
+        html =  GLOBAL[html.rawValue] && GLOBAL[html.rawValue].html();
+      }
     }
+
     if (blocks.isObject(value) && value.parameterName) {
       value = value.rawValue;
     }
