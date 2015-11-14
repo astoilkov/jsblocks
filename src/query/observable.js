@@ -170,6 +170,7 @@ define([
           var value;
           var isProperty;
           var propertyName;
+          var rawValue;
 
           Observer.startObserving();
 
@@ -183,7 +184,8 @@ define([
             }
 
             try {
-              value = blocks.unwrap(parameterQueryCache[expression.expression](context));
+              rawValue = parameterQueryCache[expression.expression](context);
+              value = blocks.unwrap(rawValue);
             } catch (ex) {
               value = '';
             }
@@ -197,6 +199,10 @@ define([
             propertyName = expression.attr ? dom.propFix[expression.attr.toLowerCase()] || expression.attr : null;
 
             if (element) {
+              if (blocks.isObservable(rawValue) && rawValue._expressions.indexOf(expression) == -1) {
+                  rawValue._expressions.push(expression);
+              }
+
               if (expression.attr) {
                 if(isProperty) {
                   element[propertyName] = Expression.GetValue(context, null, expression.entire);
