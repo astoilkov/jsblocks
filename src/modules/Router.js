@@ -116,6 +116,7 @@
   function Router() {
     this._currentRoute = {};
     this._routes = {};
+    this._baseUrl = '';
   }
 
   blocks.core.Router = Router;
@@ -170,6 +171,10 @@
         }
       });
 
+      if (this._baseUrl) {
+        result = this._baseUrl + result;
+      }
+
       return result;
     },
 
@@ -180,6 +185,10 @@
 
       url = decodeURI(url);
 
+      if (this._baseUrl && url.startsWith(this._baseUrl)) {
+        url = url.substr(this._baseUrl.length, url.length);
+      }
+
       blocks.each(this._routes, function (routeMetadata) {
         blocks.each(routeMetadata.regExCollection, function (regEx) {
           if (regEx.regEx.test(url)) {
@@ -189,7 +198,7 @@
                 id: routeMetadata.route._routeString,
                 params: getUrlParams(routeMetadata, regEx.params, matches)
               });
-              routeMetadata  = routeMetadata.parent;
+              routeMetadata = routeMetadata.parent;
             }
             return false;
           }
@@ -380,6 +389,17 @@
           });
         }
       });
+    },
+    _setBaseUrl: function (url) {
+      if (blocks.isString(url)) {
+        if (!url.endsWith('/')) {
+          url += '/';
+        }
+        if(url.startsWith('/')) {
+          url = url.substr(1, url.length);
+        }
+        this._baseUrl = url;
+      }
     }
   };
 

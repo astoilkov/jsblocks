@@ -39,6 +39,7 @@ define([
           next();
         } else {
           res.send(contents);
+          return;
         }
       });
     },
@@ -100,6 +101,7 @@ define([
     _createBrowserEnv: function (req, server) {
       var browserEnv = BrowserEnv.Create();
 
+      browserEnv.setBaseUrl(req.baseUrl);
       browserEnv.fillLocation(this._getLocation(req));
       browserEnv.addElementsById(this._elementsById);
       browserEnv.fillServer(server);
@@ -108,7 +110,7 @@ define([
     },
 
     _getLocation: function (req) {
-      return req.protocol + '://' + req.get('host') + req.url;
+      return req.protocol + '://' + req.get('host') + req.originalUrl;
     }
   };
 });

@@ -286,6 +286,11 @@ define([
       if (!this._started) {
         this._started = true;
         this._serverData = window.__blocksServerData__;
+        
+        if (this._serverData && this._serverData.baseUrl) {
+          this._router._setBaseUrl(this._serverData.baseUrl);
+        }
+        
         this._createViews();
         blocks.domReady(blocks.bind(this._ready, this, element));
       }

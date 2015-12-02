@@ -198,4 +198,14 @@ define([
       this.callSuccess(contents);
     }
   };
+
+  var blocksApplication = blocks.Application;
+
+  blocks.Application = function (options) {
+    var app = blocksApplication(options);
+    app._router._setBaseUrl(window.__baseUrl__);
+    server.data.baseUrl = window.__baseUrl__;
+    return app;
+  };
+
 });
