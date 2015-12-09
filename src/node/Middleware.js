@@ -29,7 +29,8 @@ define([
   Middleware.Defaults = {
     static: 'app',
     blocksPath: 'node_modues/blocks/blocks.js',
-    cache: true
+    cache: true,
+    baseTag: false
   };
 
   Middleware.prototype = {
