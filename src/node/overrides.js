@@ -49,6 +49,9 @@ define([
     server.await(function () {
       if (head) {
         head.children().splice(0, 0, getServerDataScript());
+        if (server.options.baseTag) {
+          head.children().splice(0, 0, getBaseTag());
+        }
       }
       server.rendered = root.renderChildren();
     });
@@ -69,6 +72,11 @@ define([
     });
 
     return result;
+  }
+
+  function getBaseTag() {
+    var baseUrl = window.location.protocol + '//' + window.location.host +  window.__baseUrl__ + '/';
+    return VirtualElement('base').attr('href', baseUrl);
   }
 
   function getServerDataScript() {
@@ -198,4 +206,14 @@ define([
       this.callSuccess(contents);
     }
   };
+
+  var blocksApplication = blocks.Application;
+
+  blocks.Application = function (options) {
+    var app = blocksApplication(options);
+    app._router._setBaseUrl(window.__baseUrl__);
+    server.data.baseUrl = window.__baseUrl__;
+    return app;
+  };
+
 });

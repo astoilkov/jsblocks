@@ -31,6 +31,7 @@ define(function () {
     var timeoutId = 0;
     var windowObj = {
       __mock__: true,
+      __baseUrl__: '',
 
       console: createConsoleMock(),
 

@@ -28,7 +28,11 @@ define([
         location[name] = props[name];
       });
     },
-
+    setBaseUrl: function (url) {
+      if (url) {
+        this._env.__baseUrl__ = url;
+      }
+    },
     addElementsById: function (elementsById) {
       var env = this._env;
       env.document.__elementsById__ = elementsById;
