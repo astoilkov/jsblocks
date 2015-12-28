@@ -361,7 +361,7 @@ define([
 
       if (type == 'checkbox') {
         value(element.checked);
-      } else if (tagName == 'select' && element.getAttribute('multiple')) {
+      } else if (tagName == 'select' && element.getAttribute('multiple') !== null) {
         var values = [];
         var selectedOptions = element.selectedOptions;
         if (selectedOptions) {
