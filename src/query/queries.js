@@ -717,7 +717,7 @@ define([
     * Sets the value attribute on an element.
     *
     * @memberof blocks.queries
-    * @param {(string|number|Array|undefined)} value - The new value for the element.
+    * @param {(string|number|Array|undefined|null)} value - The new value for the element.
     *
     * @example {html}
     * <script>
