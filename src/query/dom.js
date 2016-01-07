@@ -141,7 +141,11 @@ define([
 
           attributeValue = false;
         } else {
-          attributeValue = !!attributeValue;
+          if (blocks.isArray(attributeValue)) {
+            attributeValue = attributeValue.indexOf(element.value) !== -1;
+          } else {
+            attributeValue = !!attributeValue;
+          }
         }
       }
 

@@ -359,7 +359,16 @@ define([
       var tagName = element.tagName.toLowerCase();
       var type = element.getAttribute('type');
 
-      if (type == 'checkbox') {
+      if (blocks.isArray(value()) && (type == 'checkbox' || type == 'radio')) {
+        var unwrapedValue = value();
+        if (element.checked) {
+          if (unwrapedValue.indexOf(element.value) == -1) {
+            value.add(element.value);
+          }
+        } else if (unwrapedValue.indexOf(element.value) !== -1) {
+          value.splice(unwrapedValue.indexOf(element.value), 1);
+        }
+      } else if (type == 'checkbox') {
         value(element.checked);
       } else if (tagName == 'select' && element.getAttribute('multiple') !== null) {
         var values = [];
