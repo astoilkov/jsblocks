@@ -150,11 +150,15 @@ define([
         if (attributeName == 'checked' && attributeValue != null && !this._fake) {
           if (this._attributes.type == 'radio' &&
             typeof attributeValue == 'string' &&
-            value != attributeValue && value != null) {
+            value != attributeValue && value != null && !blocks.isArray(attributeValue)) {
 
             attributeValue = null;
           } else {
-            attributeValue = attributeValue ? 'checked' : null;
+            if (blocks.isArray(attributeValue)) {
+              attributeValue = attributeValue.indexOf(value) !== -1 ? 'checked' : null;
+            } else {
+               attributeValue = attributeValue ? 'checked' : null;
+            }
           }
         } else if (attributeName == 'disabled') {
           attributeValue = attributeValue ? 'disabled' : null;
