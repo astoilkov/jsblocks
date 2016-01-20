@@ -220,10 +220,11 @@ define([
         if (this._renderMode != VirtualElement.RenderMode.None) {
           var renderEndTag = this.renderEndTag;
 
+          domQuery.pushContext(value);
+
           if (name) {
             domQuery.addProperty(name, value);
           }
-          domQuery.pushContext(value);
 
           this.renderEndTag = function () {
             domQuery.popContext();

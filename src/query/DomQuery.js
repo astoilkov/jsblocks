@@ -68,7 +68,7 @@ define([
         $parents: context ? models : [],
         $index: this._dataIndex || null,
         $parentContext: context || null,
-        __props__: context && context.__props__
+        __props__: blocks.clone(context && context.__props__)
       };
       newContext.$context = newContext;
       this._context = newContext;
