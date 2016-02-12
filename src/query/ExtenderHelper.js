@@ -133,7 +133,7 @@ define([
               return valueA[operation.sort] - valueB[operation.sort];
             });
           } else if (blocks.isFunction(operation.sort)) {
-            collection = blocks.clone(collection).sort(operation.sort);
+            collection = blocks.clone(collection).sort(operation.sort.bind(observable.__context__));
           } else {
             collection = blocks.clone(collection).sort();
           }
