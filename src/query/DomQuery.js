@@ -266,6 +266,7 @@ define([
             elementData.observables[observable.__id__ + method.query] = observable;
             observable._elements.push({
               elementId: elementData.id,
+              element: elementData.dom || elementData.virtual._el,
               cache: [method],
               context: context
             });
