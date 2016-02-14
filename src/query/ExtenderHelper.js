@@ -130,10 +130,18 @@ define([
         } else if (operation.type == 'sort') {
           if (blocks.isString(operation.sort)) {
             collection = blocks.clone(collection).sort(function (valueA, valueB) {
-              return valueA[operation.sort] - valueB[operation.sort];
+              valueA = blocks.unwrap(valueA[operation.sort]);
+              valueB = blocks.unwrap(valueB[operation.sort]);
+              if (valueA > valueB) {
+                return 1;
+              }
+              if (valueA < valueB) {
+                return -1;
+              }
+              return 0;
             });
           } else if (blocks.isFunction(operation.sort)) {
-            collection = blocks.clone(collection).sort(operation.sort);
+            collection = blocks.clone(collection).sort(operation.sort.bind(observable.__context__));
           } else {
             collection = blocks.clone(collection).sort();
           }
@@ -204,11 +212,13 @@ define([
             break;
           case EXISTS:
             newConnections[index] = viewIndex;
+            if (view.__value__.indexOf(collection[index]) != index) {
+              view.move(view.__value__.indexOf(collection[index]), index);
+            }
             viewIndex++;
             break;
         }
       });
-
       view._connections = newConnections;
       view.update = update;
       view.update();
