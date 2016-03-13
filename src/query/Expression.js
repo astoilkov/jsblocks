@@ -180,8 +180,8 @@ define([
           };
 
           blocks.each(observables, function (observable) {
-            if (!observable._expressionKeys[elementData.id]) {
-              observable._expressionKeys[elementData.id] = true;
+            if (!observable._expressionKeys[elementData.id + (attributeName ||'expression') +'[' + expression + ']']) {
+              observable._expressionKeys[elementData.id + (attributeName ||'expression') +'[' + expression + ']'] = true;
               observable._expressions.push(expressionObj);
             }
 
