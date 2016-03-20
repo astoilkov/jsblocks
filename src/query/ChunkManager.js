@@ -69,8 +69,6 @@ define([
       var _this = this;
 
       this.each(function (domElement) {
-        blocks.context(domElement).childs.splice(index, howMany);
-
         for (var j = 0; j < howMany; j++) {
           _this._removeAt(domElement, index);
         }
@@ -101,7 +99,7 @@ define([
           syncIndex = domQuery.getSyncIndex();
           for (var i = 0; i < addItems.length; i++) {
             domQuery.dataIndex(blocks.observable.getIndex(observable, i + index, true));
-            context.childs.splice(i + index, 0, domQuery.pushContext(addItems[i]));
+            domQuery.pushContext(addItems[i]);
             html += virtualElement.renderChildren(domQuery, syncIndex + (i + index));
             domQuery.popContext();
             domQuery.dataIndex(undefined);
