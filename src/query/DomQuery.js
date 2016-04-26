@@ -258,7 +258,6 @@ define([
 
     subscribeObservables: function (method, elementData, context) {
       var observables = Observer.stopObserving();
-
       if (elementData) {
         elementData.haveData = true;
         blocks.each(observables, function (observable) {
@@ -306,7 +305,6 @@ define([
         }
       }
 
-      this._context = null;
     },
 
     createFragment: function (html) {

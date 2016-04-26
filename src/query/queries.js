@@ -330,7 +330,6 @@ define([
         var rawCollection;
         var elementData;
         var staticHtml;
-        var childs;
         var html;
 
         if (this._sync) {
@@ -367,12 +366,11 @@ define([
 
         rawCollection = blocks.unwrapObservable(collection);
 
-        childs = domQuery._context.childs = [];
 
         if (blocks.isArray(rawCollection)) {
           for (index = 0; index < rawCollection.length; index++) {
             domQuery.dataIndex(blocks.observable.getIndex(collection, index));
-            childs.push(domQuery.pushContext(rawCollection[index]));
+            domQuery.pushContext(rawCollection[index]);
             html += this.renderChildren(domQuery, syncIndex + index);
             domQuery.popContext();
             domQuery.dataIndex(undefined);

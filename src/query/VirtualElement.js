@@ -517,21 +517,19 @@ define([
       var isOneChild = template.length === 1 && VirtualElement.Is(child);
       var childNodes = domElement.childNodes;
       var syncIndex = domQuery.getSyncIndex();
-      var childContexts = domQuery._context.childs;
       var chunkLength = this._length();
       var offset = this._headers ? this._headers.length : 0;
       var index = -1;
-      var context;
 
       while (++index < updateCount) {
-        domQuery._context = context = childContexts[index];
-        context.$this = collection[index];
-        context.$parent = context.$parentContext.$this;
+        domQuery.dataIndex(blocks.observable.getIndex(collection, index));
+        domQuery.pushContext(collection[index]);
         if (isOneChild) {
           child.sync(domQuery, syncIndex + index, childNodes[index + offset]);
         } else {
           this.syncChildren(domQuery, syncIndex + index, (index * chunkLength) + offset);
         }
+       domQuery.popContext();
       }
 
       domQuery.popContext();
