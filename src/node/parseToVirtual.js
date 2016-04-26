@@ -1,6 +1,10 @@
 define([
-  '../query/VirtualElement'
-], function (VirtualElement) {
+  '../query/VirtualElement',
+  '../query/VirtualComment',
+  '../query/Expression',
+  '../var/trimRegExp',
+  '../query/var/dataQueryAttr'
+], function (VirtualElement, VirtualComment, Expression, trimRegExp, dataQueryAttr) {
   var parse5 = require('parse5');
 
   var selfClosingTags = {
@@ -98,7 +102,20 @@ define([
       },
 
       comment: function(text /*, [location] */) {
-        //Handle comments here
+        var trimmedComment = text.replace(trimRegExp, '');
+        var comment;
+
+        if (trimmedComment.indexOf('blocks') === 0) {
+          comment = new VirtualComment(text);
+          comment._parent = parent;
+          comment._attributes[dataQueryAttr] = trimmedComment.substring(6);
+          parent._children.push(comment);
+          parent = comment;
+        } else if (trimmedComment.indexOf('/blocks') === 0) {
+          parent = parent._parent;
+        } else {
+          parent._children.push('<!--' + text + '-->');
+        }
       }
     }, {
       decodeHtmlEntities: false
