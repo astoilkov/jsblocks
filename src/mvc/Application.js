@@ -134,7 +134,7 @@ define([
         this._super([_this, prototype, dataItem, collection]);
       };
 
-      prototype = prototype || {};
+      prototype = blocks.clone(prototype, true) || {};
       prototype.options = prototype.options || {};
 
       return blocks.inherit(Model, ExtendedModel, prototype);
@@ -475,6 +475,10 @@ define([
       this.View.Defaults = blocks.observable({
         options: { }
       }).extend();
+    },
+    // Application is a singleton. So return a reference instead of a clone.
+    clone: function () {
+      return this;
     }
   };
 });
