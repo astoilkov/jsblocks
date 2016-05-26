@@ -10,7 +10,10 @@ define([
    */
   function Model(application, prototype, dataItem, collection) {
     var _this = this;
+    // deep clone dataItem, otherwise we don't clone obervables nested in Models
+    dataItem = blocks.clone(dataItem, true);
     this._application = application;
+    this._prototype = prototype;
     this._collection = collection;
     this._initialDataItem = blocks.clone(dataItem, true);
 
@@ -271,17 +274,22 @@ define([
     },
 
     clone: function () {
-      return new this.constructor(blocks.clone(this._initialDataItem, true));
+      var self = this;
+      var data = {};
+      blocks.each(this._prototype, function (val, key) {
+          data[key] = blocks.clone(self[key], true);
+      });
+      return new this.constructor(data);
     },
 
     _setPropertyValue: function (property, propertyValue) {
       var propertyName = property.propertyName;
-      if (blocks.isFunction(this[propertyName])) {
+      if (property.isObservable) {
+        this[propertyName] = this._createObservable(property, propertyValue);
+      } else if (blocks.isFunction(this[propertyName])) {
         this[propertyName](propertyValue);
         this._dataSource.update(this.dataItem());
-      } else if (property.isObservable) {
-        this[propertyName] = this._createObservable(property, propertyValue);
-      } else {
+      } else  {
         this[propertyName] = function () {
           return propertyValue;
         };

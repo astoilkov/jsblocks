@@ -224,6 +224,10 @@ define([
 
     _error: function () {
       this.loading(false);
+    },
+    // View is a singleton so return a reference
+    clone: function () {
+      return this;
     }
   };
 
