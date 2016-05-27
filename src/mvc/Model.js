@@ -284,11 +284,12 @@ define([
 
     _setPropertyValue: function (property, propertyValue) {
       var propertyName = property.propertyName;
-      if (property.isObservable) {
-        this[propertyName] = this._createObservable(property, propertyValue);
-      } else if (blocks.isFunction(this[propertyName])) {
+
+      if (blocks.isFunction(this[propertyName])) {
         this[propertyName](propertyValue);
         this._dataSource.update(this.dataItem());
+      } else if (property.isObservable) {
+        this[propertyName] = this._createObservable(property, propertyValue);
       } else  {
         this[propertyName] = function () {
           return propertyValue;
