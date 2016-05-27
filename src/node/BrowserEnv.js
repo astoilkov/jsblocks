@@ -1,6 +1,7 @@
 define([
-  './createBrowserEnvObject'
-], function (createBrowserEnvObject) {
+  './createBrowserEnvObject',
+  '../core'
+], function (createBrowserEnvObject, blocks) {
   var url = require('url');
 
   function BrowserEnv() {
@@ -69,6 +70,7 @@ define([
     _initialize: function () {
       var env = this._env;
       var document = env.document;
+      env.window._blocks = blocks;
 
       document.getElementById = function (id) {
         return (document.__elementsById__ || {})[id] || null;

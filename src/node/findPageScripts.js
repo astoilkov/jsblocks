@@ -1,8 +1,9 @@
 define([
   '../core',
-  './parseToVirtual'
-], function (blocks, parseToVirtual) {
+  '../query/VirtualElement'
+], function (blocks, VirtualElement) {
   var path = require('path');
+  var fs = require('fs');
 
   function findPageScripts(virtual, static, callback) {
     var scripts = [];
@@ -28,9 +29,7 @@ define([
         src = child.attr('src');
         if (src && !child.attr('data-client-only')) {
           src = path.join(args.static, src);
-          if (blocks.contains(src, 'blocks') && blocks.endsWith(src, '.js')) {
-            src = 'node_modules/blocks/blocks.js';
-          }
+
           scripts.push({
             type: 'external',
             url: src,
