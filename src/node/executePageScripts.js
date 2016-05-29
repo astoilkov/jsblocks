@@ -1,16 +1,17 @@
 define([
-  '../core'
-], function (blocks) {
-  var vm = require('vm');
-  var fs = require('fs');
+  '../core',
+  '../query/ElementsData'
+], function (blocks, ElementsData) {
+ // var vm = require('vm');
 
   function executePageScripts(env, scripts, callback) {
-    var code = '';
+    var code = 'with(window) {';
 
     blocks.each(scripts, function (script) {
       code += script.code + ';';
     });
 
+    code += '}';
     executeCode(env, code, callback);
   }
 
