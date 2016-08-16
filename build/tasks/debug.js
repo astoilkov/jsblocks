@@ -43,14 +43,15 @@ module.exports = function (grunt) {
           });
         }
 
-        if (data.memberof && data.memberof.indexOf('blocks.queries') == 0) {
+        if (data.memberof && data.memberof.indexOf('blocks.queries') === 0) {
           queries[data.name] = data;
           return;
         }
 
-        if (!node) {
+        if (!node || data.params.length === 0) {
           return;
         }
+
         var func;
         if (node.expression && node.expression.right && node.expression.right.type == 'FunctionExpression') {
           func = node.expression.right;
@@ -60,42 +61,42 @@ module.exports = function (grunt) {
         if (func) {
           // FunctionExpression.BlockStatement.body(Array)
           var funcBody = func.body.body;
-
-          esprima.parse('blocks.debug.checkArgs && blocks.debug.checkArgs(' + toValueString(data) + ', Array.prototype.slice.call(arguments))').body.forEach(function (chunk) {
+          esprima.parse('blocks.debug && blocks.debug.checkArgs(' + toValueString(data) + ', Array.prototype.slice.call(arguments), {})').body.forEach(function (chunk) {
             funcBody.unshift(chunk);
           });
         }
       }
     });
-    //var code = escodegen.generate(parsed.parseTree(), {
-    //  format: {
-    //    indent: {
-    //      style: '  ',
-    //      base: 0,
-    //      adjustMultilineComment: true
-    //    }
-    //  },
-    //  comment: true
-    //});
+    var targetCode = escodegen.generate(parsed.parseTree(), {
+      format: {
+        indent: {
+          style: '  ',
+          base: 0,
+          adjustMultilineComment: true
+        }
+      },
+      comment: true
+    });
 
-    code = insertSourceCode(code, grunt.file.read('lib/blocks/jsdebug.js'));
-    code = insertSourceCode(code, 'blocks.debug.queries = ' + toValueString(queries));
-
-    grunt.file.write('dist/blocks.js', code);
+    targetCode = insertSourceCode(targetCode, grunt.file.read('lib/blocks/jsdebug.js'));
+    targetCode = insertSourceCode(targetCode, 'blocks.debug.queries = ' + toValueString(queries));
+    // enable blocks.debug after the framework initialized completly (jsdebug uses some functions that aren't initialized when they are needed the first time)
+    targetCode = insertSourceCode(targetCode, 'blocks.debug.enabled = true;', true);
+    grunt.file.write('dist/blocks.js', targetCode);
   });
 
-  function insertSourceCode(baseCode, insertCode) {
+  function insertSourceCode(baseCode, insertCode, source) {
     var sourceCodeLocation;
     var result = baseCode;
 
-    sourceCodeLocation = result.indexOf('// @debug-code');
+    sourceCodeLocation = result.indexOf(source ? '// @source-code' : '// @debug-code');
     result = result.substring(0, sourceCodeLocation) + '\n' + getSourceCodeWrap(insertCode) + result.substring(sourceCodeLocation);
 
     return result;
   }
 
   function getSourceCodeWrap(code) {
-    return '(function () {\n' + code + '\n})();'
+    return '(function () {\n' + code + '\n})();';
   }
 
   function toValueString(value, options) {
