@@ -55,8 +55,9 @@ define([
     };
 
     initialValue = blocks.unwrap(initialValue);
-
+    /* @if DEBUG */ blocks.debug.executing = true; /* @endif */
     blocks.extend(observable, blocks.observable.fn.base);
+    /* @if DEBUG */ blocks.debug.executing = false; /* @endif */
     observable.__id__ = observableId++;
     observable.__value__ = initialValue;
     observable.__context__ = thisArg || blocks.__viewInInitialize__ || observable;
