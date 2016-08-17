@@ -40,9 +40,11 @@
       .on('changing', options.changing, thisArg)
       .on('change', options.change, thisArg);
 
-    blocks.each(options.extenders, function (extendee) {
-      observable = observable.extend.apply(observable, extendee);
-    });
+    if (options.extenders) {
+      blocks.each(options.extenders, function (extendee) {
+        observable = observable.extend.apply(observable, extendee);
+      });
+    }
 
     return observable;
   };

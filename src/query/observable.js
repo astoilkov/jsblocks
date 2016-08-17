@@ -18,8 +18,8 @@ define([
 
   /**
   * @namespace blocks.observable
-  * @param {*} initialValue -
-  * @param {*} [context] -
+  * @param {*} initialValue - The inital value of the observable. This value will also specify the functions the observable inherits (e.g. array specific functions). Do not change types of observables later.
+  * @param {*} [context] - The context the observable will be bound to.
   * @returns {blocks.observable}
   */
   blocks.observable = function (initialValue, thisArg) {
@@ -246,14 +246,18 @@ define([
             }
           }
 
-          blocks.each(this._dependencies, function updateDependency(dependency) {
-            updateDependencies(dependency);
-            dependency.update();
-          });
+          if (this._dependencies) {
+            blocks.each(this._dependencies, function updateDependency(dependency) {
+              updateDependencies(dependency);
+              dependency.update();
+            });
+          }
 
-          blocks.each(this._indexes, function updateIndex(observable, index) {
-            observable(index);
-          });
+          if (this._indexes) {
+            blocks.each(this._indexes, function updateIndex(observable, index) {
+              observable(index);
+            });
+          }
 
           Observer.stopObserving();
 
@@ -344,7 +348,7 @@ define([
          * The value could be Array, observable array or jsvalue.Array
          *
          * @memberof array
-         * @param {Array} value - The new value that will be populated
+         * @param {Array|Null|Undefined} [value] - The new value that will be populated
          * @returns {blocks.observable} - Returns the observable itself - return this;
          *
          * @example {javascript}
@@ -567,6 +571,7 @@ define([
          * @param {Function} [callback] - Optional callback function which filters which items
          * to be removed. Returning a truthy value will remove the item and vice versa
          * @param {*} [thisArg] - Optional this context for the callback function
+         * @param {boolean} [removeOne] - If set only the first entry will be removed. Mostly used in internal functions.
          * @returns {blocks.observable} - Returns the observable itself - return this;
          */
         removeAll: function (callback, thisArg, removeOne) {
@@ -827,10 +832,10 @@ define([
          * Adds and/or removes elements from the observable array
          *
          * @memberof array
-         * @param {number} index An integer that specifies at what position to add/remove items.
+         * @param {number} index - An integer that specifies at what position to add/remove items.
          * Use negative values to specify the position from the end of the array.
-         * @param {number} howMany The number of items to be removed. If set to 0, no items will be removed.
-         * @param {...*} The new item(s) to be added to the array.
+         * @param {number} howMany - The number of items to be removed. If set to 0, no items will be removed.
+         * @param {...*} [items] - The new item(s) to be added to the array.
          * @returns {Array} A new array containing the removed items, if any.
          */
         splice: function (index, howMany) {

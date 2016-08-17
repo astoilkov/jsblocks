@@ -347,7 +347,7 @@
       var optionalParameters = [];
 
       blocks.each(routeData, function (split) {
-        if (blocks.has(route._optional, split.param)) {
+        if (route._optional && split.param && blocks.has(route._optional, split.param)) {
           optionalParameters.push(split.param);
         }
       });

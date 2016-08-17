@@ -29,7 +29,7 @@ define([
 
     observable._baseUpdate = observable.update;
     blocks.each(blocks.observable.fn.collection, function (value, key) {
-      if (blocks.isFunction(value) && key.indexOf('_') !== 0) {
+      if (blocks.isFunction(value) && key.indexOf('_') !== 0 && blocks.isFunction(observable[key])) {
         observable[key] = blocks.bind(observable[key], observable);
       }
     });
@@ -177,12 +177,13 @@ define([
       return this;
     },
 
+    //@todo docs -> What does it do with args ?
     /**
-     *
+     * Performs updates on elements, expressions, etc. like obervable.update() when called without arguments.
      *
      * @memberof Collection
-     * @param {number} id -
-     * @param {Object} newValues -
+     * @param {number} [id] - The id of the element to trigger the update for
+     * @param {Object} [newValues] - The new values to apply
      * @returns {Collection} - Chainable. Returns the Collection itself - return this;
      */
     update: function (id, newValues) {
