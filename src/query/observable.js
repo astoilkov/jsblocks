@@ -568,13 +568,14 @@ define([
          * to be removed by providing a callback
          *
          * @memberof array
-         * @param {Function} [callback] - Optional callback function which filters which items
-         * to be removed. Returning a truthy value will remove the item and vice versa
+         * @param {Function|*} [callbackOrValue] - Optional callback function which filters which items
+         * to be removed. Returning a truthy value will remove the item and vice versa.
+         * If the passed value is not a function value matching the passed value will be removed.
          * @param {*} [thisArg] - Optional this context for the callback function
          * @param {boolean} [removeOne] - If set only the first entry will be removed. Mostly used in internal functions.
          * @returns {blocks.observable} - Returns the observable itself - return this;
          */
-        removeAll: function (callback, thisArg, removeOne) {
+        removeAll: function (callbackOrValue, thisArg, removeOne) {
           var array = this.__value__;
           var chunkManager = this._chunkManager;
           var items;
@@ -601,12 +602,12 @@ define([
               index: 0
             });
           } else {
-            var isCallbackAFunction = blocks.isFunction(callback);
+            var isCallbackAFunction = blocks.isFunction(callbackOrValue);
             var value;
 
             for (i = 0; i < array.length; i++) {
               value = array[i];
-              if (value === callback || (isCallbackAFunction && callback.call(thisArg, value, i, array))) {
+              if (value === callbackOrValue || (isCallbackAFunction && callbackOrValue.call(thisArg, value, i, array))) {
                 this.splice(i, 1);
                 i -= 1;
                 if (removeOne) {
@@ -714,7 +715,7 @@ define([
          * @returns {number} The new length of the observable array
          */
         push: function () {
-          this.addMany(arguments);
+          this.addMany(blocks.toArray(arguments));
           return this.__value__.length;
         },
 
@@ -898,7 +899,7 @@ define([
          * @returns {number} The new length of the observable array.
          */
         unshift: function () {
-          this.addMany(arguments, 0);
+          this.addMany(blocks.toArray(arguments), 0);
           return this.__value__.length;
         }
       }
