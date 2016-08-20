@@ -380,8 +380,16 @@ define([
       this.validationErrors.reset(result);
     }
   };
-
   if (blocks.core.expressionsCreated) {
     blocks.core.applyExpressions('object', Model.prototype);
   }
+  // @if DEBUG
+  blocks.debug.addType('blocks.Application.ModelInstance', function (value) {
+    return value && value instanceof Model;
+  });
+
+  blocks.debug.addType('blocks.Application.Model', function (value) {
+    return value && value.prototype && value.prototype.__Class__ == Model;
+  });
+  // @endif
 });

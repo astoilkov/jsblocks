@@ -144,7 +144,7 @@ define([
     * Creates a new Collection
     *
     * @memberof Application
-    * @param {Object} [ModelType] - The model type the collection will be created for.
+    * @param {Object|blocks.Application.Model} [ModelType] - The model type the collection will be created for.
     * @param {Object} prototype - The Collection object properties that will be created.
     * @returns {Collection} - The Collection type with the specified properties
     * @example {javascript}
@@ -474,7 +474,7 @@ define([
       }).extend();
 
       this.View.Defaults = blocks.observable({
-        options: { }
+        options: {}
       }).extend();
     },
     // Application is a singleton. So return a reference instead of a clone.
