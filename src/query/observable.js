@@ -55,9 +55,9 @@ define([
     };
 
     initialValue = blocks.unwrap(initialValue);
-    /* @if DEBUG */ blocks.debug.executing = true; /* @endif */
+    /* @if DEBUG */ blocks.debug.pause(); /* @endif */
     blocks.extend(observable, blocks.observable.fn.base);
-    /* @if DEBUG */ blocks.debug.executing = false; /* @endif */
+    /* @if DEBUG */ blocks.debug.resume(); /* @endif */
     observable.__id__ = observableId++;
     observable.__value__ = initialValue;
     observable.__context__ = thisArg || blocks.__viewInInitialize__ || observable;
@@ -87,7 +87,9 @@ define([
 
   function updateDependencies(observable) {
     if (observable._dependencyType) {
+      /* @if DEBUG */ blocks.debug.pause(); /* @endif */
       observable._getDependency = blocks.bind(getDependency, observable);
+      /* @if DEBUG */ blocks.debug.resume(); /* @endif */
       observable.on('get', observable._getDependency);
     }
   }

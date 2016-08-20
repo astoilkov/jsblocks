@@ -73,6 +73,7 @@ define([
      * @memberof Collection
      * @param {Object} [params] - The parameters Object that will be used to populate the
      * Collection from the specified options.read URL. If the URL does not contain parameters
+     * @param {Function} [callback] - A callback function that will be called when the data is available.
      * @returns {Collection} - Chainable. Returns the Collection itself - return this;
      *
      * @example {javascript}

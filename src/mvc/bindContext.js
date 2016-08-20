@@ -4,7 +4,7 @@ define([
 	function bindContext (context, object) {
 		var key;
 		var value;
-		
+		/* @if DEBUG */ blocks.debug.pause(); /* @endif */
 		if (!object) {
 			object = context;
 		}
@@ -19,6 +19,7 @@ define([
 			}
 
 		}
+		/* @if DEBUG */ blocks.debug.resume(); /* @endif */
 	}
 	return bindContext;
 });
