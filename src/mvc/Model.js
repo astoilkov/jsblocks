@@ -197,10 +197,12 @@ define([
     },
 
     /**
-     * Applies new properties to the Model by providing an Object
+     * Applies new properties to the Model by providing an Object.
+     * If no object is provided all App.Properties will be set to their "defaulValue" or undefined.
+     * All observables will be set to undefined.
      *
      * @memberof Model
-     * @param {Object} dataItem - The object from which the new values will be applied
+     * @param {Object} [dataItem] - The object from which the new values will be applied
      * @returns {Model} - Chainable. Returns itself
      */
     reset: function (dataItem) {
@@ -378,8 +380,16 @@ define([
       this.validationErrors.reset(result);
     }
   };
-
   if (blocks.core.expressionsCreated) {
     blocks.core.applyExpressions('object', Model.prototype);
   }
+  // @if DEBUG
+  blocks.debug.addType('blocks.Application.ModelInstance', function (value) {
+    return value && value instanceof Model;
+  });
+
+  blocks.debug.addType('blocks.Application.Model', function (value) {
+    return value && value.prototype && value.prototype.__Class__ == Model;
+  });
+  // @endif
 });

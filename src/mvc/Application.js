@@ -51,7 +51,7 @@ define([
      * Creates an application property for a Model
      *
      * @memberof Application
-     * @param {Object)} property - An object describing the options for the current property
+     * @param {Object} [property] - An object describing the options for the current property
      *
      * @example {javascript}
      *
@@ -144,6 +144,7 @@ define([
     * Creates a new Collection
     *
     * @memberof Application
+    * @param {Object|blocks.Application.Model} [ModelType] - The model type the collection will be created for.
     * @param {Object} prototype - The Collection object properties that will be created.
     * @returns {Collection} - The Collection type with the specified properties
     * @example {javascript}
@@ -219,10 +220,10 @@ define([
       };
 
       if (!ModelType) {
-        ModelType = this.Model();
+        ModelType = this.Model({});
       } else if (!Model.prototype.isPrototypeOf(ModelType.prototype)) {
         prototype = ModelType;
-        ModelType = this.Model();
+        ModelType = this.Model({});
       }
       prototype = prototype || {};
       prototype.options = prototype.options || {};
@@ -286,11 +287,11 @@ define([
       if (!this._started) {
         this._started = true;
         this._serverData = window.__blocksServerData__;
-        
+
         if (this._serverData && this._serverData.baseUrl) {
           this._router._setBaseUrl(this._serverData.baseUrl);
         }
-        
+
         this._createViews();
         blocks.domReady(blocks.bind(this._ready, this, element));
       }
@@ -347,7 +348,7 @@ define([
     _urlChange: function (data) {
       var _this = this;
       var currentView = this._currentView;
-      var routes = this._router.routeFrom(data.url);
+      var routes = this._router.routeFrom(data.url) || [];
       var found = false;
 
       blocks.each(routes, function (route) {
@@ -473,7 +474,7 @@ define([
       }).extend();
 
       this.View.Defaults = blocks.observable({
-        options: { }
+        options: {}
       }).extend();
     },
     // Application is a singleton. So return a reference instead of a clone.

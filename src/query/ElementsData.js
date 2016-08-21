@@ -6,7 +6,7 @@
   var ElementsData = (function () {
     var data = {};
     var globalId = 1;
-    
+
     function getDataId(element) {
       var result = element ? VirtualElement.Is(element) ? element._state ? element._state.attributes[dataIdAttr] : element._attributes[dataIdAttr] :
         element.nodeType == 1 ? element.getAttribute(dataIdAttr) :
@@ -49,7 +49,7 @@
         var isVirtual = element && element.__identity__ == virtualElementIdentity;
         var currentData;
         var id;
-        
+
         if (isVirtual) {
           currentData = data[element._getAttr(dataIdAttr)];
         } else {
@@ -133,7 +133,7 @@
           });
           data[id] = undefined;
           if (VirtualElement.Is(element)) {
-            element.attr(dataIdAttr, null);
+            element.removeAttr(dataIdAttr);
           } else if (element.nodeType == 1) {
             element.removeAttribute(dataIdAttr);
           }

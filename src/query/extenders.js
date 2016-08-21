@@ -57,7 +57,7 @@ define([
    * items are skipped
    *
    * @memberof extenders
-   * @param {(number|blocks.observable)} value - The number of items to be skipped
+   * @param {(number|blocks.observable|Function)} value - The number of items to be skipped
    * @returns {blocks.observable} - Returns a new observable
    * containing a .view property with the manipulated data
    */
@@ -77,7 +77,7 @@ define([
    * always maximum n items
    *
    * @memberof extenders
-   * @param {(number|blocks.observable))} value - The max number of items to be in the collection
+   * @param {(number|blocks.observable|Function)} value - The max number of items to be in the collection
    * @returns {blocks.observable} - Returns a new observable
    * containing a .view property with the manipulated data
    */

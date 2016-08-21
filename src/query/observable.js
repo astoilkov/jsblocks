@@ -18,8 +18,8 @@ define([
 
   /**
   * @namespace blocks.observable
-  * @param {*} initialValue -
-  * @param {*} [context] -
+  * @param {*} initialValue - The inital value of the observable. This value will also specify the functions the observable inherits (e.g. array specific functions). Do not change types of observables later.
+  * @param {*} [context] - The context the observable will be bound to.
   * @returns {blocks.observable}
   */
   blocks.observable = function (initialValue, thisArg) {
@@ -55,8 +55,9 @@ define([
     };
 
     initialValue = blocks.unwrap(initialValue);
-
+    /* @if DEBUG */ blocks.debug.pause(); /* @endif */
     blocks.extend(observable, blocks.observable.fn.base);
+    /* @if DEBUG */ blocks.debug.resume(); /* @endif */
     observable.__id__ = observableId++;
     observable.__value__ = initialValue;
     observable.__context__ = thisArg || blocks.__viewInInitialize__ || observable;
@@ -86,7 +87,9 @@ define([
 
   function updateDependencies(observable) {
     if (observable._dependencyType) {
+      /* @if DEBUG */ blocks.debug.pause(); /* @endif */
       observable._getDependency = blocks.bind(getDependency, observable);
+      /* @if DEBUG */ blocks.debug.resume(); /* @endif */
       observable.on('get', observable._getDependency);
     }
   }
@@ -245,14 +248,18 @@ define([
             }
           }
 
-          blocks.each(this._dependencies, function updateDependency(dependency) {
-            updateDependencies(dependency);
-            dependency.update();
-          });
+          if (this._dependencies) {
+            blocks.each(this._dependencies, function updateDependency(dependency) {
+              updateDependencies(dependency);
+              dependency.update();
+            });
+          }
 
-          blocks.each(this._indexes, function updateIndex(observable, index) {
-            observable(index);
-          });
+          if (this._indexes) {
+            blocks.each(this._indexes, function updateIndex(observable, index) {
+              observable(index);
+            });
+          }
 
           Observer.stopObserving();
 
@@ -343,7 +350,7 @@ define([
          * The value could be Array, observable array or jsvalue.Array
          *
          * @memberof array
-         * @param {Array} value - The new value that will be populated
+         * @param {Array|Null|Undefined} [value] - The new value that will be populated
          * @returns {blocks.observable} - Returns the observable itself - return this;
          *
          * @example {javascript}
@@ -563,12 +570,14 @@ define([
          * to be removed by providing a callback
          *
          * @memberof array
-         * @param {Function} [callback] - Optional callback function which filters which items
-         * to be removed. Returning a truthy value will remove the item and vice versa
+         * @param {Function|*} [callbackOrValue] - Optional callback function which filters which items
+         * to be removed. Returning a truthy value will remove the item and vice versa.
+         * If the passed value is not a function value matching the passed value will be removed.
          * @param {*} [thisArg] - Optional this context for the callback function
+         * @param {boolean} [removeOne] - If set only the first entry will be removed. Mostly used in internal functions.
          * @returns {blocks.observable} - Returns the observable itself - return this;
          */
-        removeAll: function (callback, thisArg, removeOne) {
+        removeAll: function (callbackOrValue, thisArg, removeOne) {
           var array = this.__value__;
           var chunkManager = this._chunkManager;
           var items;
@@ -595,12 +604,12 @@ define([
               index: 0
             });
           } else {
-            var isCallbackAFunction = blocks.isFunction(callback);
+            var isCallbackAFunction = blocks.isFunction(callbackOrValue);
             var value;
 
             for (i = 0; i < array.length; i++) {
               value = array[i];
-              if (value === callback || (isCallbackAFunction && callback.call(thisArg, value, i, array))) {
+              if (value === callbackOrValue || (isCallbackAFunction && callbackOrValue.call(thisArg, value, i, array))) {
                 this.splice(i, 1);
                 i -= 1;
                 if (removeOne) {
@@ -708,7 +717,7 @@ define([
          * @returns {number} The new length of the observable array
          */
         push: function () {
-          this.addMany(arguments);
+          this.addMany(blocks.toArray(arguments));
           return this.__value__.length;
         },
 
@@ -826,10 +835,10 @@ define([
          * Adds and/or removes elements from the observable array
          *
          * @memberof array
-         * @param {number} index An integer that specifies at what position to add/remove items.
+         * @param {number} index - An integer that specifies at what position to add/remove items.
          * Use negative values to specify the position from the end of the array.
-         * @param {number} howMany The number of items to be removed. If set to 0, no items will be removed.
-         * @param {...*} The new item(s) to be added to the array.
+         * @param {number} howMany - The number of items to be removed. If set to 0, no items will be removed.
+         * @param {...*} [items] - The new item(s) to be added to the array.
          * @returns {Array} A new array containing the removed items, if any.
          */
         splice: function (index, howMany) {
@@ -892,7 +901,7 @@ define([
          * @returns {number} The new length of the observable array.
          */
         unshift: function () {
-          this.addMany(arguments, 0);
+          this.addMany(blocks.toArray(arguments), 0);
           return this.__value__.length;
         }
       }

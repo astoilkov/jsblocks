@@ -78,9 +78,9 @@ define([
     /**
      * Gets or sets the inner text of the element.
      *
-     * @param {String} [html] - The new text that will be set. Provide the parameter only if you want to set new text.
-     * @returns {String|VirtualElement} - returns itself if it is used as a setter(no parameters specified)
-     * and returns the inner text of the element if it used as a getter.
+     * @param {String} [text] - The new text that will be set. Provide the parameter only if you want to set new text.
+     * @returns {String|VirtualElement} - returns itself if it is used as a setter
+     * and returns the inner text of the element if it used as a getter (no parameters specified).
      */
     text: function (text) {
       if (arguments.length > 0) {
@@ -113,7 +113,7 @@ define([
      * Gets or sets an attribute value
      *
      * @param {String} attributeName - The attribute name to be set or retrieved.
-     * @param {String} [attributeValue] - The value to be set to the attribute.
+     * @param {String|Number|boolean} [attributeValue] - The value to be set to the attribute.
      * @returns {VirtualElement|String} - Returns the VirtualElement itself if you set an attribute.
      * Returns the attribute name value if only the first parameter is specified.
      */
@@ -206,7 +206,7 @@ define([
      * Gets or sets a CSS property
      *
      * @param {String} name - The CSS property name to be set or retrieved
-     * @param {String} [value] - The value to be set to the CSS property
+     * @param {String|number|boolean} [value] - The value to be set to the CSS property
      * @returns {VirtualElement|String} - Returns the VirtualElement itself if you use the method as a setter.
      * Returns the CSS property value if only the first parameter is specified.
      */
@@ -754,6 +754,9 @@ define([
   function replaceStyleAttribute(match) {
     return '-' + match.toLowerCase();
   }
+  //@if DEBUG
+  blocks.debug.addType('blocks.VirtualElement', VirtualElement.Is);
+  //@endif
 
   return VirtualElement;
 });
