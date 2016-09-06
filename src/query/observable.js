@@ -37,9 +37,9 @@ define([
       } else if (!blocks.equals(value, currentValue, false) && Events.trigger(observable, 'changing', value, currentValue) !== false) {
         observable.update = blocks.noop;
         if (!observable._dependencyType) {
-          if (blocks.isArray(currentValue) && blocks.isArray(value) && observable.reset) {
+          if (blocks.isArray(currentValue) && (blocks.isArray(value) || !value) && observable.reset) {
             observable.reset(value);
-          } else {
+          } else if (!blocks.isArray(currentValue) && !observable.reset) {
             observable.__value__ = value;
           }
         } else if (observable._dependencyType == 2) {
@@ -367,6 +367,13 @@ define([
           }
 
           array = blocks.unwrap(array);
+
+          if (!blocks.isArray(array) && !!array) {
+            //@if DEBUG
+            blocks.debug.throwMessage('Array-Observables can not be reseted to a non array type! Reset got aborted.', __DEBUG_METHOD, 'Warning');
+            //@endif
+            return;
+          }
 
           var current = this.__value__;
           var chunkManager = this._chunkManager;
