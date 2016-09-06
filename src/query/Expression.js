@@ -9,7 +9,7 @@ define([
     Html: 0,
     ValueOnly: 2,
     NodeWise: 4,
-    
+
     Create: function (text, attributeName, element) {
       var index = -1;
       var endIndex = 0;
@@ -55,7 +55,7 @@ define([
 
       character = text.substring(endIndex);
       if (character) {
-        result.push({ 
+        result.push({
           value: character
         });
       }
@@ -95,7 +95,7 @@ define([
           if ((expression.nodeLength - lastNodeIndex) == 2) {
             value[expression.nodeLength - 2] = null;
           }
-          value[expression.nodeLength - 1] = tempValue; 
+          value[expression.nodeLength - 1] = tempValue;
         } else {
           value = Expression.Execute(context, elementData, expression[0], expression, type);
         }
@@ -103,7 +103,7 @@ define([
         while (++index < length) {
           lastNodeIndex = expression.nodeLength;
           chunk = expression[index];
-          
+
           if (chunk.value) {
             if (type !== Expression.ValueOnly && expression.nodeLength === 0) {
               expression.nodeLength++;
@@ -121,7 +121,7 @@ define([
           } else {
             value +=  tempValue;
           }
-        }  
+        }
       }
 
       expression.lastResult = value;
@@ -142,7 +142,7 @@ define([
       // jshint -W054
       // Disable JSHint error: The Function constructor is a form of eval
       func = parameterQueryCache[expression] = parameterQueryCache[expression] ||
-        new Function('c', 'with(c){with($this){ return ' + expression + '}}');
+        new Function('c', 'with(c){with($this){ return ' + expression + '}}'/*@if DEBUG */ + '//# sourceURL=' + encodeURI(entireExpression.text)/* @endif */);
 
       Observer.startObserving();
 
