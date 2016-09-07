@@ -264,7 +264,7 @@ define([
 
       if (this._started) {
         // @if DEBUG
-        blocks.debug.throwMessage('Views can not be constructed / added after the application has been started. Try to add your views sync.', __DEBUG_METHOD, 'Error');
+        blocks.debug.throwMessage('Views can not be constructed / added after the application has been started. Try to add your views synchronous before document.readyState is "complete".', __DEBUG_METHOD, 'Error');
         // @endif
         return;
       }
