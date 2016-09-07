@@ -62,7 +62,7 @@ module.exports = function (grunt) {
         if (func) {
           // FunctionExpression.BlockStatement.body(Array)
           var funcBody = func.body.body;
-          esprima.parse('blocks.debug && blocks.debug.checkArgs(__DEBUG_METHOD, Array.prototype.slice.call(arguments), {}); var __DEBUG_METHOD = ' + toValueString(data) + ';').body.forEach(function (chunk) {
+          esprima.parse('var __DEBUG_METHOD = ' + toValueString(data) + '; blocks.debug && blocks.debug.checkArgs(__DEBUG_METHOD, Array.prototype.slice.call(arguments), {});').body.reverse().forEach(function (chunk) {
             funcBody.unshift(chunk);
           });
         }
