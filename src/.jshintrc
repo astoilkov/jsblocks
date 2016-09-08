@@ -11,7 +11,7 @@
   "curly": true,
   "freeze": true,
   "immed": true,
-  "latedef": true,
+  "latedef": false,
   "noarg": true,
   "noempty": true,
   "nonbsp": true,

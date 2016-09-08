@@ -19,26 +19,27 @@ module.exports = function (grunt) {
             };
             var current = root;
             var parents = [];
-            var parser = new parse5.SimpleApiParser({
-              startTag: function (tagName, attrs) {
-                var node = {
-                    name: attrs[0].value,
-                    children: []
-                };
-                parents.push(current);
-                current.children.push(node);
-                current = node;
-              },
+            var parser = new parse5.SAXParser();
 
-              endTag: function () {
-                current = parents.pop();
-              },
-
-              text: function (text) {
-                current.children.push(text);
-              }
+            parser.on('startTag', function (tagName, attrs) {
+              var node = {
+                  name: attrs[0].value,
+                  children: []
+              };
+              parents.push(current);
+              current.children.push(node);
+              current = node;
             });
-            parser.parse(hljs.highlightAuto(example.code, [example.language]).value);
+
+            parser.on('endTag', function () {
+              current = parents.pop();
+            });
+
+            parser.on('text', function (text) {
+              current.children.push(text);
+            });
+
+            parser.end(hljs.highlightAuto(example.code, [example.language]).value);
             example.code = root;
           });
         }
