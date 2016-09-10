@@ -30,98 +30,102 @@ define([
     var skip = 0;
     var root = VirtualElement('root');
     var parent = root;
-    var parser = new parse5.SimpleApiParser({
-      doctype: function(name, publicId, systemId /*, [location] */) {
-        root.children().push('<!DOCTYPE ' + name + '>');
-      },
-
-      startTag: function(tagName, attrsArray, selfClosing /*, [location] */) {
-        var attrs = {};
-        var length = attrsArray.length;
-        var index = -1;
-        while (++index < length) {
-          attrs[attrsArray[index].name] = attrsArray[index].value;
-        }
-
-        selfClosing = selfClosing || selfClosingTags[tagName];
-
-        var element = VirtualElement(tagName);
-        if (parent !== root) {
-          element._parent = parent;
-        }
-        element._attributes = attrs;
-        element._isSelfClosing = selfClosing;
-        element._haveAttributes = true;
-        element._createAttributeExpressions();
-
-        if (attrs.style) {
-          element._style = generateStyleObject(attrs.style);
-          element._haveStyle = true;
-          attrs.style = null;
-        }
-
-        if (parent) {
-          parent._children.push(element);
-        }
-
-        if (!selfClosing) {
-          parent = element;
-        }
-
-        if (skip) {
-          attrs['data-query'] = null;
-        }
-
-        if (!selfClosing && (skip || tagName == 'script' || tagName == 'style' || tagName == 'code' || element.hasClass('bl-skip'))) {
-          skip += 1;
-        }
-      },
-
-      endTag: function(tagName /*, [location] */) {
-        var newParent = parent._parent;
-
-        if (skip) {
-          skip -= 1;
-          if (skip === 0) {
-            parent._innerHTML = parent.renderChildren();
-          }
-        }
-        if (parent) {
-          parent = newParent || root;
-        }
-      },
-
-      text: function(text /*, [location] */) {
-        if (parent) {
-          if (skip === 0) {
-            parent._children.push(Expression.Create(text) || text);
-          } else {
-            parent._children.push(text);
-          }
-        }
-      },
-
-      comment: function(text /*, [location] */) {
-        var trimmedComment = text.replace(trimRegExp, '');
-        var comment;
-
-        if (trimmedComment.indexOf('blocks') === 0) {
-          comment = new VirtualComment(text);
-          comment._parent = parent;
-          comment._attributes[dataQueryAttr] = trimmedComment.substring(6);
-          parent._children.push(comment);
-          parent = comment;
-        } else if (trimmedComment.indexOf('/blocks') === 0) {
-          parent = parent._parent;
-        } else {
-          parent._children.push('<!--' + text + '-->');
-        }
-      }
-    }, {
+    var parser = new parse5.SAXParser({
       decodeHtmlEntities: false
     });
+    parser.on('doctype', function(name, publicId, systemId /*, [location] */) {
+      root.children().push('<!DOCTYPE ' + name + '>');
+    });
 
-    parser.parse(html);
+    parser.on('startTag', function(tagName, attrsArray, selfClosing /*, [location] */) {
+      var attrs = {};
+      var length = attrsArray.length;
+      var index = -1;
+      while (++index < length) {
+        attrs[attrsArray[index].name] = attrsArray[index].value;
+      }
+
+      selfClosing = selfClosing || selfClosingTags[tagName];
+
+      var element = VirtualElement(tagName);
+      if (parent !== root) {
+        element._parent = parent;
+      }
+      element._attributes = attrs;
+      element._isSelfClosing = selfClosing;
+      element._haveAttributes = true;
+      element._createAttributeExpressions();
+
+      if (attrs.style) {
+        element._style = generateStyleObject(attrs.style);
+        element._haveStyle = true;
+        attrs.style = null;
+      }
+
+      if (parent) {
+        parent._children.push(element);
+      }
+
+      if (!selfClosing) {
+        parent = element;
+      }
+
+      if (skip) {
+        attrs['data-query'] = null;
+      }
+
+      if (!selfClosing && (skip || tagName == 'script' || tagName == 'style' || tagName == 'code' || element.hasClass('bl-skip'))) {
+        skip += 1;
+      }
+    });
+
+    parser.on('endTag', function(tagName) {
+      var newParent = parent._parent;
+
+      if (parent && parent.tagName() !== tagName.toLowerCase()) {
+        //@todo Improve with adding information about the location inside the file.
+        console.warn('tag missmatch found closing tag for ' + tagName + ' while expecting to close ' + parent.tagName() + '!');
+      }
+
+      if (skip) {
+        skip -= 1;
+        if (skip === 0) {
+          parent._innerHTML = parent.renderChildren();
+        }
+      }
+      if (parent) {
+        parent = newParent || root;
+      }
+    });
+
+    parser.on('text', function(text /*, [location] */) {
+      if (parent) {
+        if (skip === 0) {
+          parent._children.push(Expression.Create(text) || text);
+        } else {
+          parent._children.push(text);
+        }
+      }
+    });
+
+    parser.on('comment', function(text /*, [location] */) {
+      var trimmedComment = text.replace(trimRegExp, '');
+      var comment;
+
+      if (trimmedComment.indexOf('blocks') === 0) {
+        comment = new VirtualComment(text);
+        comment._parent = parent;
+        comment._attributes[dataQueryAttr] = trimmedComment.substring(6);
+        parent._children.push(comment);
+        parent = comment;
+      } else if (trimmedComment.indexOf('/blocks') === 0) {
+        parent = parent._parent;
+      } else {
+        parent._children.push('<!--' + text + '-->');
+      }
+    });
+
+    parser.end(html);
 
     return root.children();
   }

@@ -24,8 +24,8 @@ module.exports = function (grunt) {
     },
     homepage: 'https://github.com/astoilkov/jsblocks',
     dependencies: {
-      express: "4.10.6",
-      parse5: "1.4.1"
+      express: "4.14.0",
+      parse5: "2.2.1"
     }
   };
 
