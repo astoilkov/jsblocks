@@ -369,9 +369,7 @@ define([
           array = blocks.unwrap(array);
 
           if (!blocks.isArray(array) && !!array) {
-            //@if DEBUG
-            blocks.debug.throwMessage('Array-Observables can not be reseted to a non array type! Reset got aborted.', __DEBUG_METHOD, 'Warning');
-            //@endif
+          //@debugMessage('Array-Observables can not be reseted to a non array type! Reset got aborted.', Warning);
             return;
           }
 

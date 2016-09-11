@@ -27,7 +27,6 @@
 
   "globals": {
     "blocks": true,
-    "define": true,
-    "__DEBUG_METHOD": true
+    "define": true
   }
 }
