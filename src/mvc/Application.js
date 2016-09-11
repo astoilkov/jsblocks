@@ -261,6 +261,12 @@ define([
       if (arguments.length == 1) {
         return this._views[name];
       }
+
+      if (this._started) {
+        // @debugMessage('Views can not be constructed / added after the application has been started. Try to add your views synchronous before document.readyState is "complete".', Error);
+        return;
+      }
+
       if (blocks.isString(prototype)) {
         this._viewPrototypes[prototype] = this._createView(nestedViewPrototype);
         nestedViewPrototype.options.parentView = name;

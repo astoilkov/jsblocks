@@ -216,7 +216,9 @@ define([
 
         if (VirtualElement.Is(element)) {
           if (VirtualComment.Is(element) && !method.supportsComments) {
-            // TODO: Should throw debug message
+            // @if DEBUG
+            blocks.debug.throwMessage('data-query ' + methods[i].name + ' does not support to be executed as on a comment.', blocks.debug.queries[methods[i].name], 'Error');
+            // @endif
             continue;
           }
 
