@@ -9,6 +9,8 @@ module.exports = function (grunt) {
   grunt.registerTask('debug', function () {
     var code = grunt.file.read('dist/blocks.js');
     var queries = {};
+    var methods = {};
+    var methodId = 0;
     var parsed = API().parse(code, {
       onparse: function (data, node) {
         if (data.examples) {
@@ -62,7 +64,8 @@ module.exports = function (grunt) {
         if (func) {
           // FunctionExpression.BlockStatement.body(Array)
           var funcBody = func.body.body;
-          funcBody.unshift.apply(funcBody, esprima.parse('var __DEBUG_METHOD = ' + toValueString(data) + '; blocks.debug && blocks.debug.checkArgs(__DEBUG_METHOD, Array.prototype.slice.call(arguments), {});').body);
+          methods[++methodId] = data;
+          funcBody.unshift.apply(funcBody, esprima.parse('var __METHOD_ID = ' + methodId + '; blocks.debug && blocks.debug.checkArgs(blocks.debug.methods[__METHOD_ID], Array.prototype.slice.call(arguments), {});').body);
         }
       }
     });
@@ -72,7 +75,7 @@ module.exports = function (grunt) {
     function insertMessageIfExsists(raw ,node, parent) {
       var message = regexDebugMessage.exec(raw);
       if (message) {
-        var debugChunks =  esprima.parse('blocks.debug.throwMessage(\'' + message[2] + '\', __DEBUG_METHOD || null ' + (message[3] ? ',\'' + message[3] + '\'' : '') + ');' ).body;
+        var debugChunks =  esprima.parse('blocks.debug.throwMessage(\'' + message[2] + '\', blocks.debug.methods[__METHOD_ID] || null ' + (message[3] ? ',\'' + message[3] + '\'' : '') + ');' ).body;
         debugChunks.unshift(parent.body.indexOf(node));
         debugChunks.unshift(0);
         parent.body.splice.apply(parent.body, debugChunks);
@@ -107,7 +110,7 @@ module.exports = function (grunt) {
 
 
     targetCode = insertSourceCode(targetCode, grunt.file.read('lib/blocks/jsdebug.js'));
-    targetCode = insertSourceCode(targetCode, 'blocks.debug.queries = ' + toValueString(queries));
+    targetCode = insertSourceCode(targetCode, 'blocks.debug.queries = ' + toValueString(queries) + '; blocks.debug.methods = ' + toValueString(methods) + ';');
     // enable blocks.debug after the framework initialized completly (jsdebug uses some functions that aren't initialized when they are needed the first time)
     targetCode = insertSourceCode(targetCode, 'blocks.debug.enabled = true;', true);
     grunt.file.write('dist/blocks.js', targetCode);
