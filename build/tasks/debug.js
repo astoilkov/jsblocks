@@ -65,7 +65,7 @@ module.exports = function (grunt) {
           // FunctionExpression.BlockStatement.body(Array)
           var funcBody = func.body.body;
           methods[++methodId] = data;
-          funcBody.unshift.apply(funcBody, esprima.parse('var __METHOD_ID = ' + methodId + '; blocks.debug && blocks.debug.checkArgs(blocks.debug.methods[__METHOD_ID], Array.prototype.slice.call(arguments), {});').body);
+          funcBody.unshift.apply(funcBody, esprima.parse('var __METHOD_ID = ' + methodId + '; if (blocks.debug && blocks.debug.available()) { blocks.debug.checkArgs(blocks.debug.methods[__METHOD_ID], Array.prototype.slice.call(arguments), {});}').body);
         }
       }
     });
