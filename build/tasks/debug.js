@@ -62,12 +62,38 @@ module.exports = function (grunt) {
         if (func) {
           // FunctionExpression.BlockStatement.body(Array)
           var funcBody = func.body.body;
-          esprima.parse('var __DEBUG_METHOD = ' + toValueString(data) + '; blocks.debug && blocks.debug.checkArgs(__DEBUG_METHOD, Array.prototype.slice.call(arguments), {});').body.reverse().forEach(function (chunk) {
-            funcBody.unshift(chunk);
+          funcBody.unshift.apply(funcBody, esprima.parse('var __DEBUG_METHOD = ' + toValueString(data) + '; blocks.debug && blocks.debug.checkArgs(__DEBUG_METHOD, Array.prototype.slice.call(arguments), {});').body);
+        }
+      }
+    });
+
+    var estraverse = require('estraverse');
+    var regexDebugMessage = /@debugMessage\((:?"|')(.*?)\1,?\s*(Error|Warning|Info)?\)/mi;
+    function insertMessageIfExsists(raw ,node, parent) {
+      var message = regexDebugMessage.exec(raw);
+      if (message) {
+        var debugChunks =  esprima.parse('blocks.debug.throwMessage(\'' + message[2] + '\', __DEBUG_METHOD || null ' + (message[3] ? ',\'' + message[3] + '\'' : '') + ');' ).body;
+        debugChunks.unshift(parent.body.indexOf(node));
+        debugChunks.unshift(0);
+        parent.body.splice.apply(parent.body, debugChunks);
+      }
+    }
+    estraverse.traverse(parsed.parseTree(), {
+      enter: function (node, parent) {
+        if (node.trailingComments) {
+          node.trailingComments.forEach(function (comment) {
+           insertMessageIfExsists(comment.value, node, parent);
+          });
+        }
+
+        if (node.leadingComments) {
+          node.leadingComments.forEach(function (comment) {
+            insertMessageIfExsists(comment.value, node, parent);
           });
         }
       }
     });
+
     var targetCode = escodegen.generate(parsed.parseTree(), {
       format: {
         indent: {
@@ -78,6 +104,7 @@ module.exports = function (grunt) {
       },
       comment: true
     });
+
 
     targetCode = insertSourceCode(targetCode, grunt.file.read('lib/blocks/jsdebug.js'));
     targetCode = insertSourceCode(targetCode, 'blocks.debug.queries = ' + toValueString(queries));
