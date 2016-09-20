@@ -2,6 +2,7 @@ define([
   '../core',
   '../var/hasOwn',
   '../modules/keys',
+  '../modules/Escape',
   './var/virtualElementIdentity',
   './var/classAttr',
   './var/dataIdAttr',
@@ -13,7 +14,7 @@ define([
   './dom',
   './Expression',
   './ElementsData'
-], function (blocks, hasOwn, keys, virtualElementIdentity, classAttr, dataIdAttr, dataQueryAttr, getClassIndex, setClass, escapeValue, createFragment, dom,
+], function (blocks, hasOwn, keys, Escape, virtualElementIdentity, classAttr, dataIdAttr, dataQueryAttr, getClassIndex, setClass, escapeValue, createFragment, dom,
              Expression, ElementsData) {
 
   function VirtualElement(tagName) {
@@ -85,7 +86,7 @@ define([
     text: function (text) {
       if (arguments.length > 0) {
         if (text != null) {
-          text = escapeValue(text);
+          text = Escape.forHTML(text);
           this.html(text);
         }
         return this;
@@ -618,7 +619,7 @@ define([
         if (value === '') {
           html += ' ' + key;
         } else if (value != null) {
-          html += ' ' + key + '="' + value + '"';
+          html += ' ' + key + '="' + Escape.forHTMLAttributes(value) + '"';
         }
       }
 
