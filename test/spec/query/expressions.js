@@ -211,7 +211,6 @@
         query({
           html: html
         });
-
         expect($('#testElement')).toHaveText('<div>content</div>');
         expect($('#testElement').children().length).toBe(0);
 
@@ -220,24 +219,24 @@
         expect($('#testElement')).toHaveText('<input />');
         expect($('#testElement').children().length).toBe(0);
       });
-      
+
       it('multiple observables and non observables are synced correctly', function () {
         var observable = blocks.observable(2);
-        
+
         appendText('{{nonObservable}}{{observable}}{{observable}}{{nonObservable}}{{nonObservable}}{{observable}}');
-        
+
         query({
           nonObservable: 1,
           observable: observable
         });
-        
+
         expect($('#testElement')).toHaveText('122112');
-        
+
         observable(3);
-        
+
         expect($('#testElement')).toHaveText('133113');
       });
-      
+
       it('multiple observables and non observables (with spaces between them) are synced correctly', function () {
         var observable = blocks.observable(2);
         
@@ -384,7 +383,7 @@
       });
 
       it('attribute is escaped successfully', function () {
-        var html = blocks.observable('<div>content</div>');
+        var html = blocks.observable('"><div>content</div>');
 
         setAttr('data-value', '{{html}}');
 
@@ -392,14 +391,14 @@
           html: html
         });
 
-        expect($('#testElement')).toHaveAttr('data-value', '&lt;div>content&lt;/div>');
+        expect($('#testElement')).toHaveAttr('data-value', '&quot;><div>content</div>');
 
-        html('<input />&nbsp;');
+        html('<"input />&nbsp;');
 
-        expect($('#testElement')).toHaveAttr('data-value', '&lt;input />&amp;nbsp;');
+        expect($('#testElement')).toHaveAttr('data-value', '<&quot;input />&nbsp;');
       });
     });
-  
+
     describe('array observables', function () {
 
       it('deletes the right number of nodes on reset', function () {

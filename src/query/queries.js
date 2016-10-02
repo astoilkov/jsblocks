@@ -7,7 +7,6 @@ define([
   './var/queries',
   './addListener',
   './getClassIndex',
-  './escapeValue',
   './animation',
   './createFragment',
   './createVirtual',
@@ -16,7 +15,7 @@ define([
   './Expression',
   './VirtualElement',
   './dom'
-], function (blocks, slice, trimRegExp, keys, classAttr, queries, addListener, getClassIndex, escapeValue, animation, createFragment, createVirtual,
+], function (blocks, slice, trimRegExp, keys, classAttr, queries, addListener, getClassIndex, animation, createFragment, createVirtual,
   ElementsData, DomQuery, Expression, VirtualElement, dom) {
 
   /**

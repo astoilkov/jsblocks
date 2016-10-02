@@ -1,9 +1,9 @@
 define([
   '../core',
-  '../modules/escapeRegEx',
+  '../modules/Escape',
   '../modules/Events',
   '../query/addListener'
-], function (blocks, escapeRegEx, Events, addListener) {
+], function (blocks, Escape, Events, addListener) {
   var routeStripper = /^[#\/]|\s+$/g;
   var rootStripper = /^\/+|\/+$/g;
   var isExplorer = /msie [\w.]+/;
@@ -27,7 +27,7 @@ define([
     this._fragment = this._getFragment();
     this._wants = this._options.history === true ? HASH : this._options.history;
     this._use = this._wants == PUSH_STATE && (this._history && this._history.pushState) ? PUSH_STATE : HASH;
-    this._hostRegEx = new RegExp(escapeRegEx(this._location.host));
+    this._hostRegEx = new RegExp(Escape.forRegEx(this._location.host));
   }
 
   History.prototype = {

@@ -1,7 +1,7 @@
 ﻿define([
   '../core',
-  './escapeRegEx'
-], function (blocks, escapeRegEx) {
+  '../modules/Escape'
+], function (blocks, Escape) {
   blocks.route = function (route) {
     return Route(route);
   };
@@ -272,7 +272,7 @@
               containsParameter = false;
               allOptionalBetweenForwardSlash = true;
             }
-            regExString += escapeRegEx(split.string);
+            regExString += Escape.forRegEx(split.string);
           }
         });
 

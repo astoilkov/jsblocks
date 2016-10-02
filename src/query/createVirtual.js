@@ -1,12 +1,11 @@
 define([
   '../var/trimRegExp',
   './var/dataQueryAttr',
-  './escapeValue',
   './browser',
   './Expression',
   './VirtualElement',
   './VirtualComment'
-], function (trimRegExp, dataQueryAttr, escapeValue, browser, Expression, VirtualElement, VirtualComment) {
+], function (trimRegExp, dataQueryAttr, browser, Expression, VirtualElement, VirtualComment) {
   function createVirtual(htmlElement, parentElement) {
     var serverData = window.__blocksServerData__;
     var elements = [];
@@ -66,7 +65,7 @@ define([
         //if (htmlElement.data.replace(trimRegExp, '').replace(/(\r\n|\n|\r)/gm, '') !== '') {
         //
         //}
-        data = escapeValue(htmlElement.data);
+        data = htmlElement.data;
         elements.push(Expression.Create(data, null, htmlElement) || data);
       } else if (nodeType == 8) {
         // Comment

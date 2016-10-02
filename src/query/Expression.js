@@ -1,10 +1,10 @@
 define([
   '../core',
   './var/parameterQueryCache',
-  './escapeValue',
+  '../modules/Escape',
   './ElementsData',
   './Observer'
-], function (blocks, parameterQueryCache, escapeValue, ElementsData, Observer) {
+], function (blocks, parameterQueryCache, Escape, ElementsData, Observer) {
   var Expression = {
     Html: 0,
     ValueOnly: 2,
@@ -159,7 +159,7 @@ define([
       isObservable = blocks.isObservable(value);
       result = isObservable ? value() : value;
       result = result == null ? '' : result.toString();
-      result = escapeValue(result);
+      result = attributeName ? Escape.forHTMLAttributes(result) : Escape.forHTML(result);
 
       observables = Observer.stopObserving();
 

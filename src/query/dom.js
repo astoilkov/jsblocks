@@ -9,7 +9,7 @@ define([
   './animation',
   './createFragment'
 ], function (blocks, trimRegExp, keys, dataIdAttr, on, browser, setClass, animation, createFragment) {
-  
+
   var dom = blocks.dom = {
     valueTagNames: {
       input: true,
@@ -62,13 +62,13 @@ define([
 
     addClass: function (element, className) {
       if (element) {
-        setClass('add', element, className);  
+        setClass('add', element, className);
       }
     },
 
     removeClass: function (element, className) {
       if (element) {
-        setClass('remove', element, className);  
+        setClass('remove', element, className);
       }
     },
 
@@ -113,7 +113,7 @@ define([
 
     removeAttr: function (element, attributeName) {
       if (element && attributeName) {
-        dom.attr(element, attributeName, null);  
+        dom.attr(element, attributeName, null);
       }
     },
 
@@ -127,7 +127,7 @@ define([
         !element) {
         return;
       }
-      
+
       if (element.nodeType == 8) {
         dom.comment.attr(element, attributeName, attributeValue);
         return;

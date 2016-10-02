@@ -9,12 +9,11 @@ define([
   './var/dataQueryAttr',
   './getClassIndex',
   './setClass',
-  './escapeValue',
   './createFragment',
   './dom',
   './Expression',
   './ElementsData'
-], function (blocks, hasOwn, keys, Escape, virtualElementIdentity, classAttr, dataIdAttr, dataQueryAttr, getClassIndex, setClass, escapeValue, createFragment, dom,
+], function (blocks, hasOwn, keys, Escape, virtualElementIdentity, classAttr, dataIdAttr, dataQueryAttr, getClassIndex, setClass, createFragment, dom,
              Expression, ElementsData) {
 
   function VirtualElement(tagName) {
@@ -91,6 +90,7 @@ define([
         }
         return this;
       }
+      // TODO strip tags of the html
       return this.html();
     },
 
@@ -158,7 +158,7 @@ define([
             if (blocks.isArray(attributeValue)) {
               attributeValue = attributeValue.indexOf(value) !== -1 ? 'checked' : null;
             } else {
-               attributeValue = attributeValue ? 'checked' : null;
+              attributeValue = attributeValue ? 'checked' : null;
             }
           }
         } else if (attributeName == 'disabled') {
@@ -629,7 +629,7 @@ define([
           if (value === '') {
             html += ' ' + key;
           } else if (value != null) {
-            html += ' ' + key + '="' + value + '"';
+            html += ' ' + key + '="' + Escape.forHTMLAttributes(value) + '"';
           }
         }
       }
