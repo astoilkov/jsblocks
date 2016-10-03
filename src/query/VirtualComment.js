@@ -2,8 +2,9 @@
   '../core',
   '../var/trimRegExp',
   './var/dataIdAttr',
-  './VirtualElement'
-], function (blocks, trimRegExp, dataIdAttr, VirtualElement) {
+  './VirtualElement',
+  '../modules/Escape'
+], function (blocks, trimRegExp, dataIdAttr, VirtualElement, Escape) {
   function VirtualComment(commentText) {
     if (!VirtualComment.prototype.isPrototypeOf(this)) {
       return new VirtualComment(commentText);
@@ -27,7 +28,7 @@
       if (dataId) {
         html += dataId + ':';
       }
-      html += this._commentText.replace(trimRegExp, '') + ' -->';
+      html += Escape.forHTML(this._commentText.replace(trimRegExp, '')) + ' -->';
 
       return html;
     },
