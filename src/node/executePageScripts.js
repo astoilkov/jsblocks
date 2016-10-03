@@ -60,7 +60,7 @@ define([
     if (application) {
       application._createViews();
       application._startHistory();
-      
+
       server.await(function () {
         blocks.query(application);
         blocks.each(application._views, function (view) {
@@ -70,10 +70,10 @@ define([
           if (view.isActive()) {
             hasActive = true;
           }
-        });  
+        });
       });
     }
-    
+
     server.await(function () {
       if (hasRoute && !hasActive) {
         callback('not found', null);

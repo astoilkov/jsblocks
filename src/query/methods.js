@@ -5,8 +5,9 @@ define([
   './createVirtual',
   './DomQuery',
   './VirtualElement',
-  './ElementsData'
-], function (blocks, dataQueryAttr, OBSERVABLE, createVirtual, DomQuery, VirtualElement, ElementsData) {
+  './ElementsData',
+  './serverData'
+], function (blocks, dataQueryAttr, OBSERVABLE, createVirtual, DomQuery, VirtualElement, ElementsData, serverData) {
   /**
    * Performs a query operation on the DOM. Executes all data-query attributes
    * and renders the html result to the specified HTMLElement if not specified
@@ -36,7 +37,6 @@ define([
 
         var domQuery = new DomQuery();
         var rootElement = createVirtual(element)[0];
-        var serverData = window.__blocksServerData__;
 
         domQuery.pushContext(model);
         domQuery._serverData = serverData;

@@ -4,10 +4,10 @@ define([
   './browser',
   './Expression',
   './VirtualElement',
-  './VirtualComment'
-], function (trimRegExp, dataQueryAttr, browser, Expression, VirtualElement, VirtualComment) {
+  './VirtualComment',
+  './serverData'
+], function (trimRegExp, dataQueryAttr, browser, Expression, VirtualElement, VirtualComment, serverData) {
   function createVirtual(htmlElement, parentElement) {
-    var serverData = window.__blocksServerData__;
     var elements = [];
     var element;
     var tagName;

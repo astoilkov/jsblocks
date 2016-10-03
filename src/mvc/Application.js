@@ -7,8 +7,9 @@ define([
   './Collection',
   './View',
   './Property',
-  './bindContext'
-], function (blocks, clonePrototype, Router, History, Model, Collection, View, Property, bindContext) {
+  './bindContext',
+  '../query/serverData'
+], function (blocks, clonePrototype, Router, History, Model, Collection, View, Property, bindContext, serverData) {
 
   var application;
   blocks.Application = function (options) {
@@ -292,7 +293,7 @@ define([
     start: function (element) {
       if (!this._started) {
         this._started = true;
-        this._serverData = window.__blocksServerData__;
+        this._serverData = serverData;
 
         if (this._serverData && this._serverData.baseUrl) {
           this._router._setBaseUrl(this._serverData.baseUrl);
@@ -319,7 +320,6 @@ define([
     },
 
     _ready: function (element) {
-      this._serverData = window.__blocksServerData__;
       this._startHistory();
       blocks.query(this, element);
       this._viewsReady(this._views);

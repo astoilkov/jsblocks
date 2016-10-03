@@ -5,8 +5,9 @@ define([
   '../query/DomQuery',
   '../query/VirtualElement',
   '../mvc/Application',
-  './parseToVirtual'
-], function (blocks, Request, dataIdAttr, DomQuery, VirtualElement, Application, parseToVirtual) {
+  './parseToVirtual',
+  '../modules/Escape'
+], function (blocks, Request, dataIdAttr, DomQuery, VirtualElement, Application, parseToVirtual, Escape) {
   var eachQuery = blocks.queries.each.preprocess;
 
   blocks.queries.each.preprocess = function (domQuery, collection) {
@@ -48,11 +49,11 @@ define([
 
     server.await(function () {
       if (head) {
-        head.children().splice(0, 0, getServerDataScript());
         if (server.options.baseTag) {
           head.children().splice(0, 0, getBaseTag());
         }
       }
+      body.attr('data-blocks-server-data', JSON.stringify(server.data));
       server.rendered = root.renderChildren();
     });
   }
@@ -79,17 +80,13 @@ define([
     return VirtualElement('base').attr('href', baseUrl);
   }
 
-  function getServerDataScript() {
-    return VirtualElement('script').html('window.__blocksServerData__ = ' + JSON.stringify(server.data)).render();
-  }
-
   var executeExpressionValue = Expression.Execute;
   var commentRegEx = /^<!-- ([0-9]+):/;
-  
+
   Expression.Execute = function (context, elementData, expressionData, entireExpression) {
     var value = executeExpressionValue(context, elementData, expressionData, entireExpression);
     var regExResult = commentRegEx.exec(value);
-    
+
     if (regExResult) {
       elementData = ElementsData.byId(regExResult[1]);
     }
@@ -149,11 +146,11 @@ define([
 
   blocks.observable.fn.array.reset = function (array) {
     this.removeAll();
-    
+
     if (arguments.length > 0) {
       this.addMany(blocks.unwrap(array));
     }
-    
+
     return this;
   };
 
@@ -173,7 +170,7 @@ define([
     }
 
     if (blocks.startsWith(url, 'http') || blocks.startsWith(url, 'www')) {
-
+      // TODO implement
     } else {
       relativeUrl = path.join(server.options.static, url);
       if (this.options.isView) {

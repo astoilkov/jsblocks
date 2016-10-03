@@ -44,31 +44,31 @@ define([
 
     _ready: function () {
       var node = this._node;
-      
+
       while (this.isReady()) {
         if (!node.isRoot) {
-          node.callback();  
+          node.callback();
         }
         this._node = node = this._next(node);
-        
+
         if (node === this._root) {
           break;
         }
       }
     },
-    
+
     _next: function (node) {
       var parent = node;
       var next;
-      
+
       while (!next && parent) {
         next = parent.nodes.pop();
         parent = parent.parent;
       }
-      
+
       return next || this._root;
     },
-    
+
     _createBubbleNode: function (parent, callback) {
       var node = {
         isRoot: !parent,
@@ -76,11 +76,11 @@ define([
         callback: callback,
         nodes: []
       };
-      
+
       if (parent) {
         parent.nodes.unshift(node);
       }
-      
+
       return node;
     }
   };

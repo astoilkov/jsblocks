@@ -1,7 +1,8 @@
 ﻿define([
   '../core',
-  '../modules/uniqueId'
-], function (blocks, uniqueId) {
+  '../modules/uniqueId',
+  '../query/serverData'
+], function (blocks, uniqueId, serverData) {
   function Request(options) {
     this.options = blocks.extend({}, Request.Defaults, options);
     this.execute();
@@ -56,7 +57,6 @@
   Request.prototype = {
     execute: function () {
       var options = this.options;
-      var serverData = window.__blocksServerData__;
 
       if (options.type == 'GET' && options.data) {
         this.appendDataToUrl(options.data);

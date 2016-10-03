@@ -83,7 +83,7 @@ define([
       var newParent = parent._parent;
 
       if (parent && parent.tagName() !== tagName.toLowerCase()) {
-        //@todo Improve with adding information about the location inside the file.
+        //TODO Improve with adding information about the location inside the file.
         console.warn('tag missmatch found closing tag for ' + tagName + ' while expecting to close ' + parent.tagName() + '!');
       }
 
