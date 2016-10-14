@@ -5,6 +5,13 @@ define([
 ], function (blocks, Events, Observer) {
   var ExtenderHelper = {
     waiting: {},
+    operations: {
+      FILTER: 1,
+      STEP:   2,
+      SKTIP:  3,
+      TAKE:   4,
+      SORT:   5
+    },
 
     initExpressionExtender: function (observable) {
       var newObservable = observable.clone();
@@ -61,7 +68,7 @@ define([
       Observer.startObserving();
 
       blocks.each(observable._operations, function (operation) {
-        if (operation.type == 'step') {
+        if (operation.type == ExtenderHelper.operations.STEP) {
           var view = observable.view;
           observable.view = blocks.observable([]);
           observable.view._connections = {};
@@ -115,19 +122,19 @@ define([
       view.update = blocks.noop;
 
       blocks.each(operations, function (operation) {
-        if (operation.type == 'skip') {
+        if (operation.type == ExtenderHelper.operations.SKIP) {
           skip = operation.skip;
           if (blocks.isFunction(skip)) {
             skip = skip.call(observable.__context__);
           }
           skip = blocks.unwrap(skip);
-        } else if (operation.type == 'take') {
+        } else if (operation.type == ExtenderHelper.operations.TAKE) {
           take = operation.take;
           if (blocks.isFunction(take)) {
             take = take.call(observable.__context__);
           }
           take = blocks.unwrap(take);
-        } else if (operation.type == 'sort') {
+        } else if (operation.type == ExtenderHelper.operations.SORT) {
           if (blocks.isString(operation.sort)) {
             collection = blocks.clone(collection).sort(function (valueA, valueB) {
               valueA = blocks.unwrap(valueA[operation.sort]);
@@ -146,7 +153,7 @@ define([
             collection = blocks.clone(collection).sort();
           }
           if (operations.length == 1) {
-            operations.push({ type: 'filter', filter: function () { return true; }});
+            operations.push({ type: ExtenderHelper.operations.FILTER, filter: function () { return true; }});
           }
         }
       });
@@ -177,7 +184,7 @@ define([
               }
               return false;
             }
-          } else if (operation.type == 'skip') {
+          } else if (operation.type == ExtenderHelper.operations.SKIP) {
             action = EXISTS;
             skip -= 1;
             if (skip >= 0) {
@@ -186,7 +193,7 @@ define([
             } else if (skip < 0 && connections[index] === undefined) {
               action = ADD;
             }
-          } else if (operation.type == 'take') {
+          } else if (operation.type == ExtenderHelper.operations.TAKE) {
             if (take <= 0) {
               action = REMOVE;
               return false;

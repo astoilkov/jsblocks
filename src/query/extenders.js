@@ -34,7 +34,7 @@ define([
     }
 
     observable._operations.push({
-      type: 'filter',
+      type: ExtenderHelper.operations.FILTER,
       filter: callback
     });
 
@@ -45,7 +45,7 @@ define([
     var observable = ExtenderHelper.initExpressionExtender(this);
 
     observable._operations.push({
-      type: 'step',
+      type: ExtenderHelper.operations.STEP,
       step: options
     });
 
@@ -65,7 +65,7 @@ define([
     var observable = ExtenderHelper.initExpressionExtender(this);
 
     observable._operations.push({
-      type: 'skip',
+      type: ExtenderHelper.operations.SKIP,
       skip: value
     });
 
@@ -85,7 +85,7 @@ define([
     var observable = ExtenderHelper.initExpressionExtender(this);
 
     observable._operations.push({
-      type: 'take',
+      type: ExtenderHelper.operations.TAKE,
       take: value
     });
 
@@ -105,7 +105,7 @@ define([
     var observable = ExtenderHelper.initExpressionExtender(this);
 
     observable._operations.push({
-      type: 'sort',
+      type: ExtenderHelper.operations.SORT,
       sort: options
     });
 
