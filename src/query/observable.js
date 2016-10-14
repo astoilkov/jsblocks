@@ -322,10 +322,7 @@ define([
         },
 
         toString: function () {
-          var context = this.__context__;
-          var value = this._dependencyType == 1 ? this.__value__.call(context)
-            : this._dependencyType == 2 ? this.__value__.get.call(context)
-            : this.__value__;
+          var value = getObservableValue(this);
 
           Observer.registerObservable(this);
 
