@@ -16,7 +16,7 @@ define([
     operations: {
       FILTER: 1,
       STEP:   2,
-      SKTIP:  3,
+      SKIP:   3,
       TAKE:   4,
       SORT:   5
     },
@@ -143,6 +143,7 @@ define([
             take = blocks.unwrap(take);
             break;
           case ExtenderHelper.operations.SORT:
+            // @todo resort connections after sorting this
             if (blocks.isString(operation.sort)) {
               collection = blocks.clone(collection).sort(function (valueA, valueB) {
                 valueA = blocks.unwrap(valueA[operation.sort]);
@@ -168,9 +169,11 @@ define([
       });
 
       blocks.each(collection, function iterateCollection(value, index) {
+        var oldIndex;
         if (take <= 0) {
           while (view().length - viewIndex > 0) {
             view.removeAt(view().length - 1);
+            view._connections = {};
           }
           return false;
         }
@@ -225,24 +228,44 @@ define([
           }
         });
 
+        oldIndex = connections[index];
         switch (action) {
           case Action.ADD:
             newConnections[index] = viewIndex;
             view.splice(viewIndex, 0, value);
+            blocks.each(connections, function (valueViewIndex, i) {
+              if (valueViewIndex >=  viewIndex) {
+                connections[i] = ++valueViewIndex;
+              }
+            });
             viewIndex++;
             break;
           case Action.REMOVE:
-            view.removeAt(viewIndex);
+            view.removeAt(oldIndex);
+            blocks.each(connections, function (valueViewIndex,i ) {
+              if (valueViewIndex > oldIndex) {
+                connections[i] = --valueViewIndex;
+              }
+            });
             break;
           case Action.EXISTS:
             newConnections[index] = viewIndex;
-            if (view.__value__.indexOf(collection[index]) != index) {
-              view.move(view.__value__.indexOf(collection[index]), index);
+            if (oldIndex != viewIndex) {
+              view.move(oldIndex, viewIndex);
+              blocks.each(connections, function (valueViewIndex, i) {
+                if (valueViewIndex > oldIndex) {
+                  valueViewIndex--;
+                } else if (valueViewIndex > viewIndex) {
+                  valueViewIndex++;
+                }
+                connections[i] = valueViewIndex;
+              });
             }
             viewIndex++;
             break;
         }
       });
+
       view._connections = newConnections;
       view.update = update;
       view.update();
