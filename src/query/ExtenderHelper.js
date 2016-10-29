@@ -3,7 +3,7 @@ define([
   '../modules/Events',
   './Observer'
 ], function (blocks, Events, Observer) {
-  
+
   var Action = {
     NOOP: 0,
     ADD: 1,
@@ -33,7 +33,6 @@ define([
       newObservable.view._initialized = false;
 
       newObservable.view.on('get', newObservable._getter);
-      
       newObservable.on('add', function () {
         if (newObservable.view._initialized) {
           newObservable.view._connections = {};
@@ -41,7 +40,7 @@ define([
           ExtenderHelper.executeOperations(newObservable);
         }
       });
-  
+
       newObservable.on('remove', function () {
         if (newObservable.view._initialized) {
           newObservable.view._connections = {};
@@ -114,17 +113,26 @@ define([
     },
 
     executeOperationsChunk: function (observable, operations) {
-      var action = Action.EXISTS;
+      var action = Action.NOOP;
 
       var collection = observable.__value__;
       var view = observable.view;
+      // key = index of the __value__ array, value = index of the same value in the view
       var connections = view._connections;
+      // key = index in the sorted collection, value = index in the (unsorted) connections
+      var sortedConnections = {};
+      var sorted = false;
       var newConnections = {};
-      var viewIndex = 0;
+      var collectionIndex;
+      var targetViewIndex = 0;
       var update = view.update;
       var skip = 0;
       var take = collection.length;
       view.update = blocks.noop;
+
+      function getConnection(index) {
+        return sorted ? connections[sortedConnections[index]] : connections[index];
+      }
 
       blocks.each(operations, function prepareOperations(operation) {
         switch (operation.type) {
@@ -135,6 +143,7 @@ define([
             }
             skip = blocks.unwrap(skip);
             break;
+
           case ExtenderHelper.operations.TAKE:
             take = operation.take;
             if (blocks.isFunction(take)) {
@@ -142,8 +151,8 @@ define([
             }
             take = blocks.unwrap(take);
             break;
+
           case ExtenderHelper.operations.SORT:
-            // @todo resort connections after sorting this
             if (blocks.isString(operation.sort)) {
               collection = blocks.clone(collection).sort(function (valueA, valueB) {
                 valueA = blocks.unwrap(valueA[operation.sort]);
@@ -162,16 +171,29 @@ define([
               collection = blocks.clone(collection).sort();
             }
             if (operations.length == 1) {
-              operations.push({ type: ExtenderHelper.operations.FILTER, filter: function () { return true; }});
+              operations.push({ type: ExtenderHelper.operations.FILTER, filter: noopFilter });
             }
+            sorted = true;
             break;
         }
       });
 
+      if (sorted) {
+        // create sortedConnections to match the sorted collection to connections
+        blocks.each(observable.__value__, function (original, originalIndex) {
+          blocks.each(collection, function (value, newIndex) {
+            if (value == original) {
+              sortedConnections[newIndex] = originalIndex;
+              return false;
+            }
+          });
+        });
+      }
+
       blocks.each(collection, function iterateCollection(value, index) {
-        var oldIndex;
+        var currentViewIndex;
         if (take <= 0) {
-          while (view().length - viewIndex > 0) {
+          while (view().length - targetViewIndex > 0) {
             view.removeAt(view().length - 1);
             view._connections = {};
           }
@@ -182,19 +204,17 @@ define([
           var filterCallback = operation.filter;
           operation.type = operation.type || (filterCallback && ExtenderHelper.operations.FILTER);
 
-          action = Action.NOOP;
-
           switch (operation.type) {
             case ExtenderHelper.operations.FILTER:
               if (filterCallback.call(observable.__context__, value, index, collection)) {
                 action = Action.EXISTS;
 
-                if (connections[index] === undefined) {
+                if (getConnection(index) === undefined) {
                   action = Action.ADD;
                 }
               } else {
                 action = Action.NOOP;
-                if (connections[index] !== undefined) {
+                if (getConnection(index) !== undefined) {
                   action = Action.REMOVE;
                 }
                 return false;
@@ -207,7 +227,7 @@ define([
               if (skip >= 0) {
                 action = Action.REMOVE;
                 return false;
-              } else if (skip < 0 && connections[index] === undefined) {
+              } else if (skip < 0 && getConnection(index) === undefined) {
                 action = Action.ADD;
               }
               break;
@@ -220,7 +240,7 @@ define([
                 take -= 1;
                 action = Action.EXISTS;
 
-                if (connections[index] === undefined) {
+                if (getConnection(index) === undefined) {
                   action = Action.ADD;
                 }
               }
@@ -228,40 +248,48 @@ define([
           }
         });
 
-        oldIndex = connections[index];
+        currentViewIndex = getConnection(index);
+        collectionIndex = sorted ? sortedConnections[index] : index;
+
         switch (action) {
           case Action.ADD:
-            newConnections[index] = viewIndex;
-            view.splice(viewIndex, 0, value);
+            newConnections[collectionIndex] = targetViewIndex;
+            view.splice(targetViewIndex, 0, value);
+
+            // update connections so that the connections reflect the changes on the view-array
             blocks.each(connections, function (valueViewIndex, i) {
-              if (valueViewIndex >=  viewIndex) {
+              if (valueViewIndex >=  targetViewIndex) {
                 connections[i] = ++valueViewIndex;
               }
             });
-            viewIndex++;
+            targetViewIndex++;
             break;
+
           case Action.REMOVE:
-            view.removeAt(oldIndex);
+            view.removeAt(currentViewIndex);
+
+            // update connections so that the connections reflect the changes on the view-array
             blocks.each(connections, function (valueViewIndex,i ) {
-              if (valueViewIndex > oldIndex) {
+              if (valueViewIndex > currentViewIndex) {
                 connections[i] = --valueViewIndex;
               }
             });
             break;
+
           case Action.EXISTS:
-            newConnections[index] = viewIndex;
-            if (oldIndex != viewIndex) {
-              view.move(oldIndex, viewIndex);
+            newConnections[collectionIndex] = targetViewIndex;
+            if (currentViewIndex != targetViewIndex) {
+              view.move(currentViewIndex, targetViewIndex);
+
+              // update connections so that the connections reflect the changes on the view-array
               blocks.each(connections, function (valueViewIndex, i) {
-                if (valueViewIndex > oldIndex) {
-                  valueViewIndex--;
-                } else if (valueViewIndex > viewIndex) {
-                  valueViewIndex++;
+                if (sorted ? i == sortedConnections[index] : i == index) {
+                  return;
                 }
-                connections[i] = valueViewIndex;
+                connections[i] = (valueViewIndex > currentViewIndex ? --valueViewIndex : ++valueViewIndex) ;
               });
             }
-            viewIndex++;
+            targetViewIndex++;
             break;
         }
       });
@@ -271,6 +299,7 @@ define([
       view.update();
     }
   };
+  function noopFilter() { return true; }
 
   return ExtenderHelper;
 });
