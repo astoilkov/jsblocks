@@ -115,7 +115,7 @@ define([
     executeOperationsChunk: function (observable, operations) {
       var action = Action.NOOP;
 
-      var collection = observable.__value__;
+      var collection = observable._getValue();
       var view = observable.view;
       // key = index of the __value__ array, value = index of the same value in the view
       var connections = view._connections;
@@ -180,7 +180,7 @@ define([
 
       if (sorted) {
         // create sortedConnections to match the sorted collection to connections
-        blocks.each(observable.__value__, function (original, originalIndex) {
+        blocks.each(observable._getValue(), function (original, originalIndex) {
           blocks.each(collection, function (value, newIndex) {
             if (value == original) {
               sortedConnections[newIndex] = originalIndex;
