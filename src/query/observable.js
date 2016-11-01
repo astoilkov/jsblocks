@@ -31,6 +31,11 @@ define([
       var currentValue = getObservableValue(observable);
       var update = observable.update;
 
+      if (!observable._executed) {
+        observable._initialize(currentValue);
+        observable._executed = true;
+      }
+
       if (arguments.length === 0) {
         Observer.registerObservable(observable);
         return currentValue;
@@ -65,20 +70,29 @@ define([
     observable._expressions = [];
     observable._elementKeys = {};
     observable._elements = [];
+    observable._executed = false;
 
     observable._getValue = function () {
       return getObservableValue(observable);
     };
 
     if (blocks.isArray(initialValue)) {
+      /* @if DEBUG */ blocks.debug.pause(); /* @endif */
       blocks.extend(observable, blocks.observable.fn.array);
-      observable._indexes = [];
-      observable._chunkManager = new ChunkManager(observable);
+      /* @if DEBUG */ blocks.debug.resume(); /* @endif */
     } else if (blocks.isFunction(initialValue)) {
-      observable._dependencyType = 1; // Function dependecy
+      observable._dependencyType = 1; // Function dependency
     } else if (initialValue && !initialValue.__Class__ && blocks.isFunction(initialValue.get) && blocks.isFunction(initialValue.set)) {
       observable._dependencyType = 2; // Custom object
     }
+
+    if (observable._dependencyType) {
+      /* @if DEBUG */ blocks.debug.pause(); /* @endif */
+      blocks.extend(observable, blocks.observable.fn.dependency);
+      /* @if DEBUG */ blocks.debug.resume(); /* @endif */
+    }
+
+    observable._initialize();
 
     updateDependencies(observable);
 
@@ -156,7 +170,9 @@ define([
     fn: {
       base: {
         __identity__: OBSERVABLE,
-
+        // noops for 'special' observables
+        _firstExecution: blocks.noop,
+        _initialize: blocks.noop,
         /**
          * Updates all elements, expressions and dependencies where the observable is used
          *
@@ -197,7 +213,7 @@ define([
 
             offset = expression.length - value.length;
             expression.length = value.length;
-
+            // @todo remove duplicated logic instead use dom.* methods
             isProperty = dom.props[expression.attr];
             propertyName = expression.attr ? dom.propFix[expression.attr.toLowerCase()] || expression.attr : null;
 
@@ -341,6 +357,10 @@ define([
        * @class array
        */
       array: {
+        _initialize: function () {
+          this._indexes = [];
+          this._chunkManager = new ChunkManager(this);
+        },
 
         /**
          * Removes all items from the collection and replaces them with the new value provided.
@@ -905,6 +925,41 @@ define([
         unshift: function () {
           this.addMany(blocks.toArray(arguments), 0);
           return this.__value__.length;
+        }
+      },
+      dependency: {
+        _firstExecution:  function  (value) {
+          if (blocks.isArray(value)) {
+            this._indexes = [];
+            this._chunkManager = new ChunkManager(this);
+            this._length = value.length;
+          }
+        },
+        update: function () {
+          var value = this._getValue();
+          var length = this._length;
+          var chunkManager = this._chunkManager;
+          var addCount = Math.max(value.length - length, 0);
+          var removeCount = Math.max(length - value.length, 0);
+          var updateCount = value.length - addCount;
+
+          blocks.observable.fn.base.update.apply(this);
+          // Update 'each'-queries for dependencie obseravbles if the value is an array
+          if (blocks.isArray(value)) {
+            chunkManager.each(function(domElement, virtualElement) {
+              var domQuery = blocks.domQuery(domElement);
+              domQuery.contextBubble(blocks.context(domElement), function() {
+                virtualElement.updateChildren(value, updateCount, domQuery, domElement);
+              });
+            });
+
+            if (addCount > 0) {
+              chunkManager.add(value.slice(length), length);
+            } else if (removeCount > 0) {
+              chunkManager.remove(length, removeCount);
+            }
+            this._length = value.length;
+          }
         }
       }
     }

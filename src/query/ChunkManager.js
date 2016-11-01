@@ -25,7 +25,7 @@ define([
 
     setChildNodesCount: function (count) {
       if (this.childNodesCount === undefined) {
-        this.observableLength = this.observable.__value__.length;
+        this.observableLength = this.observable._getValue().length;
       }
       this.childNodesCount = count - (this.startOffset + this.endOffset);
     },
@@ -33,7 +33,7 @@ define([
     chunkLength: function (wrapper) {
       var chunkLengths = this.chunkLengths;
       var id = ElementsData.id(wrapper);
-      var length = chunkLengths[id] || (this.childNodesCount || wrapper.childNodes.length) / (this.observableLength || this.observable.__value__.length);
+      var length = chunkLengths[id] || (this.childNodesCount || wrapper.childNodes.length) / (this.observableLength || this.observable._getValue().length);
       var result;
 
       if (blocks.isNaN(length) || length === Infinity) {
