@@ -187,8 +187,6 @@ define([
           var element;
           var offset;
           var value;
-          var isProperty;
-          var propertyName;
           var rawValue;
 
           Observer.startObserving();
@@ -213,9 +211,6 @@ define([
 
             offset = expression.length - value.length;
             expression.length = value.length;
-            // @todo remove duplicated logic instead use dom.* methods
-            isProperty = dom.props[expression.attr];
-            propertyName = expression.attr ? dom.propFix[expression.attr.toLowerCase()] || expression.attr : null;
 
             if (element) {
               if (blocks.isObservable(rawValue) && rawValue._expressions.indexOf(expression) == -1) {
@@ -223,11 +218,7 @@ define([
               }
 
               if (expression.attr) {
-                if(isProperty) {
-                  element[propertyName] = Expression.GetValue(context, null, expression.entire);
-                } else {
-                  element.setAttribute(expression.attr, Expression.GetValue(context, null, expression.entire));
-                }
+                  dom.attr(element, expression.attr, Expression.GetValue(context, null, expression.entire));
               } else {
                 if (element.nextSibling) {
                   element = element.nextSibling;
