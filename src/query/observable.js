@@ -32,7 +32,7 @@ define([
       var update = observable.update;
 
       if (!observable._executed) {
-        observable._initialize(currentValue);
+        observable._firstExecution(currentValue);
         observable._executed = true;
       }
 
