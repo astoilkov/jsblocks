@@ -829,14 +829,15 @@ define([
      * @memberof blocks.queries
      * @param {(String|Array)} events - The event or events to subscribe to
      * @param {Function} callback - The callback that will be executed when the event is fired
-     * @param {*} [args] - Optional arguments that will be passed as second parameter to
+     * @param {...*} [args] - Optional arguments that will be passed as second parameter to
      * the callback function after the event arguments
      */
     on: {
-      ready: function (events, callbacks, args) {
+      ready: function (events, callbacks) {
         if (!events || !callbacks) {
           return;
         }
+        var args = blocks.toArray(arguments).slice(2);
         var element = this;
         var context = blocks.context(this);
         var thisArg;
@@ -844,10 +845,12 @@ define([
         callbacks = blocks.toArray(callbacks);
 
         var handler = function (e) {
+          args = blocks.clone(args);
+          args.splice(0,0, e);
           context = blocks.context(this) || context;
           thisArg = context.$template || context.$view || context.$root;
           blocks.each(callbacks, function (callback) {
-            callback.call(thisArg, e, args);
+            callback.apply(thisArg, args);
           });
         };
 
@@ -871,8 +874,10 @@ define([
     blocks.queries[eventName] = {
       passRawValues: true,
 
-      ready: function (callback, data) {
-        blocks.queries.on.ready.call(this, eventName, callback, data);
+      ready: function (/*callback, data*/) {
+        var args = blocks.toArray(arguments);
+        args.splice(0, 0, eventName);
+        blocks.queries.on.ready.apply(this, args);
       }
     };
   });
