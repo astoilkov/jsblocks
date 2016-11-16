@@ -488,4 +488,5 @@ define([
       return this;
     }
   };
+  return Application;
 });

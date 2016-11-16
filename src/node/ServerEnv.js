@@ -86,4 +86,6 @@ define([
   };
 
   Events.register(ServerEnv.prototype, ['on', 'once', 'off', 'trigger']);
+
+  return ServerEnv;
 });

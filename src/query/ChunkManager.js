@@ -183,4 +183,5 @@ define([
         chunkLength);
     }
   };
+  return ChunkManager;
 });

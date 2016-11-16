@@ -241,4 +241,5 @@ define([
       return false;
     });
   } /* @endif */
+  return View;
 });

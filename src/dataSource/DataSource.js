@@ -325,4 +325,5 @@
   ]);
 
   blocks.core.applyExpressions('array', blocks.DataSource.prototype, blocks.toObject([/*'remove', 'removeAt', 'removeAll', 'add',*/ 'size', 'at', 'isEmpty', 'each']));
+  return DataSource;
 });

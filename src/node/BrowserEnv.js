@@ -77,4 +77,5 @@ define([
       };
     }
   };
+  return BrowserEnv;
 });

@@ -392,4 +392,5 @@ define([
     return value && value.prototype && value.prototype.__Class__ == Model;
   });
   // @endif
+  return Model;
 });

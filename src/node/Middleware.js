@@ -114,4 +114,6 @@ define([
       return req.protocol + '://' + req.get('host') + req.originalUrl;
     }
   };
+
+  return Middleware;
 });

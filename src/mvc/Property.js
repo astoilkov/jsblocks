@@ -56,4 +56,5 @@
 
     return this;
   };
+  return Property;
 });
