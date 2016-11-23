@@ -5,8 +5,9 @@ define([
   './getElementsById',
   './parseToVirtual',
   './ServerEnv',
-  './BrowserEnv'
-], function (blocks, findPageScripts, executePageScripts, getElementsById, parseToVirtual, ServerEnv, BrowserEnv) {
+  './BrowserEnv',
+  '../query/VirtualElement'
+], function (blocks, findPageScripts, executePageScripts, getElementsById, parseToVirtual, ServerEnv, BrowserEnv, VirtualElement) {
   var fs = require('fs');
   var path = require('path');
 
@@ -28,7 +29,6 @@ define([
 
   Middleware.Defaults = {
     static: 'app',
-    blocksPath: 'node_modues/blocks/blocks.js',
     cache: true,
     baseTag: false
   };
