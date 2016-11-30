@@ -121,7 +121,7 @@
               }
             }
 
-            if (value._expressionKeys[currentData.id]) {
+            if (value._expressions) {
               for (i = 0; i < value._expressions.length; i++) {
                 if (value._expressions[i].elementId == currentData.id) {
                   value._expressions.splice(i, 1);
