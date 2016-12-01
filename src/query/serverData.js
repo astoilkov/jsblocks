@@ -1,7 +1,7 @@
 define([
 ], function () {
 	var serverData = null;
-	if (document && document.body) {
+	if (global.document && global.document.body) {
 		var data = document.body.getAttribute('data-blocks-server-data');
 		if (data) {
 			document.body.removeAttribute('data-blocks-server-data');
