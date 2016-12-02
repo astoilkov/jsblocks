@@ -225,7 +225,11 @@ define([
               action = Action.EXISTS;
               skip -= 1;
               if (skip >= 0) {
-                action = Action.REMOVE;
+                if (getConnection(index) !== undefined) {
+                  action = Action.REMOVE;
+                } else {
+                  action = Action.NOOP;
+                }
                 return false;
               } else if (skip < 0 && getConnection(index) === undefined) {
                 action = Action.ADD;
@@ -234,7 +238,11 @@ define([
 
             case ExtenderHelper.operations.TAKE:
               if (take <= 0) {
-                action = Action.REMOVE;
+                if (getConnection(index) === undefined) {
+                  action = Action.NOOP;
+                } else {
+                  action = Action.REMOVE;
+                }
                 return false;
               } else {
                 take -= 1;
