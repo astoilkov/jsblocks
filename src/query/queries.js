@@ -837,7 +837,7 @@ define([
         if (!events || !callbacks) {
           return;
         }
-        var args = blocks.toArray(arguments).slice(2);
+        var originalArgs = blocks.toArray(arguments).slice(2);
         var element = this;
         var context = blocks.context(this);
         var thisArg;
@@ -845,7 +845,7 @@ define([
         callbacks = blocks.toArray(callbacks);
 
         var handler = function (e) {
-          args = blocks.clone(args);
+          var args = blocks.clone(originalArgs);
           args.splice(0,0, e);
           context = blocks.context(this) || context;
           thisArg = context.$template || context.$view || context.$root;
