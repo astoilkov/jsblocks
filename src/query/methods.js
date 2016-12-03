@@ -6,8 +6,9 @@ define([
   './DomQuery',
   './VirtualElement',
   './ElementsData',
-  './serverData'
-], function (blocks, dataQueryAttr, OBSERVABLE, createVirtual, DomQuery, VirtualElement, ElementsData, serverData) {
+  './serverData',
+  './Expression'
+], function (blocks, dataQueryAttr, OBSERVABLE, createVirtual, DomQuery, VirtualElement, ElementsData, serverData, Expression) {
   /**
    * Performs a query operation on the DOM. Executes all data-query attributes
    * and renders the html result to the specified HTMLElement if not specified
@@ -174,5 +175,57 @@ define([
       return blocks.domQuery(VirtualElement.Is(element) ? element._parent : element.parentNode);
     }
     return null;
+  };
+
+  /**
+   * Executes expressions on a specified context.
+   *
+   * @param  {string} expression The expression to execute.
+   * @param  {Object} context    The context to exute the expression on.
+   *                             The context for an element can be get via block.context().
+   * @param  {Object} [options]  An optional options objecz.
+   * @param  {bool}   [options.raw] If true the function returns an array with the raw value. Default: false
+   *
+   * @returns {string|Object[]}]  Returns the result of the expressions as a string.
+   *                             Or if options.raw is specified it returns an array of objects (see second example for details);
+   * @example {javascript}
+   * var context = {greeter: blocks.observable("world")};
+   * var expression = "Hello {{greeter}}!";
+   * blocks.executeExpression(expression, context);
+   * // -> "Hello world!"
+   *
+   * blocks.executeExpression(expression, context, {raw: true});
+   * // -> [{observables: [], value: "Hello ", result: "Hello "},
+   * //    {observables: [observable<"world">], value: observable<"world">, result: "world"},
+   * //    {observable: [], value: "!", result: "!"}]
+   */
+  blocks.executeExpression = function (expression, context, options) {
+    options = options || {};
+    var expressionData = Expression.Create(blocks.unwrapObservable(expression));
+    var setContext = false;
+    var value;
+    var values = [];
+    context = blocks.unwrapObservable(context);
+
+    if (!blocks.isObject(context)) {
+      context = {$this: context};
+    } else if (!context.$this) {
+      setContext = true;
+      context.$this = context;
+    }
+
+    value = Expression.GetValue(context, null, expressionData, options.raw ? Expression.Raw : Expression.ValueOnly);
+
+    if (setContext) {
+      context.$this = undefined;
+    }
+
+    if (options.raw) {
+      blocks.each(blocks.toArray(value), function (val, i) {
+        values[i] = blocks.isObject(val) ? val : {observables: [], result: val, value: val};
+      })
+    }
+
+    return options.raw ? values : value;
   };
 });

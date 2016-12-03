@@ -8,6 +8,7 @@ define([
   var Expression = {
     Html: 0,
     ValueOnly: 2,
+    Raw: 3,
     NodeWise: 4,
 
     Create: function (text, attributeName, element) {
@@ -70,7 +71,7 @@ define([
 
     GetValue: function (context, elementData, expression, type) {
       var nodeWise = type == Expression.NodeWise;
-      var value = nodeWise ? [] : '';
+      var value = nodeWise || type == Expression.Raw ? [] : '';
       var length = expression.length;
       var index = -1;
       var chunk;
@@ -118,6 +119,8 @@ define([
 
           if (nodeWise) {
             value[expression.nodeLength - 1] = (value[expression.nodeLength - 1] || '') + tempValue;
+          } else if (type == Expression.Raw) {
+            value.push(tempValue);
           } else {
             value +=  tempValue;
           }
@@ -162,6 +165,10 @@ define([
       result = attributeName ? Escape.forHTMLAttributes(result) : Escape.forHTML(result);
 
       observables = Observer.stopObserving();
+
+      if (type == Expression.Raw) {
+        return {observables: observables, result: result, value: value};
+      }
 
       if (type != Expression.ValueOnly && type != Expression.NodeWise && (isObservable || observables.length)) {
         if (!attributeName) {
