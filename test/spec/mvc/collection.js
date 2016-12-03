@@ -5,6 +5,7 @@
     var Application;
     var Products;
     var Remotes;
+    var Product;
 
     beforeEach(function () {
       Application = blocks.Application();
@@ -16,7 +17,11 @@
         }
       });
 
-      Products = Application.Collection({
+      Product = Application.Model({
+        FirstName: Application.Property()
+      });
+
+      Products = Application.Collection(Product, {
         options: {
           read: {
             url: 'Products'

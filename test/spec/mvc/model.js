@@ -28,12 +28,15 @@
         FirstName: 'Antonio'
       });
 
-      expect(model.id()).toBe(0);
-      expect(model.FirstName()).toBe('Antonio');
+      expect(model.id.toBe(0);
+      expect(model.FirstName.toBe('Antonio');
     });
 
     it('default Application.Property creates observable values', function () {
-      var Product = Application.Model({});
+      var Product = Application.Model({
+        id: Application.Property(),
+        FirstName: Application.Property()
+      });
       Application.start();
       var model = Product({
         id: 0,

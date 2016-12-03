@@ -312,11 +312,11 @@ define([
 
         for (key in dataItem) {
           property = properties[key];
-          if (!property) {
-            property = properties[key] = blocks.extend({}, this._application.Property.Defaults());
-            property.propertyName = key;
+          if (property) {
+            this._setPropertyValue(property, dataItem[key]);
+          } else {
+            this[key] = dataItem[key];
           }
-          this._setPropertyValue(property, dataItem[key]);
         }
       }
 

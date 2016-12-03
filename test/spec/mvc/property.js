@@ -306,6 +306,8 @@ describe('blocks.Application.Property: ', function () {
 
   it('property could define a dependency value', function () {
     var Product = Application.Model({
+      FirstName: Application.Property(),
+      LastName: Application.Property(),
       FullName: Application.Property({
         value: function () {
           return this.FirstName() + ' ' + this.LastName();
@@ -322,6 +324,8 @@ describe('blocks.Application.Property: ', function () {
 
   it('property could define a getter/setter', function () {
     var Product = Application.Model({
+      FirstName: Application.Property(),
+      LastName: Application.Property(),
       FullName: Application.Property({
         value: {
           get: function () {
