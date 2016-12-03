@@ -28,8 +28,8 @@
         FirstName: 'Antonio'
       });
 
-      expect(model.id.toBe(0);
-      expect(model.FirstName.toBe('Antonio');
+      expect(model.id).toBe(0);
+      expect(model.FirstName).toBe('Antonio');
     });
 
     it('default Application.Property creates observable values', function () {
@@ -47,7 +47,10 @@
     });
 
     it('dataItem() returns an object with all property values', function () {
-      var Product = Application.Model();
+      var Product = Application.Model({
+        id: Application.Property(),
+        FirstName: Application.Property()
+      });
       Application.start();
 
       var model = Product({
@@ -76,7 +79,10 @@
 
     describe('reset()', function () {
       it('sets correctly the dataItem after initialization', function () {
-        var Product = Application.Model();
+        var Product = Application.Model({
+          id: Application.Property(),
+          FirstName: Application.Property()
+        });
         Application.start();
         var model = Product();
         model.reset({
@@ -88,7 +94,11 @@
       });
 
       it('after reset not specified values are set to undefined', function () {
-        var Product = Application.Model();
+        var Product = Application.Model({
+          id: Application.Property(),
+          FirstName: Application.Property(),
+          LastName: Application.Property()
+        });
         Application.start();
         var model = Product({
           FirstName: 'Mihaela',
@@ -109,9 +119,11 @@
 
       it('after reset not specified values are set to their defaultValue', function () {
         var Product = Application.Model({
+          id: Application.Property(),
+          FirstName: Application.Property(),
           LastName: Application.Property({
             defaultValue: ''
-          })
+          }),
         });
         Application.start();
         var model = Product({
@@ -132,6 +144,7 @@
 
       it('after reset without parameters all values are set to undefined or their defaultValue', function () {
         var Product = Application.Model({
+          id: Application.Property(),
           FirstName: Application.Property({
             defaultValue: ''
           })
@@ -258,7 +271,8 @@
         var Product = Application.Model({
           options: {
             idAttr: 'id'
-          }
+          },
+          FirstName: Application.Property()
         });
         Application.start();
         var model = Product({
