@@ -69,7 +69,7 @@
         var products = Products();
         products.read();
         expect(products().length).toBe(2);
-        expect(products.at(0).get('FirstName')).toBe('Antonio');
+        expect(products()[0].FirstName()).toBe('Antonio');
       });
 
       it('without calling read() data is not selected', function () {
@@ -80,12 +80,12 @@
       it('repopulates the array with the original items when called', function () {
         var products = Products();
         products.read();
-        products.reset(products.filter(function (value) {
+        products.reset(products().filter(function (value) {
           return value.FirstName() != 'Antonio';
         }));
         products.read();
         expect(products().length).toBe(2);
-        expect(products.at(0).get('FirstName')).toBe('Antonio');
+        expect(products()[0].FirstName()).toBe('Antonio');
       });
 
       it('changes are automatically cleared after read repopulation', function () {
@@ -164,11 +164,11 @@
         var products = Products();
         products.read();
         expect(products().length).toBe(2);
-        products.reset(products.filter(function (value) {
+        products.reset(products().filter(function (value) {
           return value.FirstName() != 'Antonio';
         }));
         expect(products().length).toBe(1);
-        expect(products.at(0).get('FirstName')).toBe('Mihaela');
+        expect(products()[0].FirstName()).toBe('Mihaela');
       });
 
       it('with no parameters clears the entire collection', function () {

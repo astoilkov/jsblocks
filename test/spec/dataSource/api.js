@@ -41,7 +41,7 @@
         var dataSource = new blocks.DataSource();
         dataSource.read();
         expect(dataSource.data().length).toBe(2);
-        expect(dataSource.data.at(0)['FirstName']).toBe('Antonio');
+        expect(dataSource.data()[0].FirstName).toBe('Antonio');
       });
 
       it('without calling read() data is not selected', function () {
@@ -110,7 +110,7 @@
         dataSource.data.add({
           FirstName: 'Test'
         });
-        dataSource.data.remove(dataSource.data.last());
+        dataSource.data.remove(dataSource.data()[dataSource.data().length - 1]);
         expect(dataSource.hasChanges()).toBe(false);
       });
 
@@ -147,7 +147,7 @@
           FirstName: 'Test'
         });
         dataSource.data.remove(0);
-        var item = dataSource.data.first();
+        var item = dataSource.data()[0];
         item.City = 'Sofia';
         dataSource.update(item);
 
@@ -171,7 +171,7 @@
           FirstName: 'Test'
         });
         dataSource.data.remove(0);
-        var item = dataSource.data.first();
+        var item = dataSource.data()[0];
         item.City = 'Sofia';
         dataSource.update(item);
 
@@ -186,7 +186,7 @@
           'destroy': function () {
             isAjaxCalled = true;
           }
-        })
+        });
 
         dataSource.clearChanges().sync();
         expect(isAjaxCalled).toBe(false);
@@ -283,7 +283,7 @@
           }
         });
         dataSource.read();
-        var item = dataSource.data.first();
+        var item = dataSource.data()[0];
         item.City = 'Sofia';
         dataSource.update(item);
         dataSource.sync();

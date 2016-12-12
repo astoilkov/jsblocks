@@ -438,7 +438,7 @@
 
       blocks.query('content', document.getElementById('testElement'));
 
-      expect(blocks.trim($('#testElement script')[0].text)).toBe('{{$this}}');
+      expect($('#testElement script')[0].text.trim()).toBe('{{$this}}');
     });
   });
 })();

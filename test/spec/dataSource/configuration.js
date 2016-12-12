@@ -90,7 +90,7 @@
         Id: 1
       });
       dataSource.sync();
-      dataSource.data.remove(dataSource.data.first());
+      dataSource.data.remove(dataSource.data()[0]);
       dataSource.sync();
       expect(isRequestCalled).toBe(true);
 
@@ -104,6 +104,7 @@
           url: 'update'
         }
       });
+
 
       var isRequestCalled = false;
       testing.overrideAjax({
@@ -129,7 +130,7 @@
         data: testing.createStaticData()
       });
       expect(dataSource.data().length).toBe(2);
-      expect(dataSource.data.first().FirstName).toBe('Antonio');
+      expect(dataSource.data()[0].FirstName).toBe('Antonio');
     });
   });
 })();

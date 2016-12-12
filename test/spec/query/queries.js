@@ -496,9 +496,9 @@
           .attr('data-query', 'html(products)')
           .appendTo($('#testElement').parent());
 
-      var func = blocks.partial(query, {
-        data: [1, 2, 3]
-      });
+      var func = function () {
+        query({data: [1, 2, 3]});
+      };
       expect(func).toThrow();
     });
 
@@ -570,12 +570,13 @@
           .attr('data-query', 'html(value)')
           .appendTo($('#testElement').parent());
 
-      var func = blocks.partial(query, {
-        obj: {
-          value: 'content'
-        }
-      });
-
+      var func = function () {
+        query({
+          obj: {
+            value: 'content'
+          }
+        });
+      };
       expect(func).toThrow();
     });
 
