@@ -72,10 +72,6 @@ define([
     observable._elements = [];
     observable._executed = false;
 
-    observable._getValue = function () {
-      return getObservableValue(observable);
-    };
-
     if (blocks.isArray(initialValue)) {
       /* @if DEBUG */ blocks.debug.pause(); /* @endif */
       blocks.extend(observable, blocks.observable.fn.array);
@@ -173,6 +169,25 @@ define([
         // noops for 'special' observables
         _firstExecution: blocks.noop,
         _initialize: blocks.noop,
+        _getValue: function () {
+          return getObservableValue(this);
+        },
+        set: function (key, value) {
+          var obsevableValue = this._getValue();
+          if (blocks.isObject(obsevableValue)) {
+            if (blocks.isObservable(obsevableValue[key])) {
+              obsevableValue[key](value);
+            } else {
+              obsevableValue[key] = value;
+              this(obsevableValue);
+            }
+          }
+        },
+
+        get: function (key) {
+          var value = this._getValue();
+          return value[key];
+        },
         /**
          * Updates all elements, expressions and dependencies where the observable is used
          *
