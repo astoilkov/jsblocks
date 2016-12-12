@@ -113,7 +113,7 @@ module.exports = function (grunt) {
         wrapedModule = esprima.parse('(function () { })();');
         bodyNode = wrapedModule.body[0].expression.callee.body;
       }
-      // insert body of the original "define"-function to the 
+      // insert body of the original "define"-function to the
       bodyNode.body = node.body.body;
       return wrapedModule;
   }
