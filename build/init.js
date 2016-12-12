@@ -71,9 +71,7 @@ module.exports = function (grunt) {
         },
         files: {
           'dist/blocks.min.js': ['dist/blocks-source.js'],
-          'dist/mvc/blocks-mvc.min.js': ['dist/mvc/blocks-mvc.js'],
           'dist/query/blocks-query.min.js': ['dist/query/blocks-query.js'],
-          'dist/query/blocks-query-data.min.js': ['dist/query/blocks-query-data.js']
         }
       }
     },

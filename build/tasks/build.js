@@ -118,12 +118,17 @@ module.exports = function (grunt) {
       return wrapedModule;
   }
 
-  var names = ['query', 'mvc', 'node'];
+  var names = ['query', 'node'];
   names.forEach(function (name) {
     grunt.config.set('name', name);
     (requirejsConfig[name] = {}).options = grunt.config.process(requirejsOptions);
     grunt.config.set('name', undefined);
   });
+
+  var blocksConfig = requirejsConfig['blocks-source'] =  {};
+  blocksConfig.options = grunt.config.process(requirejsOptions);
+  blocksConfig.options.include = ['blocks.js'];
+  blocksConfig.options.out = 'dist/blocks-source.js';
 
   grunt.config.set('requirejs', requirejsConfig);
 

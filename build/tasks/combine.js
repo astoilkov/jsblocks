@@ -2,7 +2,7 @@ module.exports = function (grunt) {
 
   grunt.registerTask('combine', function () {
     var core = grunt.file.read('lib/blocks/core.js').replace('@version', grunt.config.get('version'));
-    var mvc = grunt.file.read('dist/mvc/blocks-mvc.js');
+    var blocks = grunt.file.read('dist/blocks-source.js');
     var query = grunt.file.read('dist/query/blocks-query.js');
 
     var node = grunt.file.read('dist/node/blocks-node.js');
@@ -13,7 +13,7 @@ module.exports = function (grunt) {
     grunt.file.write('dist/node/blocks-node.js', nodeCode);
 
 
-    var jsblocks = insertSourceCode(core, [mvc]);
+    var jsblocks = insertSourceCode(core, [blocks]);
     var queryOnly = insertSourceCode(core, [query]);
 
     grunt.file.write('dist/blocks-source.js', jsblocks);
