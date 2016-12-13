@@ -58,8 +58,13 @@ define([
 
     _setContents: function (contents) {
       var _this = this;
-      var virtual = blocks.first(parseToVirtual(contents), function (child) {
-        return VirtualElement.Is(child);
+      var virtual;
+
+      blocks.each(parseToVirtual(contents), function (child) {
+         if (VirtualElement.Is(child)) {
+          virtual = child;
+          return false;
+         }
       });
 
       this._contents = contents;

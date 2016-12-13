@@ -1,5 +1,5 @@
 define([
-  './mvc',
+  './blocks',
   './node/methods',
   './node/overrides'
 ], function () {

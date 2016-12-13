@@ -20,7 +20,7 @@ define([
 	var middlewares = [];
 
 	var defaults = {
-		// Should the files in static get delivered 
+		// Should the files in static get delivered
 		deliverStatics: true,
 		baseTag: true
 	};

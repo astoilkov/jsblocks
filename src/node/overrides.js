@@ -157,6 +157,7 @@ define([
   var http = require('http');
   var fs = require('fs');
   var path = require('path');
+  var reIsExternal = /^(www|http)/;
   Request.prototype.execute = function () {
     var _this = this;
     var options = this.options;
@@ -169,8 +170,9 @@ define([
       this.appendDataToUrl(options.data);
     }
 
-    if (blocks.startsWith(url, 'http') || blocks.startsWith(url, 'www')) {
+    if (reIsExternal.test(url)) {
       // TODO implement
+      // think about cacheing with etag and/or cache-headers
     } else {
       relativeUrl = path.join(server.options.static, url);
       if (this.options.isView) {
