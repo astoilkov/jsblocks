@@ -314,6 +314,8 @@ define([
           property = properties[key];
           if (property) {
             this._setPropertyValue(property, dataItem[key]);
+          } else if (blocks.isObservable(this[key])) {
+            this[key](dataItem[key]);
           } else {
             this[key] = dataItem[key];
           }

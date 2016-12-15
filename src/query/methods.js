@@ -223,7 +223,7 @@ define([
     if (options.raw) {
       blocks.each(blocks.toArray(value), function (val, i) {
         values[i] = blocks.isObject(val) ? val : {observables: [], result: val, value: val};
-      })
+      });
     }
 
     return options.raw ? values : value;

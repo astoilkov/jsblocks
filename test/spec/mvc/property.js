@@ -99,6 +99,15 @@ describe('blocks.Application.Property: ', function () {
     Product();
   });
 
+  it('it wraps an value into an observable if it is specified in the constructor', function () {
+    var TestConstructor = Application.Model({
+      test: blocks.observable()
+    });
+    var testItem = TestConstructor({test: 1});
+    expect(blocks.isObservable(testItem.test)).toBe(true);
+    expect(testItem.test()).toBe(1);
+  });
+
   it('changing Application.Property.Defaults affects the default property options', function () {
     Application.Property.Defaults.set('isObservable', false);
     var Product = Application.Model({
