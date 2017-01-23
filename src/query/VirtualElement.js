@@ -536,6 +536,16 @@ define([
       domQuery.popContext();
     },
 
+    clone: function () {
+      var element = this._el;
+      this._el = null;
+      this.clone = null;
+      var clone = blocks.clone(this, true);
+      clone.clone = this.clone = VirtualElement.prototype.clone;
+      this._el = element;
+      return clone;
+    },
+
     _length: function () {
       var template = this._template;
       var index = -1;
