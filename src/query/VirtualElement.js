@@ -356,7 +356,8 @@ define([
           attributes: {},
           style: {},
           html: null,
-          expressions: {}
+          expressions: {},
+          template: blocks.clone(this._template || this._children)
         };
         if (!this._states) {
           this._states = {};
@@ -395,7 +396,7 @@ define([
 
     renderChildren: function (domQuery, syncIndex) {
       var html = '';
-      var children = this._template || this._children;
+      var children = this._state && this._state.template || this._template || this._children;
       var length = children.length;
       var index = -1;
       var child;
@@ -453,7 +454,7 @@ define([
     },
 
     syncChildren: function (domQuery, syncIndex, offset) {
-      var children = this._template || this._children;
+      var children = this._state && this._state.template || this._template || this._children;
       var length = children.length;
       var state = this._state;
       var element = this._el.nodeType == 8 ? this._el : this._el.childNodes[offset || 0];
@@ -513,13 +514,14 @@ define([
     },
 
     updateChildren: function (collection, updateCount, domQuery, domElement) {
-      var template = this._template;
+      var template = this._state && this._state.template || this._template;
       var child = template[0];
       var isOneChild = template.length === 1 && VirtualElement.Is(child);
       var childNodes = domElement.childNodes;
       var syncIndex = domQuery.getSyncIndex();
       var chunkLength = this._length();
-      var offset = this._headers ? this._headers.length : 0;
+      var headers = this._state && this._state.headers || this._headers;
+      var offset = headers ? headers.length : 0;
       var index = -1;
 
       while (++index < updateCount) {
@@ -538,10 +540,13 @@ define([
 
     clone: function () {
       var element = this._el;
+      var parent = this._parent;
+      this._parent = null;
       this._el = null;
       this.clone = null;
       var clone = blocks.clone(this, true);
       clone.clone = this.clone = VirtualElement.prototype.clone;
+      clone._parent = this._parent = parent;
       this._el = element;
       return clone;
     },
@@ -669,7 +674,15 @@ define([
         }
       });
     },
-
+    _setChildren: function (children) {
+      this._children = children;
+      if (this._template || this._each) {
+        this._template = blocks.clone(children, true);
+      }
+      if (this._state) {
+        this._state.template = blocks.clone(children, true);
+      }
+    },
     _executeAttributeExpressions: function (context) {
       var isVirtual = this._el ? false : true;
       var attributes = this._state && this._state.attributes;

@@ -98,7 +98,7 @@ define([
         var templateName = template.parameterName;
         template = template.rawValue;
         if (value) {
-          value = value.rawValue;  
+          value = value.rawValue;
         }
 
         template = blocks.$unwrap(template);
@@ -120,7 +120,8 @@ define([
             if (!this._el) {
               var element = document.createElement('div');
               element.innerHTML = html;
-              this._children = createVirtual(element.childNodes[0], this);
+              var children = createVirtual(element.childNodes[0], this);
+              this._setChildren(children);
               this._innerHTML = null;
             } else {
               this.html(html);
@@ -264,9 +265,9 @@ define([
       supportsComments: true,
 
       _getStaticHtml: function (domQuery, element) {
-        var children = element._children;
-        var headers = element._headers;
-        var footers = element._footers;
+        var children = element._state && element._state.template || element._template || element._children;
+        var headers = element._state && element._state.headers || element._headers;
+        var footers = element._state && element._state.footer || element._footers;
         var index = -1;
         var headerHtml = '';
         var footerHtml = '';
@@ -286,8 +287,13 @@ define([
             }
           }
         } else {
-          headers = element._headers = [];
-          footers = element._footers = [];
+          if (element._state) {
+            headers = element._state.headers = [];
+            footers = element._state.footers = [];
+          }  else {
+            headers = element._headers = [];
+            footers = element._footers = [];
+          }
 
           while (++index < children.length) {
             child = children[index];
@@ -331,14 +337,14 @@ define([
         var staticHtml;
         var html;
 
-        if (this._sync) {
+        if (element._sync) {
           element.updateChildren(collection, collection.length, domQuery, this._el);
           return;
         }
 
-        this._template = this._template || this._children;
+        element._template = element._template || element._children;
 
-        this._childrenEach = true;
+        element._childrenEach = true;
 
         if (domQuery._serverData) {
           elementData = domQuery._serverData[ElementsData.id(this)];
@@ -347,8 +353,13 @@ define([
             var div = document.createElement('div');
             div.innerHTML = elementData;
             element._template = element._children = createVirtual(div.childNodes[0], element);
+            if (element._state) {
+              element._state.template = blocks.clone(element._template, true);
+            }
           }
         }
+
+
 
         staticHtml = queries.each._getStaticHtml(domQuery, element);
         html = staticHtml.header;
@@ -435,10 +446,13 @@ define([
         var value = Expression.Create('{{' + (options.value || $thisStr) + '}}', 'value');
         var caption = blocks.isString(options.caption) && new VirtualElement('option');
         var option = new VirtualElement('option');
-        var children = this._children;
+        var children = this._state && this._state.template || this._template || this._children;
         var i = 0;
         var child;
-
+        if (this._sync) {
+            blocks.queries.each.preprocess.call(this, domQuery, collection);
+            return;
+        }
         for (; i < children.length; i++) {
           child = children[i];
           if (!child._attributes || (child._attributes && !child._attributes['data-role'])) {
@@ -449,12 +463,13 @@ define([
         option._attributeExpressions.push(value);
         option._children.push(text);
         option._parent = this;
-        this._children.push(option);
+        children.push(option);
 
         if (caption) {
           caption._attributes['data-role'] = 'header';
           caption._innerHTML = options.caption;
-          this.addChild(caption);
+          caption._parent = this;
+          children.push(caption);
         }
         blocks.queries.each.preprocess.call(this, domQuery, collection);
       },
@@ -462,9 +477,10 @@ define([
       update: function (domQuery, collection) {
         var elementData = ElementsData.data(this);
         var rawCollection = collection();
-        var headers = elementData.virtual._headers;
+        var state = elementData.virtual._state;
+        var headers = state && state.headers || elementData.virtual._headers;
         var valueObservable = elementData.valueObservable;
-        var valueExpression = elementData.virtual._template[0]._attributeExpressions[0];
+        var valueExpression = (state && state.template[0] || elementData.virtual._template[0])._attributeExpressions[0];
         var rawValue = blocks.isObservable(valueObservable) ? valueObservable._getValue() : this.value;
         var expression;
         var value;
