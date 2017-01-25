@@ -5,6 +5,15 @@ define([
   './ElementsData',
   './Observer'
 ], function (blocks, parameterQueryCache, Escape, ElementsData, Observer) {
+  function cloneExpression () {
+    var element = this.element;
+    this.element = null;
+    this.clone = null;
+    var clone = blocks.clone(this, true);
+    clone.clone = this.clone = cloneExpression;
+    this.element = element;
+    return clone;
+  }
   var Expression = {
     Html: 0,
     ValueOnly: 2,
@@ -66,6 +75,7 @@ define([
       result.element = element;
       result.isExpression = true;
       result.nodeLength = 0;
+      result.clone = cloneExpression;
       return match ? result : null;
     },
 
