@@ -144,7 +144,7 @@ module.exports = function (grunt) {
 					{
 						callbacks: {
 							credentials: function () {
-								return Git.Cred.userpassPlainTextNew(gitUser, gitPassword);
+								return Git.Cred.userpassPlaintextNew(gitUser, gitPassword);
 							}
 						}
 					}
