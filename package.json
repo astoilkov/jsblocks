@@ -33,6 +33,8 @@
     "karma-ie-launcher": "^1.0.0",
     "karma-jasmine": "^1.0.2",
     "karma-jasmine-jquery": "^0.1.1",
+    "nodegit": "^0.16.0",
+    "npm-utils": "^1.11.0",
     "parse5": "^2.2.1"
   }
 }

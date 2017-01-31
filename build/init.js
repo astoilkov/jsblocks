@@ -102,5 +102,6 @@ module.exports = function (grunt) {
   grunt.registerTask('compile', ['build', 'combine', 'preprocess', 'debug', 'build-tests-definitions']);
   grunt.registerTask('live-compile', ['compile', 'watch:compile']);
   grunt.registerTask('full-build', ['jshint', 'compile', 'uglify', 'test', 'npm', 'bower']);
+  grunt.registerTask('build-only', ['jshint', 'compile', 'uglify', 'npm', 'bower']);
   grunt.registerTask('default', []);
 };
