@@ -106,11 +106,16 @@ module.exports = function (grunt) {
 					.then(function (versionChanged) {
 						if (versionChanged) {
 							grunt.log.writeln('Package version has changed. Build will be published.');
-							grunt.task.run(['build-only', 'publish-post-build']);
-							done();
+							return repository.checkoutBranch('master').then(function () {
+								grunt.log.writeln('Checkedout master branch');
+								grunt.task.run(['build-only', 'publish-post-build']);
+								done();
+							});
+
 						} else {
 							grunt.log.writeln('Version has not changed.');
 							done();
+							return;
 						}
 					});
 				})
@@ -148,15 +153,19 @@ module.exports = function (grunt) {
 				oid = oidRes;
 				return getMasterCommit(repository);
 			}).then(function (parent) {
-				return repository.createCommit('HEAD', author, author, 'Build Version ' + version, oid, [parent]);
+				return repository.createCommit('HEAD', author, author, '[ci skip] Build Version ' + version, oid, [parent]);
 			}).then(function (id) {
 				return repository.createTag(id, version, 'Release v'+version);
 			}).then(function () {
 				return repository.getRemote('origin');
 			})
 			.then(function (remote) {
+				var tag = 'refs/tags/'+version;
 				return remote.push(
-					["refs/heads/master:refs/heads/master"],
+					[
+					'refs/heads/master:refs/heads/master',
+					tag + ':' + tag
+					],
 					{
 						callbacks: {
 							credentials: function () {
