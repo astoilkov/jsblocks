@@ -135,7 +135,7 @@ module.exports = function (grunt) {
 		var repository;
 		var index;
 		var oid;
-		var author = Git.Signature.create(gitUser, gitEmail, Date.now(), 0);
+		var author = Git.Signature.now(gitUser, gitEmail);
 		return Git.Repository.open('.')
 			.then(function (repo) {
 				repository = repo;
@@ -157,7 +157,7 @@ module.exports = function (grunt) {
 			}).then(function (parent) {
 				return repository.createCommit('HEAD', author, author, '[ci skip] Build Version ' + version, oid, [parent]);
 			}).then(function (id) {
-				return Git.Tag.create(repository, version, id, author, 'Release v'+version);
+				return Git.Tag.create(repository, version, id, author, 'Release v'+version, 0); // 0 = don't force tag creation
 			}).then(function () {
 				return repository.getRemote('origin');
 			})
