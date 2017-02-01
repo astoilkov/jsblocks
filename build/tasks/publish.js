@@ -9,6 +9,17 @@ module.exports = function (grunt) {
 		return repo.getMasterCommit();
 	}
 
+	function headIsMaster (repo) {
+		return Promise.all([
+				repo.getMasterCommit(),
+				repo.getHeadCommit()
+			]).then(function (commits) {
+				var head = commits[1];
+				var master = commits[0];
+			  return (head.id().toString() == master.id().toString());
+			});
+	}
+
 	function getPatches(commit) {
 		return commit.getDiff().then(function (diffs) {
 			return Promise.all(diffs.map(function (diff) {
@@ -38,9 +49,7 @@ module.exports = function (grunt) {
 
 	function dontContainsTag (repo, tagName) {
 		return Git.Tag.list(repo).then(function (tags) {
-			return tags.map(function (tag) {
-				return tag.name();
-			}).indexOf(tagName) == -1;
+			return tags.indexOf(tagName) == -1;
 		});
 	}
 
@@ -81,22 +90,31 @@ module.exports = function (grunt) {
 				repository = repo;
 				return repo;
 			})
-			.then(getMasterCommit)
-			.then(getPatches)
-			.then(findPackageJsonPatch)
-			.then(function (patch) {
-				return hasVersionChange(patch, repository);
-			})
-			.then(function (versionChanged) {
-				if (versionChanged) {
-					grunt.log.writeln('Package version has changed. Build will be published.');
-					grunt.task.run(['build-only', 'publish-post-build']);
+			.then(headIsMaster)
+			.then(function (headIsMaster) {
+				if (!headIsMaster) {
+					grunt.log.writeln('Not on master branch. Nothing to do.');
 					done();
-				} else {
-					grunt.log.writeln('Version has not changed.');
-					done();
+					return;
 				}
-			}).catch(function (e) {
+				return getMasterCommit(repository)
+					.then(getPatches)
+					.then(findPackageJsonPatch)
+					.then(function (patch) {
+						return hasVersionChange(patch, repository);
+					})
+					.then(function (versionChanged) {
+						if (versionChanged) {
+							grunt.log.writeln('Package version has changed. Build will be published.');
+							grunt.task.run(['build-only', 'publish-post-build']);
+							done();
+						} else {
+							grunt.log.writeln('Version has not changed.');
+							done();
+						}
+					});
+				})
+			.catch(function (e) {
 				if (e.message == 'No change in package.json') {
 					grunt.log.writeln(e.message);
 					done();
@@ -128,9 +146,7 @@ module.exports = function (grunt) {
 				return index.writeTree();
 			}).then(function (oidRes) {
 				oid = oidRes;
-				return Git.Reference.nameToId(repository, 'HEAD');
-			}).then(function (head) {
-				return repository.getCommit(head);
+				return getMasterCommit(repository);
 			}).then(function (parent) {
 				return repository.createCommit('HEAD', author, author, 'Build Version ' + version, oid, [parent]);
 			}).then(function (id) {
