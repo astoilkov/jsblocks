@@ -176,6 +176,22 @@ module.exports = function (grunt) {
 						}
 					}
 				);
+			}).then(function () {
+				grunt.log.writeln('Pushed to git.');
+			});
+	}
+
+	function publishNpm () {
+		var cwd = process.cwd();
+		process.chdir(require('path').join(cwd, 'dist/npm'));
+		grunt.log.writeln('Publishing to NPM.');
+		return npmUtils.setAuthToken()
+			.then(function () {
+				return npmUtils.publish();
+			})
+			.then(function () {
+				process.chdir(cwd);
+				grunt.log.writeln('Published to npm.');
 			});
 	}
 
@@ -184,6 +200,7 @@ module.exports = function (grunt) {
 		var done = this.async();
 		commitRelease()
 			.then(function () {
+				grunt.log.writeln('Done publishing.');
 				done();
 			}).catch(function (e) {
 				grunt.log.error(e);
