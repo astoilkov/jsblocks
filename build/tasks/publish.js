@@ -158,7 +158,10 @@ module.exports = function (grunt) {
 				return repository.createCommit('HEAD', author, author, '[ci skip] Build Version ' + version, oid, [parent]);
 			}).then(function (id) {
 				grunt.log.writeln('Created commit ' + id + 'for ' + version);
-				return Git.Tag.create(repository, version, id, author, 'Release v'+version, 0); // 0 = don't force tag creation
+				return Git.Object.lookup(repository, id, Git.Object.TYPE.COMMIT);
+			})
+			.then(function (object)  {
+				return Git.Tag.create(repository, version, object, author, 'Release v'+version, 0); // 0 = don't force tag creation
 			}).then(function () {
 				grunt.log.writeln('Created tag ' + version);
 				return repository.getRemote('origin');
