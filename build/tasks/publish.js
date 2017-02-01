@@ -4,6 +4,7 @@ module.exports = function (grunt) {
 	var gitUser = process.env.GIT_USER;
 	var gitPassword = process.env.GIT_PASSWORD;
 	var gitEmail = process.env.GIT_EMAIL;
+	var releaseNotes;
 
 	function getMasterCommit (repo) {
 		return repo.getMasterCommit();
@@ -65,7 +66,9 @@ module.exports = function (grunt) {
 			newContent = JSON.parse(blobs[0].toString('utf-8'));
 			oldContent = JSON.parse(blobs[1].toString('utf-8'));
 			if (newContent.version != oldContent.version) {
-				return true;
+				return buildReleaseNotes(repo, oldContent.version).then(function () {
+					return true;
+				});
 			}
 			return false;
 		}).then(function (versionChanged) {
@@ -157,11 +160,11 @@ module.exports = function (grunt) {
 			}).then(function (parent) {
 				return repository.createCommit('HEAD', author, author, '[ci skip] Build Version ' + version, oid, [parent]);
 			}).then(function (id) {
-				grunt.log.writeln('Created commit ' + id + 'for ' + version);
+				grunt.log.writeln('Created commit ' + id + ' for ' + version);
 				return Git.Object.lookup(repository, id, Git.Object.TYPE.COMMIT);
 			})
 			.then(function (object)  {
-				return Git.Tag.create(repository, version, object, author, 'Release v'+version, 0); // 0 = don't force tag creation
+				return Git.Tag.annotationCreate(repository, version, object, author, 'Release v'+version); // 0 = don't force tag creation
 			}).then(function () {
 				grunt.log.writeln('Created tag ' + version);
 				return repository.getRemote('origin');
@@ -184,6 +187,33 @@ module.exports = function (grunt) {
 			}).then(function () {
 				grunt.log.writeln('Pushed to git.');
 			});
+	}
+
+	function buildReleaseNotes (repository, version) {
+		releaseNotes = '### Release ' + grunt.config.data.version + '\n Commits: \n';
+		return repository.getReferenceCommit(version).then(function (targetCommit) {
+			return getMasterCommit(repository).then(function (masterCommit) {
+				return new Promise(function (resolve) {
+					var history = masterCommit.history(Git.Revwalk.SORT.TIME);
+					history.on('end', function (commits) {
+						for (var i = 0; i < commits.length; i++) {
+							var commit = commits[i];
+							if (commit.id().toString() == targetCommit.id().toString()) {
+								break;
+							}
+
+							if (process.env.TRAVIS_REPO_SLUG) {
+								releaseNotes += '* [[`' + commit.sha() + '`](https://github.com/' + process.env.TRAVIS_REPO_SLUG + 'commit/' + commit.sha() +')] - ' + commit.summary() + '\n';
+							} else {
+								releaseNotes += '* [`' + commit.sha() + '`] - ' + commit.summary() + '\n';
+							}
+						}
+						resolve();
+					});
+					history.start();
+				});
+			});
+		});
 	}
 
 	function publishNpm () {
