@@ -129,23 +129,25 @@ module.exports = function (grunt) {
 				}
 			});
 	});
-	grunt.registerTask('publish-post-build', function () {
-		grunt.task.requires('build-only');
-		var done = this.async();
+
+	function commitRelease () {
 		var version = grunt.config.data.version;
 		var repository;
 		var index;
 		var oid;
 		var author = Git.Signature.create(gitUser, gitEmail, Date.now(), 0);
-		Git.Repository.open('.')
+		return Git.Repository.open('.')
 			.then(function (repo) {
 				repository = repo;
-				return repo.refreshIndex();
+			})
+			.then(function () {
+				return repository.refreshIndex();
 			})
 			.then(function (indexRes) {
 				index = indexRes;
 				return index.addAll();
-			}).then(function () {
+			})
+			.then(function () {
 				return index.write();
 			}).then(function () {
 				return index.writeTree();
@@ -155,7 +157,7 @@ module.exports = function (grunt) {
 			}).then(function (parent) {
 				return repository.createCommit('HEAD', author, author, '[ci skip] Build Version ' + version, oid, [parent]);
 			}).then(function (id) {
-				return repository.createTag(id, version, 'Release v'+version);
+				return Git.Tag.create(repository, version, id, author, 'Release v'+version);
 			}).then(function () {
 				return repository.getRemote('origin');
 			})
@@ -174,7 +176,13 @@ module.exports = function (grunt) {
 						}
 					}
 				);
-			})
+			});
+	}
+
+	grunt.registerTask('publish-post-build', function () {
+		grunt.task.requires('build-only');
+		var done = this.async();
+		commitRelease()
 			.then(function () {
 				done();
 			}).catch(function (e) {
