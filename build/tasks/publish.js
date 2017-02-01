@@ -1,10 +1,11 @@
 module.exports = function (grunt) {
 	var Git = require('nodegit');
 	var npmUtils = require('npm-utils');
+	var Github = require('github');
 	var gitUser = process.env.GIT_USER;
 	var gitPassword = process.env.GIT_PASSWORD;
 	var gitEmail = process.env.GIT_EMAIL;
-	var releaseNotes;
+	var lastCommit;
 
 	function getMasterCommit (repo) {
 		return repo.getMasterCommit();
@@ -66,9 +67,7 @@ module.exports = function (grunt) {
 			newContent = JSON.parse(blobs[0].toString('utf-8'));
 			oldContent = JSON.parse(blobs[1].toString('utf-8'));
 			if (newContent.version != oldContent.version) {
-				return buildReleaseNotes(repo, oldContent.version).then(function () {
-					return true;
-				});
+				return true;
 			}
 			return false;
 		}).then(function (versionChanged) {
@@ -101,6 +100,10 @@ module.exports = function (grunt) {
 					return;
 				}
 				return getMasterCommit(repository)
+					.then(function (masterCommit) {
+						lastCommit = masterCommit.sha();
+						return masterCommit;
+					})
 					.then(getPatches)
 					.then(findPackageJsonPatch)
 					.then(function (patch) {
@@ -164,7 +167,7 @@ module.exports = function (grunt) {
 				return Git.Object.lookup(repository, id, Git.Object.TYPE.COMMIT);
 			})
 			.then(function (object)  {
-				return Git.Tag.annotationCreate(repository, version, object, author, 'Release v'+version); // 0 = don't force tag creation
+				return Git.Tag.create(repository, version, object, author, 'Release v'+version, 0);
 			}).then(function () {
 				grunt.log.writeln('Created tag ' + version);
 				return repository.getRemote('origin');
@@ -189,30 +192,59 @@ module.exports = function (grunt) {
 			});
 	}
 
-	function buildReleaseNotes (repository, version) {
-		releaseNotes = '### Release ' + grunt.config.data.version + '\n Commits: \n';
-		return repository.getReferenceCommit(version).then(function (targetCommit) {
-			return getMasterCommit(repository).then(function (masterCommit) {
-				return new Promise(function (resolve) {
-					var history = masterCommit.history(Git.Revwalk.SORT.TIME);
-					history.on('end', function (commits) {
-						for (var i = 0; i < commits.length; i++) {
-							var commit = commits[i];
-							if (commit.id().toString() == targetCommit.id().toString()) {
-								break;
-							}
-
-							if (process.env.TRAVIS_REPO_SLUG) {
-								releaseNotes += '* [[`' + commit.sha() + '`](https://github.com/' + process.env.TRAVIS_REPO_SLUG + 'commit/' + commit.sha() +')] - ' + commit.summary() + '\n';
-							} else {
-								releaseNotes += '* [`' + commit.sha() + '`] - ' + commit.summary() + '\n';
-							}
-						}
-						resolve();
-					});
-					history.start();
+	function publishReleaseNotes () {
+		var github = new Github();
+		if (!process.env.TRAVIS_REPO_SLUG) return;
+		var owner = process.env.TRAVIS_REPO_SLUG.split('/')[0];
+		var repo = process.env.TRAVIS_REPO_SLUG.split('/')[1];
+		github.authenticate({
+			type: 'basic',
+			username: gitUser,
+			password: gitPassword
+		});
+		var commitParser = new GithubCommitParser(github, owner, repo);
+		return github.gitdata.getTags({
+			owner: owner,
+			repo: repo,
+			per_page: 1
+		}).then(function (latestTag) {
+			var latestReleaseCommit = null;
+			if (latestTag[0]) {
+				latestReleaseCommit = latestTag[0].object.sha;
+			}
+			return commitParser.loadCommits(lastCommit, latestReleaseCommit)
+				.then(commitParser.loadClosedIssuesForCommits.bind(commitParser))
+				.then(commitParser.loadMergedPullRequestsForCommits.bind(commitParser));
+		}).then(function () {
+			var releaseNotes = '### Release ' + grunt.config.data.version + '\n';
+			if (commitParser.closedIssues.length > 0) {
+				releaseNotes += '## Issues closed in this release: \n';
+				commitParser.closedIssues.forEach(function (issue) {
+					releaseNotes += '* [[`#'+ issue.number + '`]](' + issue.html_url + ') - ' + issue.title + '\n';
 				});
+			}
+			if (commitParser.mergedPullRequests.length > 0) {
+				releaseNotes += '## Merged pull requests in this release: \n';
+				commitParser.mergedPullRequests.forEach(function (pr) {
+					releaseNotes += '* [[`#' + pr.number + '`]](' + pr.html_url + ') - ' + pr.title + '\n';
+				});
+			}
+			releaseNotes += '## Commits in this release: \n';
+			commitParser.commits.forEach(function (commit) {
+				releaseNotes += '* [[`' + commit.sha.substr(0,7) + '`]](' + commit.html_url + ') - ' + commit.split('\n')[0] + '\n';
 			});
+			return releaseNotes;
+		}).then(function (releaseNotes) {
+			return github.repos.createRelease({
+				owner: owner,
+				repo: repo,
+				tag_name: grunt.config.data.version,
+				name: 'Release ' + grunt.config.data.version,
+				body: releaseNotes
+			});
+		})
+		.then(function () {
+			grunt.log.writeln('created github release');
 		});
 	}
 
@@ -231,16 +263,134 @@ module.exports = function (grunt) {
 	}
 
 	grunt.registerTask('publish-post-build', function () {
-		grunt.task.requires('build-only');
-		var done = this.async();
-		commitRelease()
-			.then(function () {
-				grunt.log.writeln('Done publishing.');
-				done();
-			}).catch(function (e) {
-				grunt.log.error(e);
-				grunt.log.error(e.stack());
-				done(false);
+       grunt.task.requires('build-only');
+       var done = this.async();
+       commitRelease()
+           .then(publishReleaseNotes)
+           .then(function () {
+                   grunt.log.writeln('Done publishing.');
+                   done();
+           }).catch(function (e) {
+                   grunt.log.error(e);
+                   grunt.log.error(e.stack());
+                   done(false);
+   			});
+   });
+
+};
+
+function GithubCommitParser (github, user, repository) {
+	this.github = github;
+	this.user = user;
+	this.repository = repository;
+	this.reset();
+}
+GithubCommitParser.prototype = {
+	reset: function () {
+		this.commits = [];
+		this.closedIssuesEvents = [];
+		this.closedIssues = [];
+		this.commitPage = 1;
+		this.issueEventsPage = 1;
+		this.issueEvents = [];
+		this.mergedPullRequests = [];
+		this.mergedPullRequestEvents = [];
+	},
+	loadCommits: function (startCommitSha, endCommitSha) {
+		var containsCommit = this._containsCommit.bind(this, endCommitSha);
+		var self = this;
+		return this.github.repos.getCommits({
+			owner: this.user,
+			repo: this.repository,
+			sha: startCommitSha,
+			page: self.commitPage++,
+			per_page: 100
+		}).then(function (commits) {
+			self.commits = self.commits.concat(commits);
+			return containsCommit();
+		}).then(function (res) {
+			if (res.contains && self.commits.length % 100 === 0) {
+				self.commits.splice(res.index+1);
+				return self;
+			} else {
+				return self.loadCommits(startCommitSha, endCommitSha);
+			}
+		});
+	},
+	loadClosedIssuesForCommits: function () {
+		var self = this;
+		return new Promise(function (resolve) {
+			if (self.issueEvents.length === 0) {
+				resolve(self._loadIssueEvents());
+			} else {
+				resolve();
+			}
+		}).then(function () {
+			self._filterClosedIssueEvents();
+		}).then(function () {
+			self.closedIssues = self.closedIssuesEvents.map(function (event) {
+				return event.issue;
 			});
-	});
+			return self;
+		});
+	},
+	loadMergedPullRequestsForCommits: function () {
+		var self = this;
+		return new Promise(function (resolve) {
+			if (self.issueEvents.length === 0) {
+				resolve(self._loadIssueEvents());
+			} else {
+				resolve();
+			}
+		}).then(function () {
+			self._filterPullRequests();
+		}).then(function () {
+			self.mergedPullRequests = self.mergedPullRequestEvents.filter(function (event) {
+				return event.issue;
+			});
+			return self;
+		});
+	},
+	_loadIssueEvents: function () {
+		var self = this;
+		return this.github.issues.getEventsForRepo({
+			owner: this.user,
+			repo: this.repository,
+			page: this.issueEventsPage++,
+			per_page: 100
+		}).then(function (issueEvents) {
+			self.issueEvents = self.issueEvents.concat(issueEvents);
+			if (issueEvents.length < 100) {
+				return;
+			} else {
+				return self._loadIssueEvents();
+			}
+		});
+	},
+	_filterPullRequests: function () {
+		var commitShas = this.commits.map(function (commit) {
+			return commit.sha;
+		});
+		this.mergedPullRequestEvents = this.issueEvents.filter(function (event) {
+			return commitShas.indexOf(event.commit_id) != -1 && event.event == 'merged';
+		});
+	},
+	_filterClosedIssueEvents: function () {
+		var commitShas = this.commits.map(function (commit) {
+			return commit.sha;
+		});
+		this.closedIssuesEvents = this.issueEvents.filter(function (issueEvent) {
+			return commitShas.indexOf(issueEvent.commit_id) != -1 && issueEvent.event == 'closed' && !issueEvent.issue.pullRequest;
+		});
+	},
+	_containsCommit: function (commitSha) {
+		var commits = this.commits.map(function (commit) {
+			return commit.sha;
+		});
+		if (commits.indexOf(commitSha) == -1) {
+			return {contains: false, index: null};
+		} else {
+			return {contains: true, index: commits.indexOf(commitSha)};
+		}
+	}
 };
