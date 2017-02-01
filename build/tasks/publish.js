@@ -157,8 +157,10 @@ module.exports = function (grunt) {
 			}).then(function (parent) {
 				return repository.createCommit('HEAD', author, author, '[ci skip] Build Version ' + version, oid, [parent]);
 			}).then(function (id) {
+				grunt.log.writeln('Created commit ' + id + 'for ' + version);
 				return Git.Tag.create(repository, version, id, author, 'Release v'+version, 0); // 0 = don't force tag creation
 			}).then(function () {
+				grunt.log.writeln('Created tag ' + version);
 				return repository.getRemote('origin');
 			})
 			.then(function (remote) {
@@ -204,6 +206,7 @@ module.exports = function (grunt) {
 				done();
 			}).catch(function (e) {
 				grunt.log.error(e);
+				grunt.log.error(e.stack());
 				done(false);
 			});
 	});
