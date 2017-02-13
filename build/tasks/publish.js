@@ -1,11 +1,14 @@
 module.exports = function (grunt) {
 	var Git = require('nodegit');
 	var npmUtils = require('npm-utils');
-	var Github = require('github');
+	var GithubGraphQLWrapper = require('../publish/github-graphql.js');
+	var fetch = require('node-fetch');
 	var gitUser = process.env.GIT_USER;
-	var gitPassword = process.env.GIT_PASSWORD;
+	var gitKey = process.env.GIT_KEY;
 	var gitEmail = process.env.GIT_EMAIL;
 	var lastCommit;
+	var graphql;
+
 
 	function getMasterCommit (repo) {
 		return repo.getMasterCommit();
@@ -80,13 +83,14 @@ module.exports = function (grunt) {
 	}
 
 	grunt.registerTask('publish', function() {
-		if (!gitUser || !gitPassword || !gitEmail) {
-			grunt.log.error('Missing login data for github. Make sure GIT_USER, GIT_EMAIL and GIT_PASSWORD are set in the environment.');
+		if (!gitUser || !gitKey || !gitEmail) {
+			grunt.log.error('Missing login data for github. Make sure GIT_USER, GIT_EMAIL and GIT_KEY are set in the environment.');
 			return;
 		}
 		var done = this.async();
 
 		var repository;
+		graphql = new GithubGraphQLWrapper(gitKey, process.env.TRAVIS_REPO_SLUG.split('/')[0], process.env.TRAVIS_REPO_SLUG.split('/')[1]);
 		Git.Repository.open('.')
 			.then(function (repo) {
 				repository = repo;
@@ -110,6 +114,14 @@ module.exports = function (grunt) {
 						return hasVersionChange(patch, repository);
 					})
 					.then(function (versionChanged) {
+						if (!versionChanged)
+							return false;
+						return graphql.fetchLastGithubRelease()
+								.then(function () {
+									return graphql.getLastRelease().tag.name != grunt.config.version;
+								});
+					})
+					.then(function (versionChanged) {
 						if (versionChanged) {
 							grunt.log.writeln('Package version has changed. Build will be published.');
 							return repository.checkoutBranch('master').then(function () {
@@ -119,7 +131,7 @@ module.exports = function (grunt) {
 							});
 
 						} else {
-							grunt.log.writeln('Version has not changed.');
+							grunt.log.writeln('Version has not changed or is already released.');
 							done();
 							return;
 						}
@@ -182,7 +194,7 @@ module.exports = function (grunt) {
 					{
 						callbacks: {
 							credentials: function () {
-								return Git.Cred.userpassPlaintextNew(gitUser, gitPassword);
+								return Git.Cred.userpassPlaintextNew(gitKey, 'x-oauth-basic');
 							}
 						}
 					}
@@ -192,61 +204,67 @@ module.exports = function (grunt) {
 			});
 	}
 
-	function publishReleaseNotes () {
-		var github = new Github();
-		if (!process.env.TRAVIS_REPO_SLUG) return;
-		var owner = process.env.TRAVIS_REPO_SLUG.split('/')[0];
-		var repo = process.env.TRAVIS_REPO_SLUG.split('/')[1];
-		github.authenticate({
-			type: 'basic',
-			username: gitUser,
-			password: gitPassword
-		});
-		var commitParser = new GithubCommitParser(github, owner, repo);
-		return github.gitdata.getTags({
-			owner: owner,
-			repo: repo,
-			per_page: 1
-		}).then(function (latestTag) {
-			var latestReleaseCommit = null;
-			if (latestTag[0]) {
-				latestReleaseCommit = latestTag[0].object.sha;
-			}
-			return commitParser.loadCommits(lastCommit, latestReleaseCommit)
-				.then(commitParser.loadClosedIssuesForCommits.bind(commitParser))
-				.then(commitParser.loadMergedPullRequestsForCommits.bind(commitParser));
-		}).then(function () {
-			var releaseNotes = '### Release ' + grunt.config.data.version + '\n';
-			if (commitParser.closedIssues.length > 0) {
-				releaseNotes += '## Issues closed in this release: \n';
-				commitParser.closedIssues.forEach(function (issue) {
-					releaseNotes += '* [[`#'+ issue.number + '`]](' + issue.html_url + ') - ' + issue.title + '\n';
+	function publishRelease () {
+		return graphql.fetchCommitsToLastRelease()
+			.then(ql => ql.fetchPRsAndIssues())
+			.then(function () {
+				var commits = graphql.getCommits();
+				var prs = graphql.getMergedPRs();
+				var issues = graphql.getClosedIssues();
+				var commitOids = commits.map(commit => commit.oid);
+				var mergedPRs = prs.filter(pr => {
+					for (var i in pr.timeline) {
+						var mergeEvent = pr.timeline[i];
+						if (mergeEvent.commit && commitOids.indexOf(mergeEvent.commit.oid) != -1) {
+							return true;
+						}
+					}
+					return false;
 				});
-			}
-			if (commitParser.mergedPullRequests.length > 0) {
-				releaseNotes += '## Merged pull requests in this release: \n';
-				commitParser.mergedPullRequests.forEach(function (pr) {
-					releaseNotes += '* [[`#' + pr.number + '`]](' + pr.html_url + ') - ' + pr.title + '\n';
+				var closedIssues = issues.filter(issue => {
+					for (var i in issue.timeline) {
+						var event = issue.timeline[i];
+						if ( (event.commit && commitOids.indexOf(event.commit.oid) != -1) ||  (event.closeCommit && commitOids.indexOf(event.closeCommit.oid) != -1)) {
+							return true;
+						}
+					}
+					return false;
 				});
-			}
-			releaseNotes += '## Commits in this release: \n';
-			commitParser.commits.forEach(function (commit) {
-				releaseNotes += '* [[`' + commit.sha.substr(0,7) + '`]](' + commit.html_url + ') - ' + commit.split('\n')[0] + '\n';
+				return {closedIssues: closedIssues, mergedPRs: mergedPRs, commits: commits};
+			}).then(history => {
+				var releaseNotes = `# ${grunt.config.data.pkg.name} release ${grunt.config.data.version}\n\n`;
+				releaseNotes += `## Closed issues:\n`;
+				history.closedIssues.forEach(issue => {
+					releaseNotes += `* [[\`#${issue.number}\`]](${issue.url}) - ${issue.title}\n`;
+				});
+
+				releaseNotes += `\n\n## Merged pull requests:\n`;
+				history.mergedPRs.forEach(pr => {
+					releaseNotes += `* [[\`#${pr.number}\`]](${pr.url}) - ${pr.title}\n`;
+				});
+
+				releaseNotes += `\n\n## Commits:\n`;
+				history.commits.forEach(commit => {
+					releaseNotes += `* [[\`${commit.oid.substr(0, 10)}\`]](${commit.url}) - ${commit.messageHeadline} \n`;
+				});
+
+				return releaseNotes;
+			}).then(releaseNotes => {
+				return fetch(`https://api.github.com/repos/${graphql.getOwner()}/${graphql.getRepo()}/releases`, {
+					method: 'POST',
+					headers: {
+						Authorization: `token ${gitKey}`,
+					},
+					body: JSON.stringify({
+						prerelease: /rc,alpha,beta/i.test(grunt.config.data.version),
+						name: grunt.config.data.version,
+						tag_name: grunt.config.data.version,
+						body: releaseNotes
+					})
+				});
 			});
-			return releaseNotes;
-		}).then(function (releaseNotes) {
-			return github.repos.createRelease({
-				owner: owner,
-				repo: repo,
-				tag_name: grunt.config.data.version,
-				name: 'Release ' + grunt.config.data.version,
-				body: releaseNotes
-			});
-		})
-		.then(function () {
-			grunt.log.writeln('created github release');
-		});
 	}
+
 
 	function publishNpm () {
 		var cwd = process.cwd();
@@ -266,7 +284,7 @@ module.exports = function (grunt) {
        grunt.task.requires('build-only');
        var done = this.async();
        commitRelease()
-           .then(publishReleaseNotes)
+           .then(publishRelease)
            .then(function () {
                    grunt.log.writeln('Done publishing.');
                    done();
@@ -277,120 +295,4 @@ module.exports = function (grunt) {
    			});
    });
 
-};
-
-function GithubCommitParser (github, user, repository) {
-	this.github = github;
-	this.user = user;
-	this.repository = repository;
-	this.reset();
-}
-GithubCommitParser.prototype = {
-	reset: function () {
-		this.commits = [];
-		this.closedIssuesEvents = [];
-		this.closedIssues = [];
-		this.commitPage = 1;
-		this.issueEventsPage = 1;
-		this.issueEvents = [];
-		this.mergedPullRequests = [];
-		this.mergedPullRequestEvents = [];
-	},
-	loadCommits: function (startCommitSha, endCommitSha) {
-		var containsCommit = this._containsCommit.bind(this, endCommitSha);
-		var self = this;
-		return this.github.repos.getCommits({
-			owner: this.user,
-			repo: this.repository,
-			sha: startCommitSha,
-			page: self.commitPage++,
-			per_page: 100
-		}).then(function (commits) {
-			self.commits = self.commits.concat(commits);
-			return containsCommit();
-		}).then(function (res) {
-			if (res.contains && self.commits.length % 100 === 0) {
-				self.commits.splice(res.index+1);
-				return self;
-			} else {
-				return self.loadCommits(startCommitSha, endCommitSha);
-			}
-		});
-	},
-	loadClosedIssuesForCommits: function () {
-		var self = this;
-		return new Promise(function (resolve) {
-			if (self.issueEvents.length === 0) {
-				resolve(self._loadIssueEvents());
-			} else {
-				resolve();
-			}
-		}).then(function () {
-			self._filterClosedIssueEvents();
-		}).then(function () {
-			self.closedIssues = self.closedIssuesEvents.map(function (event) {
-				return event.issue;
-			});
-			return self;
-		});
-	},
-	loadMergedPullRequestsForCommits: function () {
-		var self = this;
-		return new Promise(function (resolve) {
-			if (self.issueEvents.length === 0) {
-				resolve(self._loadIssueEvents());
-			} else {
-				resolve();
-			}
-		}).then(function () {
-			self._filterPullRequests();
-		}).then(function () {
-			self.mergedPullRequests = self.mergedPullRequestEvents.filter(function (event) {
-				return event.issue;
-			});
-			return self;
-		});
-	},
-	_loadIssueEvents: function () {
-		var self = this;
-		return this.github.issues.getEventsForRepo({
-			owner: this.user,
-			repo: this.repository,
-			page: this.issueEventsPage++,
-			per_page: 100
-		}).then(function (issueEvents) {
-			self.issueEvents = self.issueEvents.concat(issueEvents);
-			if (issueEvents.length < 100) {
-				return;
-			} else {
-				return self._loadIssueEvents();
-			}
-		});
-	},
-	_filterPullRequests: function () {
-		var commitShas = this.commits.map(function (commit) {
-			return commit.sha;
-		});
-		this.mergedPullRequestEvents = this.issueEvents.filter(function (event) {
-			return commitShas.indexOf(event.commit_id) != -1 && event.event == 'merged';
-		});
-	},
-	_filterClosedIssueEvents: function () {
-		var commitShas = this.commits.map(function (commit) {
-			return commit.sha;
-		});
-		this.closedIssuesEvents = this.issueEvents.filter(function (issueEvent) {
-			return commitShas.indexOf(issueEvent.commit_id) != -1 && issueEvent.event == 'closed' && !issueEvent.issue.pullRequest;
-		});
-	},
-	_containsCommit: function (commitSha) {
-		var commits = this.commits.map(function (commit) {
-			return commit.sha;
-		});
-		if (commits.indexOf(commitSha) == -1) {
-			return {contains: false, index: null};
-		} else {
-			return {contains: true, index: commits.indexOf(commitSha)};
-		}
-	}
 };

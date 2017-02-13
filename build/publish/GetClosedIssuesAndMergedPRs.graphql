@@ -1,0 +1,67 @@
+query ($owner: String!, $repo: String!, $afterIssues: String, $afterPRs: String, $includePRs: Boolean!, $includeIssues: Boolean!) {
+  repository(owner: $owner, name: $repo) {
+    ...issues @include(if: $includeIssues)
+    ...prs @include(if: $includePRs)
+    parent {
+      ...issues @include(if: $includeIssues)
+      ...prs @include(if: $includePRs)
+    }
+  }
+}
+
+fragment issues on Repository {
+  issues(first: 100, after: $afterIssues, states: [CLOSED]) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      number
+      url
+      title
+      timeline(first: 100) {
+        nodes {
+          ... on ReferencedEvent {
+            commit {
+              oid
+            }
+          }
+          ... on ClosedEvent {
+            closeCommit: commit {
+              oid
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+fragment prs on Repository {
+  pullRequests(first: 100, after: $afterPRs, states: [MERGED]) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      title
+      url
+      number
+      timeline(first: 100) {
+        nodes {
+          ... on MergedEvent {
+            commit {
+              oid
+            }
+          }
+        }
+      }
+     # unfortunatly seems to be buggy in the alpha of github graphql
+     # sometime "MERGED" PRs have a mergeCommit and sometimes not
+     # while they are having a "MergedEvent" timeline
+     # mergeCommit {
+     #   oid
+     # }
+    }
+  }
+}
