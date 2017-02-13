@@ -284,11 +284,12 @@ module.exports = function (grunt) {
        grunt.task.requires('build-only');
        var done = this.async();
        commitRelease()
-           .then(publishRelease)
-           .then(function () {
+       		.then(publishNpm)
+        	.then(publishRelease)
+           	.then(function () {
                    grunt.log.writeln('Done publishing.');
                    done();
-           }).catch(function (e) {
+           	}).catch(function (e) {
                    grunt.log.error(e);
                    grunt.log.error(e.stack());
                    done(false);
