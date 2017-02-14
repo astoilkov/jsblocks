@@ -256,7 +256,7 @@ module.exports = function (grunt) {
 						Authorization: `token ${gitKey}`,
 					},
 					body: JSON.stringify({
-						prerelease: /rc,alpha,beta/i.test(grunt.config.data.version),
+						prerelease: /rc|alpha|beta/i.test(grunt.config.data.version),
 						name: grunt.config.data.version,
 						tag_name: grunt.config.data.version,
 						body: releaseNotes
