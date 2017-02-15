@@ -1,0 +1,45 @@
+query ($owner: String!, $repo: String!, $after: String, $includeLastRelease: Boolean!) {
+	repository(owner: $owner, name: $repo) {
+		...commits
+		...lastRelease @include(if:$includeLastRelease)
+	    # for some reason releases aren't queryable on forked repos if they weren't published on the fork first
+	    # so include the parent in case the repo doesn't have a last release
+	    parent @include(if: $includeLastRelease) {
+			...lastRelease
+	    }
+	}
+}
+
+fragment commits on Repository {
+	ref(qualifiedName: "refs/heads/master") {
+		target {
+			... on Commit {
+				history(first: 100, after: $after) {
+					pageInfo {
+						hasNextPage
+						endCursor
+					}
+					nodes {
+						url
+						messageHeadline
+						oid
+					}
+				}
+			}
+		}
+	}
+}
+
+fragment lastRelease on Repository {
+    releases(last: 1) {
+    	nodes {
+    	 	description
+    	 	tag {
+    	    	name
+    	    	target {
+    	    	  oid
+    	    	}
+	 		}
+ 		}
+	}
+}
