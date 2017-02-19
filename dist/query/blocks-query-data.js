@@ -9,14 +9,29 @@
  * Date: @DATE
  */
 (function(global, factory) {
-  if (typeof module === 'object' && typeof module.exports === 'object') {
-    module.exports = factory(global, true);
+  var blocks;
+  // handle jsblocks serverside rendering overrides
+  if (global.__mock__ && global._blocks) {
+    blocks = global._blocks;
   } else {
-    factory(global);
+    blocks = factory(global);
   }
 
+  if (typeof module === 'object' && typeof module.exports === 'object') {
+    module.exports = blocks;
+  } else {
+    global.blocks = blocks;
+  }
+
+  if (typeof define === 'function' && define.amd) {
+    define('blocks', [], function () {
+      return blocks;
+    });
+  }
+
+
   // Pass this if window is not defined yet
-}(typeof window !== 'undefined' ? window : this, function(global, noGlobal) {
+}(typeof window !== 'undefined' ? window : this, function(global) {
   var toString = Object.prototype.toString;
   var slice = Array.prototype.slice;
   var hasOwn = Object.prototype.hasOwnProperty;
@@ -37,13 +52,14 @@
     return value;
   };
 
-  blocks.version = '0.3.4';
+  blocks.version = '0.3.5';
   blocks.core = core;
 
   /**
    * Copies properties from all provided objects into the first object parameter
    *
    * @memberof blocks
+   * @param {boolean} [deepCopy] - If true, the merge becomes recursive (aka. deep copy)
    * @param {Object} obj
    * @param {...Object} objects
    * @returns {Object}
@@ -103,6 +119,108 @@
     // Return the modified object
     return target;
   };
+
+  // Adds a function to the pending array that sets the value if it's not created yet (for circular references)
+  // e.g. var a = {}; var b = {parent: a}; a.b = b;
+  // otherwise it looks if the value got already cloned it set's a reference to it
+  // e.g. var a = {answer: 42}; var b = {first: a, second: a};
+  // otherwise it clones the value
+  function cloneIfNotExsists(clone, key, value, history) {
+    var stack = history.stack;
+    var processed = history.processed;
+    var clones = history.clones;
+    var pending = history.pending;
+
+    for (var stackIndex = 0; stackIndex < stack.length; stackIndex++) {
+      if (value[key] === stack[stackIndex]) {
+        pending[stackIndex].push(function (cloned) {
+          clone[key] = cloned;
+        });
+        return;
+      }
+    }
+
+    for (var processedIndex = 0; processedIndex < processed.length; processedIndex++) {
+      if (value[key] === processed[processedIndex]) {
+        clone[key] = clones[processedIndex];
+        return;
+      }
+    }
+    clone[key] = internalClone(value[key], true, history);
+  }
+
+  // internal clone helper function
+  function internalClone(value, deepClone, history) {
+    if (value == null) {
+      return value;
+    }
+
+    history.stack.push(value);
+    history.pending.push([]);
+
+    var type = blocks.type(value);
+    var clone;
+    var key;
+    var pending;
+
+    if (blocks.isFunction(value.clone)) {
+      clone = value.clone(deepClone);
+    } else {
+      switch (type) {
+        case 'object':
+        case 'array':
+          if (value.constructor === Object) {
+            clone = {};
+          } else if (type == 'object'){
+            clone = new value.constructor();
+          } else {
+            clone = Array(value.length);
+          }
+
+          for (key in value) {
+            if (!deepClone) {
+              clone[key] =  value[key];
+            } else {
+              cloneIfNotExsists(clone, key, value, history);
+            }
+          }
+          break;
+        case 'date':
+          clone = new Date(value.getFullYear(), value.getMonth(), value.getDate(),
+            value.getHours(), value.getMinutes(), value.getSeconds(), value.getMilliseconds());
+          break;
+        case 'regexp':
+          var flags = '';
+          if (value.global) {
+            flags += 'g';
+          }
+          if (value.ignoreCase) {
+            flags += 'i';
+          }
+          if (value.multiline) {
+            flags += 'm';
+          }
+          clone = new RegExp(value.source, flags);
+          clone.lastIndex = value.lastIndex;
+          break;
+      }
+    }
+
+    history.stack.pop();
+    if (clone) {
+      history.processed.push(value);
+      history.clones.push(clone);
+      pending = history.pending.pop();
+
+      for (var pendingIndex = 0; pendingIndex < pending.length; pendingIndex++) {
+        pending[pendingIndex](clone || value);
+      }
+    } else {
+      history.pending.pop();
+    }
+
+    return clone || value;
+  }
 
   /**
    * @callback iterateCallback
@@ -261,6 +379,7 @@
         Class.prototype._super = _super;
       } else if (prototype) {
         Class.prototype = prototype;
+        Class.prototype.constructor = Class;
       }
 
       return Class;
@@ -424,11 +543,15 @@
      * Unwraps a jQuery instance and returns the first element
      *
      * @param {*} element - If jQuery element is specified it will be unwraped
+     * @param {Function} [callback] - Callback the element will be passed to.
+     * @param {*} [thisArg] - The context the callback will be executed with
      * @returns {*} - The unwraped value
      *
      * @example {javascript}
      * var articles = $('.article');
-     * blocks.$unwrap()
+     * blocks.$unwrap(articles, function (article) {
+     *   console.log(artice.textContent);
+     * });
      */
     $unwrap: function(element, callback, thisArg) {
       callback = parseCallback(callback, thisArg);
@@ -500,7 +623,7 @@
      * If the value could not be parsed to a number it is not converted
      *
      * @memberof blocks
-     * @param {[type]} value - The value to be converted to the specified unit
+     * @param {String|Number} value - The value to be converted to the specified unit
      * @param {String} [unit='px'] - Optionally provide a unit to convert to.
      * Default value is 'px'
      *
@@ -536,9 +659,9 @@
      * Clones value. If deepClone is set to true the value will be cloned recursively
      *
      * @memberof blocks
-     * @param {*} value -
-     * @param {boolean} [deepClone] - Description
-     * @returns {*} Description
+     * @param {*} value - The value to clone.
+     * @param {boolean} [deepClone] - If true it will be a deep clone.
+     * @returns {*} - The cloned object.
      *
      * @example {javascript}
      * var array = [3, 1, 4];
@@ -547,50 +670,17 @@
      * var areEqual = array == cloned;
      * // -> false
      */
-    clone: function(value, deepClone) {
-      if (value == null) {
-        return value;
+    clone: function (value, deepClone) {
+      var rootClone = false;
+      if (!blocks.core.currentClone) {
+        blocks.core.currentClone = {stack: [], processed: [], clones: [], pending: []};
+        rootClone = true;
       }
-
-      var type = blocks.type(value);
-      var clone;
-      var key;
-
-      if (type == 'array') {
-        return value.slice(0);
-      } else if (type == 'object') {
-        if (value.constructor === Object) {
-          clone = {};
-        } else {
-          clone = new value.constructor();
-        }
-
-        for (key in value) {
-          clone[key] = deepClone ? blocks.clone(value[key], true) : value[key];
-        }
-        return clone;
-      } else if (type == 'date') {
-        return new Date(value.getFullYear(), value.getMonth(), value.getDate(),
-          value.getHours(), value.getMinutes(), value.getSeconds(), value.getMilliseconds());
-      } else if (type == 'string') {
-        return value.toString();
-      } else if (type == 'regexp') {
-        var flags = '';
-        if (value.global) {
-          flags += 'g';
-        }
-        if (value.ignoreCase) {
-          flags += 'i';
-        }
-        if (value.multiline) {
-          flags += 'm';
-        }
-        clone = new RegExp(value.source, flags);
-        clone.lastIndex = value.lastIndex;
-        return clone;
+      var clone = internalClone(value, deepClone, blocks.core.currentClone);
+      if (rootClone) {
+        blocks.core.currentClone = null;
       }
-
-      return value;
+      return clone;
     },
 
     /**
@@ -662,7 +752,7 @@
      * Determines if the specified value is an object
      *
      * @memberof blocks
-     * @param {[type]} obj - The value to check for if it is an object
+     * @param {*} obj - The value to check for if it is an object
      * @returns {boolean} - Returns whether the value is an object
      */
     isObject: function(obj) {
@@ -831,6 +921,96 @@
         return self;
       };
       return bound;
+    },
+
+    /**
+     * Converts an array of keys and an array of values to an object.
+     * If no value array is specified the values will be set to true.
+     * @param {String[]|Object[]} array - The array of keys or an array of
+     *                             objects containing objects with key and value properties.
+     * @param {*[]} [values] - The array of values.
+     * @returns {Object}  - The object with the combined keys and values.
+     *
+     * @example {javascript}
+     *
+     * var keys = ['a', 'b', 'c'];
+     * var values = [1, 2, 3];
+     * blocks.toObject(keys, values);
+     * // -> {a: 1, b: 2, c: 3}
+     *
+     * blocks.toObject(keys);
+     * // -> {a: true, b: true, c: true}
+     *
+     * blocks.toObject([{key: 'a', value: 1}, {key: 'b', value: 2}]);
+     * // -> {a: 1, b: 2}
+     */
+    toObject: function (array, values) {
+      var result = {},
+          useValuesArray = arguments.length > 1 && values,
+          i = 0,
+          length = array.length,
+          value;
+
+      for (; i < length; i++) {
+        value = array[i];
+        if (blocks.isArray(value)) {
+          result[value[0]] = value[1];
+        } else if (blocks.isObject(value)) {
+          result[value.key] = value.value;
+        } else {
+          result[value] = useValuesArray ? values[i] : true;
+        }
+      }
+      return result;
+    },
+
+    /**
+     * Converts an given object into an array of objects with properties key and value.
+     * Where key is the property name in the original object and value is the value of the property.
+     * @param {Object} obj - The object to convert.
+     * @returns {Object[]}  - An array of objects with the key/value pairs.
+     *
+     * @example {javascript}
+     * var myObject = {
+     *   a: 1,
+     *   b: "something"
+     * };
+     * blocks.pairs(myObject);
+     * // -> [{key: a, value: 1}, {key: b, value: "someting"}]
+     */
+    pairs: function (obj) {
+      var pairs = [];
+      for (var key in obj) {
+        pairs.push({key: key, value: obj[key]});
+      }
+      return pairs;
+    },
+
+    /**
+     * Flattens an array of values.
+     * @param {Array} collection - The array to flatten.
+     * @param {boolean} [shallow=false] - If true makes the flatten shallow.
+     * @returns {Array} - The flattend array.
+     *
+     * @example {javascript}
+     * var unflattend = [1, 2, [3, [4, 5]]];
+     * blocks.flatten(unflattend);
+     * // -> [1, 2, 3, 4, 5]
+     * blocks.flatten(unflattend, true);
+     * // -> [1, 2, 3, [4, 5]]
+     */
+    flatten: function (collection, shallow) {
+      var flatten = blocks.core.flatten;
+      var result = [];
+      var length = collection.length;
+      var value;
+      var index = -1;
+
+      while (++index < length) {
+          value = collection[index];
+          flatten(shallow, value, result);
+      }
+      return result;
     },
 
     /**
@@ -1042,12 +1222,23 @@
     return callback;
   }
 
-  (function () {
-    // @debug-code
-  })();
+  core.flatten = function (shallow, value, result) {
+    if (blocks.isArray(value) || blocks.isArguments(value)) {
+      if (shallow) {
+        result.push.apply(result, value);
+      } else {
+        for (var i = 0; i < value.length; i++) {
+          core.flatten(shallow, value[i], result);
+        }
+      }
+    } else {
+      result.push(value);
+    }
+  };
 
-  (function () {
-    
+  // @debug-code
+
+  
 (function () {
 
 
@@ -1412,7 +1603,7 @@
   }
 
   var core = blocks.core;
-  
+
   var PrepareValues = {
     parseCallback: function (callback, thisArg) {
       if (typeof callback == 'string') {
@@ -1525,20 +1716,6 @@
         }
         return true;
       }
-    },
-
-    flatten: function (shallow, value, result) {
-      if (blocks.isArray(value) || blocks.isArguments(value)) {
-        if (shallow) {
-          result.push.apply(result, value);
-        } else {
-          for (var i = 0; i < value.length; i++) {
-            PrepareValues.flatten(shallow, value[i], result);
-          }
-        }
-      } else {
-        result.push(value);
-      }
     }
   };
   PrepareValues.reduceRightPrepare = PrepareValues.reducePrepare;
@@ -1549,139 +1726,173 @@
 
 
 var CollectionDescriptors = {
-contains: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-return {
-boolResult: false,
-args: ['searchValue'],
-beforeLoop: 'result' + index + '=false;',
-inLoop: 'if (value===searchValue' + index + '){result' + index + '=true;break ;};'}
-},each: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-var prepareValues = 'callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');';
-return {
-args: ['callback', 'thisArg'],
-beforeLoop: (index === ''?'' + prepareValues + '':''),
-inLoop: 'callback' + index + '(value,indexOrKey,collection);',
-prepareValues: prepareValues}
+contains: function generated(index, type, expression, tillExpressions, skipTake) {
+  return {
+    boolResult: false,
+    args: ['searchValue'],
+    beforeLoop: 'result' + index + '=false;',
+    inLoop: 'if (value===searchValue' + index + '){result' + index + '=true;break ;};'
+  };
+},each: function generated(index, type, expression, tillExpressions, skipTake) {
+  var prepareValues = 'callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');';
+  return {
+    args: [
+      'callback',
+      'thisArg'
+    ],
+    beforeLoop: index === '' ? '' + prepareValues + '' : '',
+    inLoop: 'callback' + index + '(value,indexOrKey,collection);',
+    prepareValues: prepareValues
+  };
 },
 // Objects with different constructors are not equivalent, but `Object`s
-equals: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-var prepareValues = 'deepEqual' + index + '=deepEqual' + index + '===false?false:true;';
-return {
-boolResult: true,
-args: ['compareValue', 'deepEqual'],
-beforeLoop: (index === ''?'' + prepareValues + '':'')+'var index' + index + '=0;var resultResolved' + index + '=false;var size' + index + '=0;var key' + index + ';result' + index + '=true;if (Object.prototype.toString.call(collection)!==Object.prototype.toString.call(compareValue' + index + ')){result' + index + '=false;resultResolved' + index + '=true;};if (!resultResolved' + index + '){var aCtor=collection.constructor;var bCtor=compareValue' + index + '.constructor;if (aCtor!==bCtor&&!(blocks.isFunction(aCtor)&&aCtor instanceof aCtor&&blocks.isFunction(bCtor)&&bCtor instanceof bCtor)&&("constructor" in collection&&"constructor" in compareValue' + index + ')){result' + index + '=false;resultResolved' + index + '=true;}};',
-inLoop: (type == 'array'?'if (!resultResolved' + index + '){if (deepEqual' + index + '?!blocks.equals(value,compareValue' + index + '[size' + index + '],true):value!==compareValue' + index + '[size' + index + ']){result' + index + '=false;break;}size' + index + '+=1;};':'')+(type == 'object'?'if (!resultResolved' + index + '){if (blocks.has(collection,indexOrKey)){if (!blocks.has(compareValue' + index + ',indexOrKey)||(deepEqual' + index + '?!blocks.equals(value,compareValue' + index + '[indexOrKey],true):value!==compareValue' + index + '[indexOrKey])){result' + index + '=false;break;}size' + index + '+=1;}};':''),
-afterLoop: (type == 'array'?'if (!compareValue' + index + '||size' + index + '!==compareValue' + index + '.length){result' + index + '=false;resultResolved' + index + '=true;};':'')+(type == 'object'?'if (!resultResolved' + index + '&&result' + index + '){for (key' + index + ' in compareValue' + index + '){if (blocks.has(compareValue' + index + ',key' + index + ')&&!size' + index + '--){break ;}}result' + index + '=!size' + index + ';};':''),
-prepareValues: prepareValues}
-},every: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-var prepareValues = 'callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');';
-return {
-boolResult: true,
-args: ['callback', 'thisArg'],
-beforeLoop: 'result' + index + '=true;'+(index === ''?'' + prepareValues + '':''),
-inLoop: 'if (callback' + index + '){if (!callback' + index + '(value,indexOrKey,collection)){result' + index + '=false;break ;}}else if (!value){result' + index + '=false;break ;};',
-prepareValues: prepareValues}
-},filter: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-var prepareValues = 'callback' + index + '=blocks.core.filterPrepare(callback' + index + ',thisArg' + index + ');';
-return {
-args: ['callback', 'thisArg'],
-beforeLoop: (index === ''?'' + prepareValues + '':'')+(index === '' || tillExpressions.length === 0?''+(type == 'array'?'result' + index + '=[];':'')+(type == 'object'?'result' + index + '={};':''):''),
-inLoop: 'if (!callback' + index + '(value,indexOrKey,collection)){continue ;};' + skipTake + ';'+(index === '' || tillExpressions.length === 0?''+(type == 'array'?'result' + index + '.push(value);':'')+(type == 'object'?'result' + index + '[indexOrKey]=value;':''):''),
-prepareValues: prepareValues}
-},first: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-var prepareValues = 'if (callback' + index + '){callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');};';
-return {
-args: ['callback', 'thisArg'],
-beforeLoop: 'var isNumber' + index + '=blocks.isNumber(callback' + index + ');var size' + index + '=0;var count' + index + '=1;var current' + index + ';if (isNumber' + index + '){result' + index + '=[];count' + index + '=callback' + index + ';callback' + index + '=thisArg' + index + ';};'+(index === ''?'' + prepareValues + '':''),
-inLoop: 'if (callback' + index + '){if (callback' + index + '(value,indexOrKey,collection)){current' + index + '=value;}else {continue ;}}else {current' + index + '=value;};if (isNumber' + index + '){if (size' + index + '++>=count' + index + '){break ;}result' + index + '.push(current' + index + ');}else {result' + index + '=current' + index + ';break ;};',
-prepareValues: prepareValues,
-everything: true}
-},has: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-return {
-boolResult: false,
-args: ['key'],
-beforeLoop: 'result' + index + '=false;',
-afterLoop: 'result' + index + '=blocks.has(collection,key' + index + ');'}
+equals: function generated(index, type, expression, tillExpressions, skipTake) {
+  var prepareValues = 'deepEqual' + index + '=deepEqual' + index + '===false?false:true;';
+  return {
+    boolResult: true,
+    args: [
+      'compareValue',
+      'deepEqual'
+    ],
+    beforeLoop: (index === '' ? '' + prepareValues + '' : '') + 'var index' + index + '=0;var resultResolved' + index + '=false;var size' + index + '=0;var key' + index + ';result' + index + '=true;if (Object.prototype.toString.call(collection)!==Object.prototype.toString.call(compareValue' + index + ')){result' + index + '=false;resultResolved' + index + '=true;};if (!resultResolved' + index + '){var aCtor=collection.constructor;var bCtor=compareValue' + index + '.constructor;if (aCtor!==bCtor&&!(blocks.isFunction(aCtor)&&aCtor instanceof aCtor&&blocks.isFunction(bCtor)&&bCtor instanceof bCtor)&&("constructor" in collection&&"constructor" in compareValue' + index + ')){result' + index + '=false;resultResolved' + index + '=true;}};',
+    inLoop: (type == 'array' ? 'if (!resultResolved' + index + '){if (deepEqual' + index + '?!blocks.equals(value,compareValue' + index + '[size' + index + '],true):value!==compareValue' + index + '[size' + index + ']){result' + index + '=false;break;}size' + index + '+=1;};' : '') + (type == 'object' ? 'if (!resultResolved' + index + '){if (blocks.has(collection,indexOrKey)){if (!blocks.has(compareValue' + index + ',indexOrKey)||(deepEqual' + index + '?!blocks.equals(value,compareValue' + index + '[indexOrKey],true):value!==compareValue' + index + '[indexOrKey])){result' + index + '=false;break;}size' + index + '+=1;}};' : ''),
+    afterLoop: (type == 'array' ? 'if (!compareValue' + index + '||size' + index + '!==compareValue' + index + '.length){result' + index + '=false;resultResolved' + index + '=true;};' : '') + (type == 'object' ? 'if (!resultResolved' + index + '&&result' + index + '){for (key' + index + ' in compareValue' + index + '){if (blocks.has(compareValue' + index + ',key' + index + ')&&!size' + index + '--){break ;}}result' + index + '=!size' + index + ';};' : ''),
+    prepareValues: prepareValues
+  };
+},every: function generated(index, type, expression, tillExpressions, skipTake) {
+  var prepareValues = 'callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');';
+  return {
+    boolResult: true,
+    args: [
+      'callback',
+      'thisArg'
+    ],
+    beforeLoop: 'result' + index + '=true;' + (index === '' ? '' + prepareValues + '' : ''),
+    inLoop: 'if (callback' + index + '){if (!callback' + index + '(value,indexOrKey,collection)){result' + index + '=false;break ;}}else if (!value){result' + index + '=false;break ;};',
+    prepareValues: prepareValues
+  };
+},filter: function generated(index, type, expression, tillExpressions, skipTake) {
+  var prepareValues = 'callback' + index + '=blocks.core.filterPrepare(callback' + index + ',thisArg' + index + ');';
+  return {
+    args: [
+      'callback',
+      'thisArg'
+    ],
+    beforeLoop: (index === '' ? '' + prepareValues + '' : '') + (index === '' || tillExpressions.length === 0 ? '' + (type == 'array' ? 'result' + index + '=[];' : '') + (type == 'object' ? 'result' + index + '={};' : '') : ''),
+    inLoop: 'if (!callback' + index + '(value,indexOrKey,collection)){continue ;};' + skipTake + ';' + (index === '' || tillExpressions.length === 0 ? '' + (type == 'array' ? 'result' + index + '.push(value);' : '') + (type == 'object' ? 'result' + index + '[indexOrKey]=value;' : '') : ''),
+    prepareValues: prepareValues
+  };
+},first: function generated(index, type, expression, tillExpressions, skipTake) {
+  var prepareValues = 'if (callback' + index + '){callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');};';
+  return {
+    args: [
+      'callback',
+      'thisArg'
+    ],
+    beforeLoop: 'var isNumber' + index + '=blocks.isNumber(callback' + index + ');var size' + index + '=0;var count' + index + '=1;var current' + index + ';if (isNumber' + index + '){result' + index + '=[];count' + index + '=callback' + index + ';callback' + index + '=thisArg' + index + ';};' + (index === '' ? '' + prepareValues + '' : ''),
+    inLoop: 'if (callback' + index + '){if (callback' + index + '(value,indexOrKey,collection)){current' + index + '=value;}else {continue ;}}else {current' + index + '=value;};if (isNumber' + index + '){if (size' + index + '++>=count' + index + '){break ;}result' + index + '.push(current' + index + ');}else {result' + index + '=current' + index + ';break ;};',
+    prepareValues: prepareValues,
+    everything: true
+  };
+},has: function generated(index, type, expression, tillExpressions, skipTake) {
+  return {
+    boolResult: false,
+    args: ['key'],
+    beforeLoop: 'result' + index + '=false;',
+    afterLoop: 'result' + index + '=blocks.has(collection,key' + index + ');'
+  };
 },
 // TODO: ifNeedsResult could be removed and automatically detect if you need to include the this.result in the descriptor string
-invoke: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-return {
-args: ['method', 'args'],
-beforeLoop: 'var isFunc' + index + '=blocks.isFunction(method' + index + ');'+(index === '' || tillExpressions.length === 0?''+(type == 'array'?'result' + index + '=[];':'')+(type == 'object'?'result' + index + '={};':''):'')+(index === ''?'args' + index + '=Array.prototype.slice.call(arguments,2);':''),
-inLoop: 'value=(isFunc' + index + '?method' + index + ':value[method' + index + ']).apply(value,args' + index + '||[]);'+(index === '' || tillExpressions.length === 0?''+(type == 'array'?'result' + index + '.push(value);':'')+(type == 'object'?'result' + index + '[indexOrKey]=value;':''):'')}
-},isEmpty: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-return {
-boolResult: true,
-beforeLoop: 'result' + index + '=true;',
-inLoop: 'result' + index + '=false;'}
-},join: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-return {
-args: ['separator'],
-beforeLoop: 'separator' + index + '=typeof separator' + index + '=="undefined"?",":separator' + index + ';result' + index + '="";',
-inLoop: 'result' + index + '+=value+separator' + index + ';',
-afterLoop: 'result' + index + '=result' + index + '.substring(0,result' + index + '.length-separator' + index + '.length);'}
+invoke: function generated(index, type, expression, tillExpressions, skipTake) {
+  return {
+    args: [
+      'method',
+      'args'
+    ],
+    beforeLoop: 'var isFunc' + index + '=blocks.isFunction(method' + index + ');' + (index === '' || tillExpressions.length === 0 ? '' + (type == 'array' ? 'result' + index + '=[];' : '') + (type == 'object' ? 'result' + index + '={};' : '') : '') + (index === '' ? 'args' + index + '=Array.prototype.slice.call(arguments,2);' : ''),
+    inLoop: 'value=(isFunc' + index + '?method' + index + ':value[method' + index + ']).apply(value,args' + index + '||[]);' + (index === '' || tillExpressions.length === 0 ? '' + (type == 'array' ? 'result' + index + '.push(value);' : '') + (type == 'object' ? 'result' + index + '[indexOrKey]=value;' : '') : '')
+  };
+},isEmpty: function generated(index, type, expression, tillExpressions, skipTake) {
+  return {
+    boolResult: true,
+    beforeLoop: 'result' + index + '=true;',
+    inLoop: 'result' + index + '=false;'
+  };
+},join: function generated(index, type, expression, tillExpressions, skipTake) {
+  return {
+    args: ['separator'],
+    beforeLoop: 'separator' + index + '=typeof separator' + index + '=="undefined"?",":separator' + index + ';result' + index + '="";',
+    inLoop: 'result' + index + '+=value+separator' + index + ';',
+    afterLoop: 'result' + index + '=result' + index + '.substring(0,result' + index + '.length-separator' + index + '.length);'
+  };
 },
 // NOTE: The code could be minified using UglifyJS.
-map: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-var prepareValues = 'callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');';
-return {
-args: ['callback', 'thisArg'],
-beforeLoop: (index === ''?'' + prepareValues + '':'')+(index === ''?''+(type == 'array'?'result' + index + '=Array(collection.length);':'')+(type == 'object'?'result' + index + '=[];':''):'')+(index !== '' && tillExpressions.length === 0?'result' + index + '=[];':''),
-inLoop: 'value=callback' + index + '(value,indexOrKey,collection);'+(index === ''?''+(type == 'array'?'result' + index + '[indexOrKey]=value;':'')+(type == 'object'?'result' + index + '.push(value);':''):'')+(index !== '' && tillExpressions.length === 0?'result' + index + '.push(value);':''),
-prepareValues: prepareValues}
-},max: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-var prepareValues = 'callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');';
-return {
-args: ['callback', 'thisArg'],
-beforeLoop: 'var max' + index + '=-Infinity;result' + index + '=max' + index + ';'+(index === ''?'' + prepareValues + '':''),
-inLoop: 'max' + index + '=callback' + index + '?callback' + index + '(value,indexOrKey,collection):value;result' + index + '=max' + index + '>result' + index + '?max' + index + ':result' + index + ';',
-prepareValues: prepareValues,
-type: 'NumberExpression'}
-},min: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-var prepareValues = 'callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');';
-return {
-args: ['callback', 'thisArg'],
-beforeLoop: 'var min' + index + '=Infinity;result' + index + '=min' + index + ';'+(index === ''?'' + prepareValues + '':''),
-inLoop: 'min' + index + '=callback' + index + '?callback' + index + '(value,indexOrKey,collection):value;result' + index + '=min' + index + '<result' + index + '?min' + index + ':result' + index + ';',
-prepareValues: prepareValues,
-type: 'NumberExpression'}
-},reduce: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-var prepareValues = 'callback' + index + '=blocks.core.reducePrepare(callback' + index + ',memo' + index + ',thisArg' + index + ');';
-return {
-args: ['callback', 'memo', 'thisArg'],
-beforeLoop: 'var hasMemo' + index + '=memo' + index + '!=null;result' + index + '=memo' + index + ';'+(index === ''?'' + prepareValues + '':''),
-inLoop: 'if (hasMemo' + index + '){result' + index + '=callback' + index + '(result' + index + ',value,indexOrKey,collection);}else {result' + index + '=collection[indexOrKey];hasMemo' + index + '=true;};',
-prepareValues: prepareValues,
-everything: true}
-},size: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-return {
-beforeLoop: (index === ''?''+(type == 'array'?'return collection.length;':''):'')+'result' + index + '=0;',
-inLoop: 'result' + index + '++;',
-type: 'NumberExpression'}
-},some: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-var prepareValues = 'callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');';
-return {
-boolResult: false,
-args: ['callback', 'thisArg'],
-beforeLoop: 'result' + index + '=false;'+(index === ''?'' + prepareValues + '':''),
-inLoop: 'if (callback' + index + '){if (callback' + index + '(value,indexOrKey,collection)){result' + index + '=true;break ;}}else if (value){result' + index + '=true;break ;};',
-prepareValues: prepareValues}
+map: function generated(index, type, expression, tillExpressions, skipTake) {
+  var prepareValues = 'callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');';
+  return {
+    args: [
+      'callback',
+      'thisArg'
+    ],
+    beforeLoop: (index === '' ? '' + prepareValues + '' : '') + (index === '' ? '' + (type == 'array' ? 'result' + index + '=Array(collection.length);' : '') + (type == 'object' ? 'result' + index + '=[];' : '') : '') + (index !== '' && tillExpressions.length === 0 ? 'result' + index + '=[];' : ''),
+    inLoop: 'value=callback' + index + '(value,indexOrKey,collection);' + (index === '' ? '' + (type == 'array' ? 'result' + index + '[indexOrKey]=value;' : '') + (type == 'object' ? 'result' + index + '.push(value);' : '') : '') + (index !== '' && tillExpressions.length === 0 ? 'result' + index + '.push(value);' : ''),
+    prepareValues: prepareValues
+  };
+},max: function generated(index, type, expression, tillExpressions, skipTake) {
+  var prepareValues = 'callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');';
+  return {
+    args: [
+      'callback',
+      'thisArg'
+    ],
+    beforeLoop: 'var max' + index + '=-Infinity;result' + index + '=max' + index + ';' + (index === '' ? '' + prepareValues + '' : ''),
+    inLoop: 'max' + index + '=callback' + index + '?callback' + index + '(value,indexOrKey,collection):value;result' + index + '=max' + index + '>result' + index + '?max' + index + ':result' + index + ';',
+    prepareValues: prepareValues,
+    type: 'NumberExpression'
+  };
+},min: function generated(index, type, expression, tillExpressions, skipTake) {
+  var prepareValues = 'callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');';
+  return {
+    args: [
+      'callback',
+      'thisArg'
+    ],
+    beforeLoop: 'var min' + index + '=Infinity;result' + index + '=min' + index + ';' + (index === '' ? '' + prepareValues + '' : ''),
+    inLoop: 'min' + index + '=callback' + index + '?callback' + index + '(value,indexOrKey,collection):value;result' + index + '=min' + index + '<result' + index + '?min' + index + ':result' + index + ';',
+    prepareValues: prepareValues,
+    type: 'NumberExpression'
+  };
+},reduce: function generated(index, type, expression, tillExpressions, skipTake) {
+  var prepareValues = 'callback' + index + '=blocks.core.reducePrepare(callback' + index + ',memo' + index + ',thisArg' + index + ');';
+  return {
+    args: [
+      'callback',
+      'memo',
+      'thisArg'
+    ],
+    beforeLoop: 'var hasMemo' + index + '=memo' + index + '!=null;result' + index + '=memo' + index + ';' + (index === '' ? '' + prepareValues + '' : ''),
+    inLoop: 'if (hasMemo' + index + '){result' + index + '=callback' + index + '(result' + index + ',value,indexOrKey,collection);}else {result' + index + '=collection[indexOrKey];hasMemo' + index + '=true;};',
+    prepareValues: prepareValues,
+    everything: true
+  };
+},size: function generated(index, type, expression, tillExpressions, skipTake) {
+  return {
+    beforeLoop: (index === '' ? '' + (type == 'array' ? 'return collection.length;' : '') : '') + 'result' + index + '=0;',
+    inLoop: 'result' + index + '++;',
+    type: 'NumberExpression'
+  };
+},some: function generated(index, type, expression, tillExpressions, skipTake) {
+  var prepareValues = 'callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');';
+  return {
+    boolResult: false,
+    args: [
+      'callback',
+      'thisArg'
+    ],
+    beforeLoop: 'result' + index + '=false;' + (index === '' ? '' + prepareValues + '' : ''),
+    inLoop: 'if (callback' + index + '){if (callback' + index + '(value,indexOrKey,collection)){result' + index + '=true;break ;}}else if (value){result' + index + '=true;break ;};',
+    prepareValues: prepareValues
+  };
 },type: 'collection'
 };for (var key in CollectionDescriptors) {CollectionDescriptors[key].identity = key;CollectionDescriptors[key].parent = CollectionDescriptors;}
 
@@ -1700,12 +1911,15 @@ var ArrayDescriptors = {
  * blocks.at(['fred', 'barney', 'pebbles'], 0, 2);
  * // → ['fred', 'pebbles']
  */
-at: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-return {
-args: ['position', 'count'],
-beforeLoop: 'var isArray' + index + '=blocks.isNumber(count' + index + ');var size' + index + '=0;indexOrKey=position' + index + '-1;if (isArray' + index + '){result' + index + '=[];};',
-inLoop: 'if (isArray' + index + '){if (size' + index + '++>=count' + index + '){break ;}result' + index + '.push(value);}else {result=value;break ;};'}
+at: function generated(index, type, expression, tillExpressions, skipTake) {
+  return {
+    args: [
+      'position',
+      'count'
+    ],
+    beforeLoop: 'var isArray' + index + '=blocks.isNumber(count' + index + ');var size' + index + '=0;indexOrKey=position' + index + '-1;if (isArray' + index + '){result' + index + '=[];};',
+    inLoop: 'if (isArray' + index + '){if (size' + index + '++>=count' + index + '){break ;}result' + index + '.push(value);}else {result=value;break ;};'
+  };
 },
 /**
  * Flattens a nested array (the nesting can be to any depth).
@@ -1734,12 +1948,12 @@ inLoop: 'if (isArray' + index + '){if (size' + index + '++>=count' + index + '){
  * blocks.flatten(characters, 'pets');
  * // → ['hoppy', 'baby puss', 'dino']
  */
-flatten: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-return {
-args: ['shallow'],
-beforeLoop: 'var flatten' + index + '=blocks.core.flatten;result' + index + '=[];',
-inLoop: 'flatten' + index + '(shallow' + index + ',value,result' + index + ');'}
+flatten: function generated(index, type, expression, tillExpressions, skipTake) {
+  return {
+    args: ['shallow'],
+    beforeLoop: 'var flatten' + index + '=blocks.core.flatten;result' + index + '=[];',
+    inLoop: 'flatten' + index + '(shallow' + index + ',value,result' + index + ');'
+  };
 },
 /**
  * Gets the index at which the first occurrence of value is found using strict equality for comparisons, i.e. ===.
@@ -1760,13 +1974,16 @@ inLoop: 'flatten' + index + '(shallow' + index + ',value,result' + index + ');'}
  * blocks.indexOf([1, 1, 2, 2, 3, 3], 2, true);
  * // → 2
  */
-indexOf: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-return {
-args: ['searchValue', 'fromIndex'],
-beforeLoop: 'result' + index + '=-1;if (blocks.isNumber(fromIndex' + index + ')){indexOrKey=fromIndex' + index + ';};',
-inLoop: 'if (value===searchValue' + index + '){result' + index + '=indexOrKey;break ;};',
-type: 'NumberExpression'}
+indexOf: function generated(index, type, expression, tillExpressions, skipTake) {
+  return {
+    args: [
+      'searchValue',
+      'fromIndex'
+    ],
+    beforeLoop: 'result' + index + '=-1;if (blocks.isNumber(fromIndex' + index + ')){indexOrKey=fromIndex' + index + ';};',
+    inLoop: 'if (value===searchValue' + index + '){result' + index + '=indexOrKey;break ;};',
+    type: 'NumberExpression'
+  };
 },
 /**
  * Gets the last element or last n elements of an array. If a callback is provided elements at the end of the array are returned as long as the callback returns truthy.
@@ -1805,16 +2022,19 @@ type: 'NumberExpression'}
  * blocks.last(characters, { 'employer': 'na' });
  * // → [{ 'name': 'pebbles', 'blocked': true, 'employer': 'na' }]
  */
-last: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-var prepareValues = 'if (callback' + index + '){callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');};';
-return {
-reverse: true,
-args: ['callback', 'thisArg'],
-beforeLoop: 'var isNumber' + index + '=blocks.isNumber(callback' + index + ');var size' + index + '=0;var count' + index + '=1;var current' + index + ';if (isNumber' + index + '){result' + index + '=[];count' + index + '=callback' + index + ';callback' + index + '=thisArg' + index + ';};'+(index === ''?'' + prepareValues + '':''),
-inLoop: 'if (callback' + index + '){if (callback' + index + '(value,indexOrKey,collection)){current' + index + '=value;}else {continue ;}}else {current' + index + '=value;};if (isNumber' + index + '){if (size' + index + '++>=count' + index + '){break ;}result' + index + '.unshift(current' + index + ');}else {result' + index + '=current' + index + ';break ;};',
-prepareValues: prepareValues,
-everything: true}
+last: function generated(index, type, expression, tillExpressions, skipTake) {
+  var prepareValues = 'if (callback' + index + '){callback' + index + '=blocks.core.parseCallback(callback' + index + ',thisArg' + index + ');};';
+  return {
+    reverse: true,
+    args: [
+      'callback',
+      'thisArg'
+    ],
+    beforeLoop: 'var isNumber' + index + '=blocks.isNumber(callback' + index + ');var size' + index + '=0;var count' + index + '=1;var current' + index + ';if (isNumber' + index + '){result' + index + '=[];count' + index + '=callback' + index + ';callback' + index + '=thisArg' + index + ';};' + (index === '' ? '' + prepareValues + '' : ''),
+    inLoop: 'if (callback' + index + '){if (callback' + index + '(value,indexOrKey,collection)){current' + index + '=value;}else {continue ;}}else {current' + index + '=value;};if (isNumber' + index + '){if (size' + index + '++>=count' + index + '){break ;}result' + index + '.unshift(current' + index + ');}else {result' + index + '=current' + index + ';break ;};',
+    prepareValues: prepareValues,
+    everything: true
+  };
 },
 /**
  * Gets the index at which the last occurrence of value is found using strict equality for comparisons, i.e. ===. If fromIndex is negative, it is used as the offset from the end of the collection.
@@ -1835,14 +2055,17 @@ everything: true}
  * blocks.lastIndexOf([1, 2, 3, 1, 2, 3], 2, 3);
  * // → 1
  */
-lastIndexOf: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-return {
-reverse: true,
-args: ['searchValue', 'fromIndex'],
-beforeLoop: 'result' + index + '=-1;if (blocks.isNumber(fromIndex' + index + ')){indexOrKey=fromIndex' + index + ';};',
-inLoop: 'if (value===searchValue' + index + '){result' + index + '=indexOrKey;break ;};',
-type: 'NumberExpression'}
+lastIndexOf: function generated(index, type, expression, tillExpressions, skipTake) {
+  return {
+    reverse: true,
+    args: [
+      'searchValue',
+      'fromIndex'
+    ],
+    beforeLoop: 'result' + index + '=-1;if (blocks.isNumber(fromIndex' + index + ')){indexOrKey=fromIndex' + index + ';};',
+    inLoop: 'if (value===searchValue' + index + '){result' + index + '=indexOrKey;break ;};',
+    type: 'NumberExpression'
+  };
 },
 /**
 ﻿ * Creates an array of numbers (positive and/or negative) progressing from start up to but not including end.
@@ -1873,336 +2096,341 @@ type: 'NumberExpression'}
 ﻿ * blocks.range(0);
 ﻿ * // → []
 ﻿ */
-range: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-return {
-args: ['start', 'end', 'step'],
-beforeLoop: 'length=Math.max(Math.ceil((end' + index + '-start' + index + ')/step' + index + '),0);result' + index + '=Array(length);',
-inLoop: 'value=start' + index + ';start' + index + '+=step' + index + ';'+(index === '' || tillExpressions.length === 0?'result' + index + '[indexOrKey]=value;':'')}
+range: function generated(index, type, expression, tillExpressions, skipTake) {
+  return {
+    args: [
+      'start',
+      'end',
+      'step'
+    ],
+    beforeLoop: 'length=Math.max(Math.ceil((end' + index + '-start' + index + ')/step' + index + '),0);result' + index + '=Array(length);',
+    inLoop: 'value=start' + index + ';start' + index + '+=step' + index + ';' + (index === '' || tillExpressions.length === 0 ? 'result' + index + '[indexOrKey]=value;' : '')
+  };
 },
 // TODO: reduceRight and lastIndexOf are equal to code as reduce and indexOf respectivly
-reduceRight: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-return {
-reverse: true,
-args: ['callback', 'memo', 'thisArg'],
-beforeLoop: 'var hasMemo' + index + '=memo' + index + '!=null;result' + index + '=memo' + index + ';'+(index === ''?'callback' + index + '=blocks.core.reducePrepare(callback' + index + ',memo' + index + ',thisArg' + index + ');':''),
-inLoop: 'if (hasMemo' + index + '){result' + index + '=callback' + index + '(result' + index + ',value,indexOrKey,collection);}else {result' + index + '=collection[indexOrKey];hasMemo' + index + '=true;};',
-everything: true}
-},unique: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-var prepareValues = 'callback' + index + '=blocks.core.uniquePrepare(callback' + index + ',thisArg' + index + ');';
-return {
-args: ['callback', 'thisArg'],
-beforeLoop: 'var seen' + index + '=[];var isFirst' + index + '=true;var isSorted' + index + '=blocks.isBoolean(callback' + index + ')&&callback' + index + ';var hasCallback' + index + '=blocks.isFunction(callback' + index + ');var map' + index + ';result' + index + '=[];'+(index === ''?'' + prepareValues + '':''),
-inLoop: 'map' + index + '=hasCallback' + index + '?callback' + index + '(value,indexOrKey,collection):value;if (isSorted' + index + '?isFirst' + index + '||seen' + index + '[seen' + index + '.length-1]!==map' + index + ':!blocks.contains(seen' + index + ',map' + index + ')){isFirst' + index + '=false;seen' + index + '.push(map' + index + ');}else {continue ;};'+(index === '' || tillExpressions.length === 0?'result' + index + '.push(value);':''),
-prepareValues: prepareValues}
+reduceRight: function generated(index, type, expression, tillExpressions, skipTake) {
+  return {
+    reverse: true,
+    args: [
+      'callback',
+      'memo',
+      'thisArg'
+    ],
+    beforeLoop: 'var hasMemo' + index + '=memo' + index + '!=null;result' + index + '=memo' + index + ';' + (index === '' ? 'callback' + index + '=blocks.core.reducePrepare(callback' + index + ',memo' + index + ',thisArg' + index + ');' : ''),
+    inLoop: 'if (hasMemo' + index + '){result' + index + '=callback' + index + '(result' + index + ',value,indexOrKey,collection);}else {result' + index + '=collection[indexOrKey];hasMemo' + index + '=true;};',
+    everything: true
+  };
+},unique: function generated(index, type, expression, tillExpressions, skipTake) {
+  var prepareValues = 'callback' + index + '=blocks.core.uniquePrepare(callback' + index + ',thisArg' + index + ');';
+  return {
+    args: [
+      'callback',
+      'thisArg'
+    ],
+    beforeLoop: 'var seen' + index + '=[];var isFirst' + index + '=true;var isSorted' + index + '=blocks.isBoolean(callback' + index + ')&&callback' + index + ';var hasCallback' + index + '=blocks.isFunction(callback' + index + ');var map' + index + ';result' + index + '=[];' + (index === '' ? '' + prepareValues + '' : ''),
+    inLoop: 'map' + index + '=hasCallback' + index + '?callback' + index + '(value,indexOrKey,collection):value;if (isSorted' + index + '?isFirst' + index + '||seen' + index + '[seen' + index + '.length-1]!==map' + index + ':!blocks.contains(seen' + index + ',map' + index + ')){isFirst' + index + '=false;seen' + index + '.push(map' + index + ');}else {continue ;};' + (index === '' || tillExpressions.length === 0 ? 'result' + index + '.push(value);' : ''),
+    prepareValues: prepareValues
+  };
 },type: 'array'
 };for (var key in ArrayDescriptors) {ArrayDescriptors[key].identity = key;ArrayDescriptors[key].parent = ArrayDescriptors;}
 
 var ObjectDescriptors = {
-get: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-var prepareValues = (index === ''?'keys' + index + '=blocks.flatten(Array.prototype.slice.call(arguments,1));':'')+(index !== ''?'keys' + index + '=blocks.flatten(Array.prototype.slice.call(arguments,0));':'');
-return {
-args: ['keys'],
-beforeLoop: (index === ''?'' + prepareValues + '':'')+'var singleKey' + index + '=keys' + index + '.length<2;keys' + index + '=blocks.toObject(keys' + index + ');result' + index + '={};',
-inLoop: 'if (keys' + index + '.hasOwnProperty(indexOrKey)){if (singleKey' + index + '){result' + index + '=value;}else {result' + index + '[indexOrKey]=value;}};',
-prepareValues: prepareValues}
-},invert: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-return {
-beforeLoop: 'var temp' + index + ';result' + index + '={};',
-inLoop: 'temp' + index + '=value;value=indexOrKey;indexOrKey=temp' + index + ';'+(index === '' || tillExpressions.length === 0?'result' + index + '[indexOrKey]=value;':'')}
-},keys: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-return {
-beforeLoop: 'result' + index + '=[];',
-inLoop: 'value=indexOrKey;'+(index === '' || tillExpressions.length === 0?'result' + index + '.push(value);':'')}
-},pairs: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-return {
-beforeLoop: 'result' + index + '=[];',
-inLoop: 'result' + index + '.push({key:indexOrKey,value:value});'}
-},values: function anonymous(index,type,expression,tillExpressions,skipTake
-/**/) {
-return {
-beforeLoop: 'result' + index + '=[];',
-inLoop: 'result' + index + '.push(value);'}
+get: function generated(index, type, expression, tillExpressions, skipTake) {
+  var prepareValues = (index === '' ? 'keys' + index + '=blocks.flatten(Array.prototype.slice.call(arguments,1));' : '') + (index !== '' ? 'keys' + index + '=blocks.flatten(Array.prototype.slice.call(arguments,0));' : '');
+  return {
+    args: ['keys'],
+    beforeLoop: (index === '' ? '' + prepareValues + '' : '') + 'var singleKey' + index + '=keys' + index + '.length<2;keys' + index + '=blocks.toObject(keys' + index + ');result' + index + '={};',
+    inLoop: 'if (keys' + index + '.hasOwnProperty(indexOrKey)){if (singleKey' + index + '){result' + index + '=value;}else {result' + index + '[indexOrKey]=value;}};',
+    prepareValues: prepareValues
+  };
+},invert: function generated(index, type, expression, tillExpressions, skipTake) {
+  return {
+    beforeLoop: 'var temp' + index + ';result' + index + '={};',
+    inLoop: 'temp' + index + '=value;value=indexOrKey;indexOrKey=temp' + index + ';' + (index === '' || tillExpressions.length === 0 ? 'result' + index + '[indexOrKey]=value;' : '')
+  };
+},keys: function generated(index, type, expression, tillExpressions, skipTake) {
+  return {
+    beforeLoop: 'result' + index + '=[];',
+    inLoop: 'value=indexOrKey;' + (index === '' || tillExpressions.length === 0 ? 'result' + index + '.push(value);' : '')
+  };
+},pairs: function generated(index, type, expression, tillExpressions, skipTake) {
+  return {
+    beforeLoop: 'result' + index + '=[];',
+    inLoop: 'result' + index + '.push({key:indexOrKey,value:value});'
+  };
+},values: function generated(index, type, expression, tillExpressions, skipTake) {
+  return {
+    beforeLoop: 'result' + index + '=[];',
+    inLoop: 'result' + index + '.push(value);'
+  };
 },type: 'object'
 };for (var key in ObjectDescriptors) {ObjectDescriptors[key].identity = key;ObjectDescriptors[key].parent = ObjectDescriptors;}
 
 var LoopDescriptors = {
-chainExpression: function anonymous(context
-/**/) {
-var context2;
-var context1;
-var result = '';
-var last2;
-var first2;
-var key2;
-var index2;
-var last1;
-var first1;
-var key1;
-var index1;
-result += 'var ' + context.indexOrKey + ' = -1, ' + context.collection + ', ' + context.length + ', ' + context.value + ', ' + (!context.conditions ? ' ' + context.result + context.resultIndex + ',' : '') + ' ' + context.result + (context.conditions ? ' = false' : '') + '; ' + context.conditionsDeclarations + ' ';
-index1 = -1;
-blocks.each(context.args, function (value, index){
-context1 = value;
-index1 += 1;
-key1 = index;
-first1 = index == 0;
-last1 = index == context.args.length - 1;
-result += ' ';
-index2 = -1;
-blocks.each(context1, function (value, index){
-context2 = value;
-index2 += 1;
-key2 = index;
-first2 = index == 0;
-last2 = index == context1.length - 1;
-result += ' var ' + context2 + index1 + ' = ' + context.expression + '._' + context2 + '; ';
-});
-result += ' ' + context.expression + ' = ' + context.expression + '._parent; ';
-});
-result += ' ';
-blocks.eachRight(context.variables, function (value, index){
-context1 = value;
-index1 = context.variables.length;
-index1 += -1;
-key1 = index;
-first1 = index == 0;
-last1 = index == context.variables.length - 1;
-result += ' ';
-index2 = -1;
-blocks.each(context1, function (value, index){
-context2 = value;
-index2 += 1;
-key2 = index;
-first2 = index == 0;
-last2 = index == context1.length - 1;
-result += ' var ' + key2 + index2 + ' = ' + context2 + '; ';
-});
-result += ' ';
-});
-result += ' ' + context.collection + ' = ' + context.expression + '._value; ' + context.indexOrKey + ' += ' + context.skip + '; ' + (context.take ? ' ' + context.length + ' = Math.min(' + context.collection + '.length, ' + context.skip + ' + ' + context.take + '); ' : '') + ' ' + (!context.take ? ' ' + context.length + ' = ' + context.collection + '.length; ' : '') + ' ' + (context.reverse ? ' ' + context.indexOrKey + ' = ' + context.collection + '.length - ' + context.skip + '; ' : '') + ' ';
-blocks.eachRight(context.arrayBeforeLoops, function (value, index){
-context1 = value;
-index1 = context.arrayBeforeLoops.length;
-index1 += -1;
-key1 = index;
-first1 = index == 0;
-last1 = index == context.arrayBeforeLoops.length - 1;
-result += ' ' + context1 + ' ';
-});
-result += ' ' + (context.isObject ? ' for (' + context.indexOrKey + ' in ' + context.collection + ') { ' : '') + ' ' + (!context.isObject ? ' ' + (context.reverse ? ' while (--' + context.indexOrKey + ' >= ' + (context.take ? context.take : '') + (!context.take ? '0' : '') + ') { ' : '') + ' ' + (!context.reverse ? ' while (++' + context.indexOrKey + ' < ' + context.length + ') { ' : '') + ' ' : '') + ' ' + context.value + ' = ' + context.collection + '[' + context.indexOrKey + ']; ';
-blocks.eachRight(context.arrayInLoops, function (value, index){
-context1 = value;
-index1 = context.arrayInLoops.length;
-index1 += -1;
-key1 = index;
-first1 = index == 0;
-last1 = index == context.arrayInLoops.length - 1;
-result += ' ' + context1 + ' ';
-});
-result += ' ' + (context.inLoopConditions ? ' ' + context.inLoopConditions + ' ' : '') + ' } ';
-blocks.eachRight(context.arrayAfterLoops, function (value, index){
-context1 = value;
-index1 = context.arrayAfterLoops.length;
-index1 += -1;
-key1 = index;
-first1 = index == 0;
-last1 = index == context.arrayAfterLoops.length - 1;
-result += ' ' + context1 + ' ';
-});
-result += ' ' + (context.afterLoopConditions ? ' ' + context.afterLoopConditions + ' ' : '') + ' ' + (!context.conditions ? ' ' + context.result + ' = ' + context.result + context.resultIndex + '; ' : '') + ' return ' + context.result + '; ';
-return result;
-},conditions: function anonymous(context
-/**/) {
-var context1;
-var result = '';
-var last1;
-var first1;
-var key1;
-var index1;
-result += 'if (';
-index1 = -1;
-blocks.each(context.items, function (value, index){
-context1 = value;
-index1 += 1;
-key1 = index;
-first1 = index == 0;
-last1 = index == context.items.length - 1;
-result += context1;
-});
-result += ') { ' + context.result + ' = true; ' + (context.inLoop ? ' break; ' : '') + ' } ';
-return result;
-},expressions: function anonymous(context
-/**/) {
-var context2;
-var context1;
-var result = '';
-var last2;
-var first2;
-var key2;
-var index2;
-var last1;
-var first1;
-var key1;
-var index1;
-result += 'function ' + context.name + 'Expression( ';
-index1 = -1;
-blocks.each(context.args, function (value, index){
-context1 = value;
-index1 += 1;
-key1 = index;
-first1 = index == 0;
-last1 = index == context.args.length - 1;
-result += ' ' + context1 + ', ';
-});
-result += ' parent ) { this._parent = parent; this._descriptor = descriptors.' + context.descriptorName + '; ';
-index1 = -1;
-blocks.each(context.args, function (value, index){
-context1 = value;
-index1 += 1;
-key1 = index;
-first1 = index == 0;
-last1 = index == context.args.length - 1;
-result += ' this._' + context1 + ' = ' + context1 + '; ';
-});
-result += ' } ' + (context.isRoot ? ' function ' + context.name + 'Expression(value) { this._value = value; this._loopDescriptor = LoopDescriptors.chainExpression; } ' : '') + ' blocks.inherit(BaseExpression, ' + context.name + 'Expression, { _type: ' + context.type + ', _name: "' + context.name + '", ';
-index1 = -1;
-blocks.each(context.methods, function (value, index){
-context1 = value;
-index1 += 1;
-key1 = index;
-first1 = index == 0;
-last1 = index == context.methods.length - 1;
-result += ' ' + context1.name + ': function ( ';
-index2 = -1;
-blocks.each(context1.args, function (value, index){
-context2 = value;
-index2 += 1;
-key2 = index;
-first2 = index == 0;
-last2 = index == context1.args.length - 1;
-result += ' ' + context2 + ', ';
-});
-result += ' a ) { var type = expressions.' + context.path + context1.name + '; if (!type) { type = (expressions.' + context.path + context1.name + ' = generateExpression("' + context.name + context1.name + '", "' + context.path + context1.name + '", "' + context1.name + '", ' + context.type + ')); } ' + context1.prepareValues + ' expression = new type(';
-index2 = -1;
-blocks.each(context1.args, function (value, index){
-context2 = value;
-index2 += 1;
-key2 = index;
-first2 = index == 0;
-last2 = index == context1.args.length - 1;
-result += ' ' + context2 + ', ';
-});
-result += ' this); ' + (context1.type ? ' if (this._hasConditions()) { this.result(); this._setLastCondition(); return new ' + context1.type + '(expression.value(), this); } return new ' + context1.type + '(expression.value()); ' : '') + ' ' + (context1.everything ? ' if (this._hasConditions()) { this.result(); this._setLastCondition(); } return blocks(expression.value(), this); ' : '') + ' return expression; }, ';
-});
-result += ' ';
-index1 = -1;
-blocks.each(context.staticMethods, function (value, index){
-context1 = value;
-index1 += 1;
-key1 = index;
-first1 = index == 0;
-last1 = index == context.staticMethods.length - 1;
-result += ' ' + key1 + ' : ' + context1 + ', ';
-});
-result += ' reverse: function () { var type = expressions.' + context.path + 'reverse; if (!type) { type = (expressions.' + context.path + 'reverse = generateExpression("' + context.path + 'reverse", "' + context.path + 'reverse", "reverse", ' + context.type + ')); } var expression = new type(this); return expression; }, each: function (callback, thisArg) { var type = expressions.' + context.path + 'each; if (!type) { type = (expressions.' + context.path + 'each = generateExpression("' + context.path + 'each", "' + context.path + 'each", "each", ' + context.type + ')); } callback = PrepareValues.parseCallback(callback, thisArg); var expression = new type(callback, thisArg, this); expression._loop(); return expression; }, value: function () { if (this._parent && this._computedValue === undefined) { this._execute(true); this._computedValue = blocks.isBoolean(this._result) ? this._parent._value : this._result; } return this._computedValue === undefined ? this._value : this._computedValue; }, result: function () { if (this._result === true || this._result === false) { return this._result; } if (this._parent) { this._execute(); } return this._result; }, _loop: function () { var func = cache.' + context.path + ' || (cache.' + context.path + ' = createExpression(this)); func(this); }, _execute: function (skipConditions) { var func = cache.' + context.path + ' || (cache.' + context.path + ' = createExpression(this, skipConditions)); if (func) { this._setResult(func(this)); } else { this._result = this._findValue(); } }, _hasConditions: function () { var name = this._name; return name.indexOf("and") != -1 || name.indexOf("or") != -1; }, _setLastCondition: function () { var name = this._name; var andIndex = name.lastIndexOf("and"); var orIndex = name.lastIndexOf("or"); this._lastCondition = andIndex > orIndex ? "and" : "or"; }, _findValue: function () { var parent = this._parent; while (parent) { if (parent._value) { return parent._value; } parent = parent._parent; } } }); return ' + context.name + 'Expression; ';
-return result;
-},singleExpression: function anonymous(context
-/**/) {
-var context1;
-var result = '';
-var last1;
-var first1;
-var key1;
-var index1;
-result += 'var ' + context.length + ' = ' + context.collection + '.length, ' + context.indexOrKey + ' = ' + (!context.reverse ? '-1' : '') + (context.reverse ? context.length : '') + ', ' + context.isCollectionAnArray + ' = ' + context.isArrayCheck + ', ' + context.result + ', ' + context.value + '; ';
-index1 = -1;
-blocks.each(context.variables, function (value, index){
-context1 = value;
-index1 += 1;
-key1 = index;
-first1 = index == 0;
-last1 = index == context.variables.length - 1;
-result += ' ';
-});
-result += ' if (' + context.isCollectionAnArray + ') { ';
-index1 = -1;
-blocks.each(context.arrayBeforeLoops, function (value, index){
-context1 = value;
-index1 += 1;
-key1 = index;
-first1 = index == 0;
-last1 = index == context.arrayBeforeLoops.length - 1;
-result += ' ' + context1 + ' ';
-});
-result += ' ' + (context.reverse ? ' while (--' + context.indexOrKey + ' >= 0) { ' : '') + ' ' + (!context.reverse ? ' while (++' + context.indexOrKey + ' < ' + context.length + ') { ' : '') + ' ' + context.value + ' = ' + context.collection + '[' + context.indexOrKey + ']; ';
-index1 = -1;
-blocks.each(context.arrayInLoops, function (value, index){
-context1 = value;
-index1 += 1;
-key1 = index;
-first1 = index == 0;
-last1 = index == context.arrayInLoops.length - 1;
-result += ' ' + context1 + ' ';
-});
-result += ' } ';
-index1 = -1;
-blocks.each(context.arrayAfterLoops, function (value, index){
-context1 = value;
-index1 += 1;
-key1 = index;
-first1 = index == 0;
-last1 = index == context.arrayAfterLoops.length - 1;
-result += ' ' + context1 + ' ';
-});
-result += ' } else { ';
-index1 = -1;
-blocks.each(context.objectBeforeLoops, function (value, index){
-context1 = value;
-index1 += 1;
-key1 = index;
-first1 = index == 0;
-last1 = index == context.objectBeforeLoops.length - 1;
-result += ' ' + context1 + ' ';
-});
-result += ' for (' + context.indexOrKey + ' in collection) { ' + context.value + ' = ' + context.collection + '[' + context.indexOrKey + ']; ';
-index1 = -1;
-blocks.each(context.objectInLoops, function (value, index){
-context1 = value;
-index1 += 1;
-key1 = index;
-first1 = index == 0;
-last1 = index == context.objectInLoops.length - 1;
-result += ' ' + context1 + ' ';
-});
-result += ' } ';
-index1 = -1;
-blocks.each(context.objectAfterLoops, function (value, index){
-context1 = value;
-index1 += 1;
-key1 = index;
-first1 = index == 0;
-last1 = index == context.objectAfterLoops.length - 1;
-result += ' ' + context1 + ' ';
-});
-result += ' } return ' + context.result + '; ';
-return result;
-},skip: function anonymous(context
-/**/) {
-var result = '';
-result += 'if (skip' + context.index + '-- > 0) { continue; }';
-return result;
-},take: function anonymous(context
-/**/) {
-var result = '';
-result += 'if (take' + context.index + '-- <= 0) { break; }';
-return result;
+chainExpression: function compiledTemplate(context) {
+  var context2;
+  var context1;
+  var result = '';
+  var last2;
+  var first2;
+  var key2;
+  var index2;
+  var last1;
+  var first1;
+  var key1;
+  var index1;
+  result += 'var ' + context.indexOrKey + ' = -1, ' + context.collection + ', ' + context.length + ', ' + context.value + ', ' + (!context.conditions ? ' ' + context.result + context.resultIndex + ',' : '') + ' ' + context.result + (context.conditions ? ' = false' : '') + '; ' + context.conditionsDeclarations + ' ';
+  index1 = -1;
+  blocks.each(context.args, function (value, index) {
+    context1 = value;
+    index1 += 1;
+    key1 = index;
+    first1 = index == 0;
+    last1 = index == context.args.length - 1;
+    result += ' ';
+    index2 = -1;
+    blocks.each(context1, function (value, index) {
+      context2 = value;
+      index2 += 1;
+      key2 = index;
+      first2 = index == 0;
+      last2 = index == context1.length - 1;
+      result += ' var ' + context2 + index1 + ' = ' + context.expression + '._' + context2 + '; ';
+    });
+    result += ' ' + context.expression + ' = ' + context.expression + '._parent; ';
+  });
+  result += ' ';
+  blocks.eachRight(context.variables, function (value, index) {
+    context1 = value;
+    index1 = context.variables.length;
+    index1 += -1;
+    key1 = index;
+    first1 = index == 0;
+    last1 = index == context.variables.length - 1;
+    result += ' ';
+    index2 = -1;
+    blocks.each(context1, function (value, index) {
+      context2 = value;
+      index2 += 1;
+      key2 = index;
+      first2 = index == 0;
+      last2 = index == context1.length - 1;
+      result += ' var ' + key2 + index2 + ' = ' + context2 + '; ';
+    });
+    result += ' ';
+  });
+  result += ' ' + context.collection + ' = ' + context.expression + '._value; ' + context.indexOrKey + ' += ' + context.skip + '; ' + (context.take ? ' ' + context.length + ' = Math.min(' + context.collection + '.length, ' + context.skip + ' + ' + context.take + '); ' : '') + ' ' + (!context.take ? ' ' + context.length + ' = ' + context.collection + '.length; ' : '') + ' ' + (context.reverse ? ' ' + context.indexOrKey + ' = ' + context.collection + '.length - ' + context.skip + '; ' : '') + ' ';
+  blocks.eachRight(context.arrayBeforeLoops, function (value, index) {
+    context1 = value;
+    index1 = context.arrayBeforeLoops.length;
+    index1 += -1;
+    key1 = index;
+    first1 = index == 0;
+    last1 = index == context.arrayBeforeLoops.length - 1;
+    result += ' ' + context1 + ' ';
+  });
+  result += ' ' + (context.isObject ? ' for (' + context.indexOrKey + ' in ' + context.collection + ') { ' : '') + ' ' + (!context.isObject ? ' ' + (context.reverse ? ' while (--' + context.indexOrKey + ' >= ' + (context.take ? context.take : '') + (!context.take ? '0' : '') + ') { ' : '') + ' ' + (!context.reverse ? ' while (++' + context.indexOrKey + ' < ' + context.length + ') { ' : '') + ' ' : '') + ' ' + context.value + ' = ' + context.collection + '[' + context.indexOrKey + ']; ';
+  blocks.eachRight(context.arrayInLoops, function (value, index) {
+    context1 = value;
+    index1 = context.arrayInLoops.length;
+    index1 += -1;
+    key1 = index;
+    first1 = index == 0;
+    last1 = index == context.arrayInLoops.length - 1;
+    result += ' ' + context1 + ' ';
+  });
+  result += ' ' + (context.inLoopConditions ? ' ' + context.inLoopConditions + ' ' : '') + ' } ';
+  blocks.eachRight(context.arrayAfterLoops, function (value, index) {
+    context1 = value;
+    index1 = context.arrayAfterLoops.length;
+    index1 += -1;
+    key1 = index;
+    first1 = index == 0;
+    last1 = index == context.arrayAfterLoops.length - 1;
+    result += ' ' + context1 + ' ';
+  });
+  result += ' ' + (context.afterLoopConditions ? ' ' + context.afterLoopConditions + ' ' : '') + ' ' + (!context.conditions ? ' ' + context.result + ' = ' + context.result + context.resultIndex + '; ' : '') + ' return ' + context.result + '; ';
+  return result;
+},conditions: function compiledTemplate(context) {
+  var context1;
+  var result = '';
+  var last1;
+  var first1;
+  var key1;
+  var index1;
+  result += 'if (';
+  index1 = -1;
+  blocks.each(context.items, function (value, index) {
+    context1 = value;
+    index1 += 1;
+    key1 = index;
+    first1 = index == 0;
+    last1 = index == context.items.length - 1;
+    result += context1;
+  });
+  result += ') { ' + context.result + ' = true; ' + (context.inLoop ? ' break; ' : '') + ' } ';
+  return result;
+},expressions: function compiledTemplate(context) {
+  var context2;
+  var context1;
+  var result = '';
+  var last2;
+  var first2;
+  var key2;
+  var index2;
+  var last1;
+  var first1;
+  var key1;
+  var index1;
+  result += 'function ' + context.name + 'Expression( ';
+  index1 = -1;
+  blocks.each(context.args, function (value, index) {
+    context1 = value;
+    index1 += 1;
+    key1 = index;
+    first1 = index == 0;
+    last1 = index == context.args.length - 1;
+    result += ' ' + context1 + ', ';
+  });
+  result += ' parent ) { this._parent = parent; this._descriptor = descriptors.' + context.descriptorName + '; ';
+  index1 = -1;
+  blocks.each(context.args, function (value, index) {
+    context1 = value;
+    index1 += 1;
+    key1 = index;
+    first1 = index == 0;
+    last1 = index == context.args.length - 1;
+    result += ' this._' + context1 + ' = ' + context1 + '; ';
+  });
+  result += ' } ' + (context.isRoot ? ' function ' + context.name + 'Expression(value) { this._value = value; this._loopDescriptor = LoopDescriptors.chainExpression; } ' : '') + ' blocks.inherit(BaseExpression, ' + context.name + 'Expression, { _type: ' + context.type + ', _name: "' + context.name + '", ';
+  index1 = -1;
+  blocks.each(context.methods, function (value, index) {
+    context1 = value;
+    index1 += 1;
+    key1 = index;
+    first1 = index == 0;
+    last1 = index == context.methods.length - 1;
+    result += ' ' + context1.name + ': function ( ';
+    index2 = -1;
+    blocks.each(context1.args, function (value, index) {
+      context2 = value;
+      index2 += 1;
+      key2 = index;
+      first2 = index == 0;
+      last2 = index == context1.args.length - 1;
+      result += ' ' + context2 + ', ';
+    });
+    result += ' a ) { var type = expressions.' + context.path + context1.name + '; if (!type) { type = (expressions.' + context.path + context1.name + ' = generateExpression("' + context.name + context1.name + '", "' + context.path + context1.name + '", "' + context1.name + '", ' + context.type + ')); } ' + context1.prepareValues + ' expression = new type(';
+    index2 = -1;
+    blocks.each(context1.args, function (value, index) {
+      context2 = value;
+      index2 += 1;
+      key2 = index;
+      first2 = index == 0;
+      last2 = index == context1.args.length - 1;
+      result += ' ' + context2 + ', ';
+    });
+    result += ' this); ' + (context1.type ? ' if (this._hasConditions()) { this.result(); this._setLastCondition(); return new ' + context1.type + '(expression.value(), this); } return new ' + context1.type + '(expression.value()); ' : '') + ' ' + (context1.everything ? ' if (this._hasConditions()) { this.result(); this._setLastCondition(); } return blocks(expression.value(), this); ' : '') + ' ' + (!context1.everything ? ' return expression; ' : '') + ' }, ';
+  });
+  result += ' ';
+  index1 = -1;
+  blocks.each(context.staticMethods, function (value, index) {
+    context1 = value;
+    index1 += 1;
+    key1 = index;
+    first1 = index == 0;
+    last1 = index == context.staticMethods.length - 1;
+    result += ' ' + key1 + ' : ' + context1 + ', ';
+  });
+  result += ' reverse: function () { var type = expressions.' + context.path + 'reverse; if (!type) { type = (expressions.' + context.path + 'reverse = generateExpression("' + context.path + 'reverse", "' + context.path + 'reverse", "reverse", ' + context.type + ')); } var expression = new type(this); return expression; }, each: function (callback, thisArg) { var type = expressions.' + context.path + 'each; if (!type) { type = (expressions.' + context.path + 'each = generateExpression("' + context.path + 'each", "' + context.path + 'each", "each", ' + context.type + ')); } callback = PrepareValues.parseCallback(callback, thisArg); var expression = new type(callback, thisArg, this); expression._loop(); return expression; }, value: function () { if (this._parent && this._computedValue === undefined) { this._execute(true); this._computedValue = blocks.isBoolean(this._result) ? this._parent._value : this._result; } return this._computedValue === undefined ? this._value : this._computedValue; }, result: function () { if (this._result === true || this._result === false) { return this._result; } if (this._parent) { this._execute(); } return this._result; }, _loop: function () { var func = cache.' + context.path + ' || (cache.' + context.path + ' = createExpression(this)); func(this); }, _execute: function (skipConditions) { var func = cache.' + context.path + ' || (cache.' + context.path + ' = createExpression(this, skipConditions)); if (func) { this._setResult(func(this)); } else { this._result = this._findValue(); } }, _hasConditions: function () { var name = this._name; return name.indexOf("and") != -1 || name.indexOf("or") != -1; }, _setLastCondition: function () { var name = this._name; var andIndex = name.lastIndexOf("and"); var orIndex = name.lastIndexOf("or"); this._lastCondition = andIndex > orIndex ? "and" : "or"; }, _findValue: function () { var parent = this._parent; while (parent) { if (parent._value) { return parent._value; } parent = parent._parent; } } }); return ' + context.name + 'Expression; ';
+  return result;
+},singleExpression: function compiledTemplate(context) {
+  var context1;
+  var result = '';
+  var last1;
+  var first1;
+  var key1;
+  var index1;
+  result += 'var ' + context.length + ' = ' + context.collection + '.length, ' + context.indexOrKey + ' = ' + (!context.reverse ? '-1' : '') + (context.reverse ? context.length : '') + ', ' + context.isCollectionAnArray + ' = ' + context.isArrayCheck + ', ' + context.result + ', ' + context.value + '; ';
+  index1 = -1;
+  blocks.each(context.variables, function (value, index) {
+    context1 = value;
+    index1 += 1;
+    key1 = index;
+    first1 = index == 0;
+    last1 = index == context.variables.length - 1;
+    result += ' ';
+  });
+  result += ' if (' + context.isCollectionAnArray + ') { ';
+  index1 = -1;
+  blocks.each(context.arrayBeforeLoops, function (value, index) {
+    context1 = value;
+    index1 += 1;
+    key1 = index;
+    first1 = index == 0;
+    last1 = index == context.arrayBeforeLoops.length - 1;
+    result += ' ' + context1 + ' ';
+  });
+  result += ' ' + (context.reverse ? ' while (--' + context.indexOrKey + ' >= 0) { ' : '') + ' ' + (!context.reverse ? ' while (++' + context.indexOrKey + ' < ' + context.length + ') { ' : '') + ' ' + context.value + ' = ' + context.collection + '[' + context.indexOrKey + ']; ';
+  index1 = -1;
+  blocks.each(context.arrayInLoops, function (value, index) {
+    context1 = value;
+    index1 += 1;
+    key1 = index;
+    first1 = index == 0;
+    last1 = index == context.arrayInLoops.length - 1;
+    result += ' ' + context1 + ' ';
+  });
+  result += ' } ';
+  index1 = -1;
+  blocks.each(context.arrayAfterLoops, function (value, index) {
+    context1 = value;
+    index1 += 1;
+    key1 = index;
+    first1 = index == 0;
+    last1 = index == context.arrayAfterLoops.length - 1;
+    result += ' ' + context1 + ' ';
+  });
+  result += ' } else { ';
+  index1 = -1;
+  blocks.each(context.objectBeforeLoops, function (value, index) {
+    context1 = value;
+    index1 += 1;
+    key1 = index;
+    first1 = index == 0;
+    last1 = index == context.objectBeforeLoops.length - 1;
+    result += ' ' + context1 + ' ';
+  });
+  result += ' for (' + context.indexOrKey + ' in collection) { ' + context.value + ' = ' + context.collection + '[' + context.indexOrKey + ']; ';
+  index1 = -1;
+  blocks.each(context.objectInLoops, function (value, index) {
+    context1 = value;
+    index1 += 1;
+    key1 = index;
+    first1 = index == 0;
+    last1 = index == context.objectInLoops.length - 1;
+    result += ' ' + context1 + ' ';
+  });
+  result += ' } ';
+  index1 = -1;
+  blocks.each(context.objectAfterLoops, function (value, index) {
+    context1 = value;
+    index1 += 1;
+    key1 = index;
+    first1 = index == 0;
+    last1 = index == context.objectAfterLoops.length - 1;
+    result += ' ' + context1 + ' ';
+  });
+  result += ' } return ' + context.result + '; ';
+  return result;
+},skip: function compiledTemplate(context) {
+  var result = '';
+  result += 'if (skip' + context.index + '-- > 0) { continue; }';
+  return result;
+},take: function compiledTemplate(context) {
+  var result = '';
+  result += 'if (take' + context.index + '-- <= 0) { break; }';
+  return result;
 },type: 'loop'
 };
 
@@ -2346,7 +2574,7 @@ return result;
       type: type || 0,
       staticMethods: staticMethods
     });
-
+    debugger;
     var Expression = new Function(
           ['blocks', 'blox', 'expressions', 'cache', 'BaseExpression', 'LoopDescriptors', 'generateExpression', 'descriptors', 'createExpression', 'PrepareValues', 'slice', 'add',
           'NumberExpression'],
@@ -2459,26 +2687,6 @@ return result;
       }
 
       return array;
-    },
-
-    toObject: function (array, values) {
-      var result = {},
-          useValuesArray = arguments.length > 1 && values,
-          i = 0,
-          length = array.length,
-          value;
-
-      for (; i < length; i++) {
-        value = array[i];
-        if (blocks.isArray(value)) {
-          result[value[0]] = value[1];
-        } else if (blocks.isObject(value)) {
-          result[value.key] = value.value;
-        } else {
-          result[value] = useValuesArray ? values[i] : true;
-        }
-      }
-      return result;
     },
 
     shuffle: function (array) {
@@ -3397,7 +3605,7 @@ return result;
         };
         return expression;
     }
-    
+
 
     function create(name) {
         var descriptor = descriptors[name];
@@ -3410,7 +3618,7 @@ return result;
             }
         }
     }
-    
+
     for (var key in descriptors) {
         create(key);
     }
@@ -3459,7 +3667,7 @@ return result;
 })();
 (function () {
 
-
+var parseCallback = function () {
   function parseCallback(callback, thisArg) {
     //callback = parseExpression(callback);
     if (thisArg != null) {
@@ -3470,8 +3678,10 @@ return result;
     }
     return callback;
   }
-
-  var Events = (function () {
+  return parseCallback;
+}();
+var Events = function () {
+  var Events = function () {
     function createEventMethod(eventName) {
       return function (callback, context) {
         if (arguments.length > 1) {
@@ -3482,7 +3692,6 @@ return result;
         return this;
       };
     }
-
     var methods = {
       on: function (eventName, callback, context) {
         if (arguments.length > 2) {
@@ -3492,21 +3701,17 @@ return result;
         }
         return this;
       },
-
       once: function (eventNames, callback, thisArg) {
         Events.once(this, eventNames, callback, thisArg);
       },
-
       off: function (eventName, callback) {
         Events.off(this, eventName, callback);
       },
-
       trigger: function (eventName) {
         Events.trigger(this, eventName, blocks.toArray(arguments).slice(1, 100));
       }
     };
     methods._trigger = methods.trigger;
-
     return {
       register: function (object, eventNames) {
         eventNames = blocks.isArray(eventNames) ? eventNames : [eventNames];
@@ -3519,18 +3724,14 @@ return result;
           }
         }
       },
-
       on: function (object, eventNames, callback, thisArg) {
         eventNames = blocks.toArray(eventNames).join(' ').split(' ');
-
         var i = 0;
         var length = eventNames.length;
         var eventName;
-
         if (!callback) {
           return;
         }
-
         if (!object._events) {
           object._events = {};
         }
@@ -3545,20 +3746,17 @@ return result;
           });
         }
       },
-
       once: function (object, eventNames, callback, thisArg) {
         Events.on(object, eventNames, callback, thisArg);
         Events.on(object, eventNames, function () {
           Events.off(object, eventNames, callback);
         });
       },
-
       off: function (object, eventName, callback) {
         if (blocks.isFunction(eventName)) {
           callback = eventName;
           eventName = undefined;
         }
-
         if (eventName !== undefined || callback !== undefined) {
           blocks.each(object._events, function (events, currentEventName) {
             if (eventName !== undefined && callback === undefined) {
@@ -3576,19 +3774,15 @@ return result;
           object._events = undefined;
         }
       },
-
       trigger: function (object, eventName) {
         var result = true;
         var eventsData;
         var thisArg;
         var args;
-
         if (object && object._events) {
           eventsData = object._events[eventName];
-
           if (eventsData && eventsData.length > 0) {
             args = Array.prototype.slice.call(arguments, 2);
-
             blocks.each(eventsData, function iterateEventsData(eventData) {
               if (eventData) {
                 thisArg = object;
@@ -3602,20 +3796,19 @@ return result;
             });
           }
         }
-
         return result;
       },
-
       has: function (object, eventName) {
         return !!blocks.access(object, '_events.' + eventName + '.length');
       }
     };
-  })();
-
+  }();
+  return Events;
+}();
+(function () {
   // Implementation of blocks.domReady event
   (function () {
     blocks.isDomReady = false;
-
     //blocks.elementReady = function (element, callback, thisArg) {
     //  callback = parseCallback(callback, thisArg);
     //  if (element) {
@@ -3624,16 +3817,12 @@ return result;
     //    blocks.domReady(callback);
     //  }
     //};
-
     blocks.domReady = function (callback, thisArg) {
-      if (typeof document == 'undefined' || typeof window == 'undefined' ||
-        (window.__mock__ && document.__mock__)) {
+      if (typeof document == 'undefined' || typeof window == 'undefined' || window.__mock__ && document.__mock__) {
         return;
       }
-
       callback = parseCallback(callback, thisArg);
-      if (blocks.isDomReady || document.readyState == 'complete' ||
-        (window.jQuery && window.jQuery.isReady)) {
+      if (blocks.isDomReady || document.readyState == 'complete' || window.jQuery && window.jQuery.isReady) {
         blocks.isDomReady = true;
         callback();
       } else {
@@ -3641,7 +3830,6 @@ return result;
         handleReady();
       }
     };
-
     function handleReady() {
       if (document.readyState === 'complete') {
         setTimeout(ready);
@@ -3651,12 +3839,11 @@ return result;
       } else {
         document.attachEvent('onreadystatechange', completed);
         window.attachEvent('onload', completed);
-
         var top = false;
         try {
           top = window.frameElement == null && document.documentElement;
-        } catch (e) { }
-
+        } catch (e) {
+        }
         if (top && top.doScroll) {
           (function doScrollCheck() {
             if (!blocks.isDomReady) {
@@ -3665,20 +3852,17 @@ return result;
               } catch (e) {
                 return setTimeout(doScrollCheck, 50);
               }
-
               ready();
             }
-          })();
+          }());
         }
       }
     }
-
     function completed() {
       if (document.addEventListener || event.type == 'load' || document.readyState == 'complete') {
         ready();
       }
     }
-
     function ready() {
       if (!blocks.isDomReady) {
         blocks.isDomReady = true;
@@ -3686,13 +3870,13 @@ return result;
         Events.off(blocks.core, 'domReady');
       }
     }
-  })();
-
+  }());
+}());
     var slice = Array.prototype.slice;
 
     var trimRegExp = /^\s+|\s+$/gm;
 
-
+var keys = function () {
   function keys(array) {
     var result = {};
     blocks.each(array, function (value) {
@@ -3700,161 +3884,129 @@ return result;
     });
     return result;
   }
+  return keys;
+}();
     var classAttr = 'class';
 
     var queries = (blocks.queries = {});
 
-
+var Event = function () {
   var isMouseEventRegEx = /^(?:mouse|pointer|contextmenu)|click/;
   var isKeyEventRegEx = /^key/;
-
   function returnFalse() {
     return false;
   }
-
   function returnTrue() {
     return true;
   }
-
   function Event(e) {
     this.originalEvent = e;
     this.type = e.type;
-
-    this.isDefaultPrevented = e.defaultPrevented ||
-        (e.defaultPrevented === undefined &&
-        // Support: IE < 9, Android < 4.0
-        e.returnValue === false) ?
-        returnTrue :
-        returnFalse;
-
+    this.isDefaultPrevented = e.defaultPrevented || e.defaultPrevented === undefined && // Support: IE < 9, Android < 4.0
+    e.returnValue === false ? returnTrue : returnFalse;
     this.timeStamp = e.timeStamp || +new Date();
   }
-
   Event.PropertiesToCopy = {
     all: 'altKey bubbles cancelable ctrlKey currentTarget eventPhase metaKey relatedTarget shiftKey target timeStamp view which'.split(' '),
     mouse: 'button buttons clientX clientY fromElement offsetX offsetY pageX pageY screenX screenY toElement'.split(' '),
     keyboard: 'char charCode key keyCode'.split(' ')
   };
-
   Event.CopyProperties = function (originalEvent, event, propertiesName) {
     blocks.each(Event.PropertiesToCopy[propertiesName], function (propertyName) {
       event[propertyName] = originalEvent[propertyName];
     });
   };
-
   Event.prototype = {
     preventDefault: function () {
-        var e = this.originalEvent;
-
-        this.isDefaultPrevented = returnTrue;
-
-        if (e.preventDefault) {
-            // If preventDefault exists, run it on the original event
-            e.preventDefault();
-        } else {
-            // Support: IE
-            // Otherwise set the returnValue property of the original event to false
-            e.returnValue = false;
-        }
-    },
-
-    stopPropagation: function () {
-        var e = this.originalEvent;
-
-        this.isPropagationStopped = returnTrue;
-
-        // If stopPropagation exists, run it on the original event
-        if (e.stopPropagation) {
-            e.stopPropagation();
-        }
-
+      var e = this.originalEvent;
+      this.isDefaultPrevented = returnTrue;
+      if (e.preventDefault) {
+        // If preventDefault exists, run it on the original event
+        e.preventDefault();
+      } else {
         // Support: IE
-        // Set the cancelBubble property of the original event to true
-        e.cancelBubble = true;
+        // Otherwise set the returnValue property of the original event to false
+        e.returnValue = false;
+      }
     },
-
+    stopPropagation: function () {
+      var e = this.originalEvent;
+      this.isPropagationStopped = returnTrue;
+      // If stopPropagation exists, run it on the original event
+      if (e.stopPropagation) {
+        e.stopPropagation();
+      }
+      // Support: IE
+      // Set the cancelBubble property of the original event to true
+      e.cancelBubble = true;
+    },
     stopImmediatePropagation: function () {
-        var e = this.originalEvent;
-
-        this.isImmediatePropagationStopped = returnTrue;
-
-        if (e.stopImmediatePropagation) {
-            e.stopImmediatePropagation();
-        }
-
-        this.stopPropagation();
+      var e = this.originalEvent;
+      this.isImmediatePropagationStopped = returnTrue;
+      if (e.stopImmediatePropagation) {
+        e.stopImmediatePropagation();
+      }
+      this.stopPropagation();
     }
   };
-
   Event.fix = function (originalEvent) {
     var type = originalEvent.type;
     var event = new Event(originalEvent);
-
     Event.CopyProperties(originalEvent, event, 'all');
-
     // Support: IE<9
     // Fix target property (#1925)
     if (!event.target) {
-        event.target = originalEvent.srcElement || document;
+      event.target = originalEvent.srcElement || document;
     }
-
     // Support: Chrome 23+, Safari?
     // Target should not be a text node (#504, #13143)
     if (event.target.nodeType === 3) {
-        event.target = event.target.parentNode;
+      event.target = event.target.parentNode;
     }
-
     // Support: IE<9
     // For mouse/key events, metaKey==false if it's undefined (#3368, #11328)
     event.metaKey = !!event.metaKey;
-
     if (isMouseEventRegEx.test(type)) {
-        Event.fixMouse(originalEvent, event);
+      Event.fixMouse(originalEvent, event);
     } else if (isKeyEventRegEx.test(type) && event.which == null) {
-        Event.CopyProperties(originalEvent, event, 'keyboard');
-        // Add which for key events
-        event.which = originalEvent.charCode != null ? originalEvent.charCode : originalEvent.keyCode;
+      Event.CopyProperties(originalEvent, event, 'keyboard');
+      // Add which for key events
+      event.which = originalEvent.charCode != null ? originalEvent.charCode : originalEvent.keyCode;
     }
-
     return event;
   };
-
   Event.fixMouse = function (originalEvent, event) {
     var button = originalEvent.button;
     var fromElement = originalEvent.fromElement;
     var body;
     var eventDoc;
     var doc;
-
     Event.CopyProperties(originalEvent, event, 'mouse');
-
     // Calculate pageX/Y if missing and clientX/Y available
     if (event.pageX == null && originalEvent.clientX != null) {
-        eventDoc = event.target.ownerDocument || document;
-        doc = eventDoc.documentElement;
-        body = eventDoc.body;
-
-        event.pageX = originalEvent.clientX + (doc && doc.scrollLeft || body && body.scrollLeft || 0) - (doc && doc.clientLeft || body && body.clientLeft || 0);
-        event.pageY = originalEvent.clientY + (doc && doc.scrollTop || body && body.scrollTop || 0) - (doc && doc.clientTop || body && body.clientTop || 0);
+      eventDoc = event.target.ownerDocument || document;
+      doc = eventDoc.documentElement;
+      body = eventDoc.body;
+      event.pageX = originalEvent.clientX + (doc && doc.scrollLeft || body && body.scrollLeft || 0) - (doc && doc.clientLeft || body && body.clientLeft || 0);
+      event.pageY = originalEvent.clientY + (doc && doc.scrollTop || body && body.scrollTop || 0) - (doc && doc.clientTop || body && body.clientTop || 0);
     }
-
     // Add relatedTarget, if necessary
     if (!event.relatedTarget && fromElement) {
-        event.relatedTarget = fromElement === event.target ? originalEvent.toElement : fromElement;
+      event.relatedTarget = fromElement === event.target ? originalEvent.toElement : fromElement;
     }
-
     // Add which for click: 1 === left; 2 === middle; 3 === right
     // Note: button is not normalized, so don't use it
     if (!event.which && button !== undefined) {
-        /* jshint bitwise: false */
-        event.which = (button & 1 ? 1 : (button & 2 ? 3 : (button & 4 ? 2 : 0)));
+      /* jshint bitwise: false */
+      event.which = button & 1 ? 1 : button & 2 ? 3 : button & 4 ? 2 : 0;
     }
   };
-
   //var event = blocks.Event();
   //event.currentTarget = 1; // the current element from which is the event is fired
   //event.namespace = ''; // the namespace for the event
-
+  return Event;
+}();
+var addListener = function () {
   function addListener(element, eventName, callback) {
     if (element.addEventListener && eventName != 'propertychange') {
       element.addEventListener(eventName, function (event) {
@@ -3866,33 +4018,68 @@ return result;
       });
     }
   }
-
+  return addListener;
+}();
+var getClassIndex = function () {
   function getClassIndex(classAttribute, className) {
     if (!classAttribute || typeof classAttribute !== 'string' || className == null) {
       return -1;
     }
-
     classAttribute = ' ' + classAttribute + ' ';
     return classAttribute.indexOf(' ' + className + ' ');
   }
-
-  var ampRegEx = /&/g;
-  var lessThanRegEx = /</g;
-
-  function escapeValue(value) {
-    return String(value)
-      .replace(ampRegEx, '&amp;')
-      .replace(lessThanRegEx, '&lt;');
-  }
+  return getClassIndex;
+}();
     var hasOwn = Object.prototype.hasOwnProperty;
 
+var Escape = function () {
+  var htmlEntityMap = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    '\'': '&#x27;',
+    '/': '&#x2F;'
+  };
+  var htmlEscapeRegEx = function () {
+    var entities = [];
+    for (var entity in htmlEntityMap) {
+      entities.push(entity);
+    }
+    return new RegExp('(' + entities.join('|') + ')', 'g');
+  }();
+  function internalHTMLEscapeReplacer(entity) {
+    return htmlEntityMap[entity];
+  }
+  var Escape = {
+    // moved from modules/escapeRegEx
+    forRegEx: function escapeRegEx(string) {
+      return string.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&');
+    },
+    forHTML: function (value) {
+      if (blocks.isString(value)) {
+        return value.replace(htmlEscapeRegEx, internalHTMLEscapeReplacer);
+      }
+      return value;
+    },
+    // This is only valid because jsblocks forces (inserts itself) double quotes for attributes
+    // don't use this in other cases
+    forHTMLAttributes: function (value) {
+      if (blocks.isString(value)) {
+        return value.replace(/"/g, '&quot;');
+      }
+      return value;
+    }
+  };
+  return Escape;
+}();
     var virtualElementIdentity = '__blocks.VirtualElement__';
 
     var dataIdAttr = 'data-id';
 
     var dataQueryAttr = 'data-query';
 
-
+var createFragment = function () {
   function createFragment(html) {
     var fragment = document.createDocumentFragment();
     var temp = document.createElement('div');
@@ -3903,10 +4090,8 @@ return result;
     var tbodyEnd = '</tbody>';
     var tr = '<tr>';
     var trEnd = '</tr>';
-
     html = html.toString();
-
-    if ((html.indexOf('<option') != -1) && html.indexOf('<select') == -1) {
+    if (html.indexOf('<option') != -1 && html.indexOf('<select') == -1) {
       html = '<select>' + html + '</select>';
       count = 2;
     } else if (html.indexOf('<table') == -1) {
@@ -3921,69 +4106,53 @@ return result;
         html = table + tbody + tr + html + trEnd + tbodyEnd + tableEnd;
       }
     }
-
-
     temp.innerHTML = 'A<div>' + html + '</div>';
-
     while (count--) {
       temp = temp.lastChild;
     }
-
     while (temp.firstChild) {
       fragment.appendChild(temp.firstChild);
     }
-
     return fragment;
   }
-
+  return createFragment;
+}();
+var browser = function () {
   var browser = {};
-
   function parseVersion(matches) {
     if (matches) {
       return parseFloat(matches[1]);
     }
     return undefined;
   }
-
   if (typeof document !== 'undefined') {
     blocks.extend(browser, {
-      IE: document && (function () {
+      IE: document && function () {
         var version = 3;
         var div = document.createElement('div');
         var iElems = div.getElementsByTagName('i');
-
         /* jshint noempty: false */
         // Disable JSHint error: Empty block
         // Keep constructing conditional HTML blocks until we hit one that resolves to an empty fragment
-        while (
-          div.innerHTML = '<!--[if gt IE ' + (++version) + ']><i></i><![endif]-->',
-          iElems[0]
-          ) { }
+        while (div.innerHTML = '<!--[if gt IE ' + ++version + ']><i></i><![endif]-->', iElems[0]) {
+        }
         return version > 4 ? version : undefined;
-      }()),
-
-      Opera: (window && window.navigator && window.opera && window.opera.version && parseInt(window.opera.version(), 10)) || undefined,
-
+      }(),
+      Opera: window && window.navigator && window.opera && window.opera.version && parseInt(window.opera.version(), 10) || undefined,
       Safari: window && window.navigator && parseVersion(window.navigator.userAgent.match(/^(?:(?!chrome).)*version\/([^ ]*) safari/i)),
-
       Firefox: window && window.navigator && parseVersion(window.navigator.userAgent.match(/Firefox\/([^ ]*)/))
     });
   }
-
-  var ElementsData = (function () {
+  return browser;
+}();
+var ElementsData = function () {
+  var ElementsData = function () {
     var data = {};
     var globalId = 1;
-    
     function getDataId(element) {
-      var result = element ? VirtualElement.Is(element) ? element._state ? element._state.attributes[dataIdAttr] : element._attributes[dataIdAttr] :
-        element.nodeType == 1 ? element.getAttribute(dataIdAttr) :
-          element.nodeType == 8 ? /\s+(\d+):[^\/]/.exec(element.nodeValue) :
-            null :
-        null;
-
+      var result = element ? VirtualElement.Is(element) ? element._state ? element._state.attributes[dataIdAttr] : element._attributes[dataIdAttr] : element.nodeType == 1 ? element.getAttribute(dataIdAttr) : element.nodeType == 8 ? /\s+(\d+):[^\/]/.exec(element.nodeValue) : null : null;
       return blocks.isArray(result) ? result[1] : result;
     }
-
     function setDataId(element, id) {
       if (VirtualElement.Is(element)) {
         element.attr(dataIdAttr, id);
@@ -3991,19 +4160,16 @@ return result;
         element.setAttribute(dataIdAttr, id);
       }
     }
-
     return {
       id: function (element) {
         return getDataId(element);
       },
-
       /* @if SERVER */
       reset: function () {
         data = {};
         globalId = 1;
       },
       /* @endif */
-
       collectGarbage: function () {
         blocks.each(data, function (value) {
           if (value && value.dom && !document.body.contains(value.dom)) {
@@ -4011,18 +4177,15 @@ return result;
           }
         });
       },
-
       createIfNotExists: function (element) {
         var isVirtual = element && element.__identity__ == virtualElementIdentity;
         var currentData;
         var id;
-        
         if (isVirtual) {
           currentData = data[element._getAttr(dataIdAttr)];
         } else {
           currentData = data[element && getDataId(element)];
         }
-
         if (!currentData) {
           id = globalId++;
           if (element) {
@@ -4037,7 +4200,6 @@ return result;
               setDataId(element, id);
             }
           }
-
           // if element is not defined then treat it as expression
           if (!element) {
             currentData = data[id] = {
@@ -4054,14 +4216,11 @@ return result;
             };
           }
         }
-
         return currentData;
       },
-
       byId: function (id) {
         return data[id];
       },
-
       data: function (element, name, value) {
         var result = data[getDataId(element) || element];
         if (!result) {
@@ -4074,11 +4233,9 @@ return result;
         }
         return result[name];
       },
-
       clear: function (element, force) {
         var id = getDataId(element) || element;
         var currentData = data[id];
-
         if (currentData && (!currentData.haveData || force)) {
           blocks.each(currentData.observables, function (value) {
             for (var i = 0; i < value._elements.length; i++) {
@@ -4087,8 +4244,7 @@ return result;
                 i--;
               }
             }
-
-            if (value._expressionKeys[currentData.id]) {
+            if (value._expressions) {
               for (i = 0; i < value._expressions.length; i++) {
                 if (value._expressions[i].elementId == currentData.id) {
                   value._expressions.splice(i, 1);
@@ -4100,17 +4256,18 @@ return result;
           });
           data[id] = undefined;
           if (VirtualElement.Is(element)) {
-            element.attr(dataIdAttr, null);
+            element.removeAttr(dataIdAttr);
           } else if (element.nodeType == 1) {
             element.removeAttribute(dataIdAttr);
           }
         }
       }
     };
-  })();
-
-
-	// addEventListener implementation that fixes old browser issues
+  }();
+  return ElementsData;
+}();
+var on = function () {
+  // addEventListener implementation that fixes old browser issues
   function on(element, eventName, handler) {
     if (Workarounds[eventName]) {
       Workarounds[eventName](element, handler, function (eventName, callback) {
@@ -4120,30 +4277,25 @@ return result;
       addListener(element, eventName, handler);
     }
   }
-
   var Workarounds = {
-		// support for "oninput" in legacy browsers
+    // support for "oninput" in legacy browsers
     input: function (element, handler, subscribe) {
       var timeout;
-
       function call(e) {
         clearTimeout(timeout);
         handler(e);
       }
-
       function deferCall() {
         if (!timeout) {
           timeout = setTimeout(call, 4);
         }
       }
-
       if (browser.IE < 10) {
         subscribe('propertychange', function (e) {
           if (e.originalEvent.propertyName === 'value') {
             call(e);
           }
         });
-
         if (browser.IE == 8) {
           subscribe('keyup', call);
           subscribe('keydown', call);
@@ -4154,14 +4306,13 @@ return result;
         }
       } else {
         subscribe('input', call);
-
         if (browser.Safari < 7 && element.tagName.toLowerCase() == 'textarea') {
           subscribe('keydown', deferCall);
           subscribe('paste', deferCall);
           subscribe('cut', deferCall);
         } else if (browser.Opera < 11) {
           subscribe('keydown', deferCall);
-        } else if (browser.Firefox < 4.0) {
+        } else if (browser.Firefox < 4) {
           subscribe('DOMAutoComplete', call);
           subscribe('dragdrop', call);
           subscribe('drop', call);
@@ -4169,10 +4320,8 @@ return result;
       }
     }
   };
-
-  var globalSelectionChangeHandler = (function () {
+  var globalSelectionChangeHandler = function () {
     var isRegistered = false;
-
     function selectionChangeHandler(e) {
       var element = this.activeElement;
       var handler = element && ElementsData.data(element, 'selectionchange');
@@ -4180,7 +4329,6 @@ return result;
         handler(e);
       }
     }
-
     return function (element, handler) {
       if (!isRegistered) {
         addListener(element.ownerDocument, 'selectionchange', selectionChangeHandler);
@@ -4188,22 +4336,21 @@ return result;
       }
       ElementsData.createIfNotExists(element).selectionChange = handler;
     };
-  })();
-
-  
+  }();
+  return on;
+}();
+var dom = function () {
   var dom = blocks.dom = {
     valueTagNames: {
       input: true,
       textarea: true,
       select: true
     },
-
     valueTypes: {
       file: true,
       hidden: true,
       password: true,
       text: true,
-
       // New HTML5 Types
       color: true,
       date: true,
@@ -4219,7 +4366,6 @@ return result;
       url: true,
       week: true
     },
-
     props: {
       'for': true,
       'class': true,
@@ -4229,30 +4375,25 @@ return result;
       className: true,
       htmlFor: true
     },
-
     propFix: {
       'for': 'htmlFor',
       'class': 'className',
       tabindex: 'tabIndex'
     },
-
     attrFix: {
       className: 'class',
       htmlFor: 'for'
     },
-
     addClass: function (element, className) {
       if (element) {
-        setClass('add', element, className);  
+        setClass('add', element, className);
       }
     },
-
     removeClass: function (element, className) {
       if (element) {
-        setClass('remove', element, className);  
+        setClass('remove', element, className);
       }
     },
-
     html: function (element, html) {
       if (element) {
         html = html.toString();
@@ -4268,64 +4409,50 @@ return result;
         }
       }
     },
-
     css: function (element, name, value) {
       // IE7 will thrown an error if you try to set element.style[''] (with empty string)
       if (!element || !name) {
         return;
       }
-
       if (name == 'display') {
         animation.setVisibility(element, value == 'none' ? false : true);
       } else {
         element.style[name] = value;
       }
     },
-
     on: function (element, eventName, handler) {
       if (element) {
         on(element, eventName, handler);
       }
     },
-
     off: function () {
-
     },
-
     removeAttr: function (element, attributeName) {
       if (element && attributeName) {
-        dom.attr(element, attributeName, null);  
+        dom.attr(element, attributeName, null);
       }
     },
-
     attr: function (element, attributeName, attributeValue) {
       var isProperty = dom.props[attributeName];
       attributeName = dom.propFix[attributeName.toLowerCase()] || attributeName;
-
-      if ((blocks.core.skipExecution &&
-        blocks.core.skipExecution.element === element &&
-        blocks.core.skipExecution.attributeName == attributeName) ||
-        !element) {
+      if (blocks.core.skipExecution && blocks.core.skipExecution.element === element && blocks.core.skipExecution.attributeName == attributeName || !element) {
         return;
       }
-      
       if (element.nodeType == 8) {
         dom.comment.attr(element, attributeName, attributeValue);
         return;
       }
-
       if (attributeName == 'checked') {
-        if (attributeValue != 'checked' &&
-          typeof attributeValue == 'string' &&
-          element.getAttribute('type') == 'radio' &&
-          attributeValue != element.value && element.defaultValue != null && element.defaultValue !== '') {
-
+        if (attributeValue != 'checked' && typeof attributeValue == 'string' && element.getAttribute('type') == 'radio' && attributeValue != element.value && element.defaultValue != null && element.defaultValue !== '') {
           attributeValue = false;
         } else {
-          attributeValue = !!attributeValue;
+          if (blocks.isArray(attributeValue)) {
+            attributeValue = attributeValue.indexOf(element.value) !== -1;
+          } else {
+            attributeValue = !!attributeValue;
+          }
         }
       }
-
       if (arguments.length === 1) {
         return isProperty ? element[attributeName] : element.getAttribute(attributeName);
       } else if (attributeValue != null) {
@@ -4353,7 +4480,6 @@ return result;
         }
       }
     },
-
     comment: {
       html: function (element, html) {
         // var commentElement = this._element.nextSibling;
@@ -4365,19 +4491,16 @@ return result;
         var currentElement = commentElement.nextSibling;
         var temp;
         var count = 0;
-
         while (currentElement && (currentElement.nodeType != 8 || currentElement.nodeValue.indexOf('/blocks') == -1)) {
           count++;
           temp = currentElement.nextSibling;
           parentNode.removeChild(currentElement);
           currentElement = temp;
         }
-
         parentNode.insertBefore(createFragment(html), commentElement.nextSibling);
         //parentNode.removeChild(currentElement);
         return count;
       },
-
       attr: function (element, attributeName, attributeValue) {
         if (element && attributeName == dataIdAttr && attributeValue) {
           var commentElement = element;
@@ -4391,29 +4514,26 @@ return result;
       }
     }
   };
+  return blocks.dom;
+}();
     var parameterQueryCache = {};
 
-
-  var Observer = (function () {
+var Observer = function () {
+  var Observer = function () {
     var stack = [];
-
     return {
       startObserving: function () {
         stack.push([]);
       },
-
       stopObserving: function () {
         return stack.pop();
       },
-
       currentObservables: function () {
         return stack[stack.length - 1];
       },
-
       registerObservable: function (newObservable) {
         var observables = stack[stack.length - 1];
         var alreadyExists = false;
-
         if (observables) {
           blocks.each(observables, function (observable) {
             if (observable === newObservable) {
@@ -4427,12 +4547,24 @@ return result;
         }
       }
     };
-  })();
-
+  }();
+  return Observer;
+}();
+var Expression = function () {
+  function cloneExpression() {
+    var element = this.element;
+    this.element = null;
+    this.clone = null;
+    var clone = blocks.clone(this, true);
+    clone.clone = this.clone = cloneExpression;
+    this.element = element;
+    return clone;
+  }
   var Expression = {
     Html: 0,
     ValueOnly: 2,
-    
+    Raw: 3,
+    NodeWise: 4,
     Create: function (text, attributeName, element) {
       var index = -1;
       var endIndex = 0;
@@ -4440,80 +4572,94 @@ return result;
       var character;
       var startIndex;
       var match;
-
       while (text.length > ++index) {
         character = text.charAt(index);
-
         if (character == '{' && text.charAt(index + 1) == '{') {
           startIndex = index + 2;
         } else if (character == '}' && text.charAt(index + 1) == '}') {
           if (startIndex) {
             match = text.substring(startIndex, index);
             if (!attributeName) {
-              match = match
-                .replace(/&amp;/g, '&')
-                .replace(/&quot;/g, '"')
-                .replace(/&#39;/g, '\'')
-                .replace(/&lt;/g, '<')
-                .replace(/&gt;/g, '>');
+              match = match.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, '\'').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
             }
-
             character = text.substring(endIndex, startIndex - 2);
             if (character) {
-              result.push(character);
+              result.push({ value: character });
             }
-
             result.push({
               expression: match,
               attributeName: attributeName
             });
-
             endIndex = index + 2;
           }
           startIndex = 0;
         }
       }
-
       character = text.substring(endIndex);
       if (character) {
-        result.push(character);
+        result.push({ value: character });
       }
-
       result.text = text;
       result.attributeName = attributeName;
       result.element = element;
       result.isExpression = true;
+      result.nodeLength = 0;
+      result.clone = cloneExpression;
       return match ? result : null;
     },
-
     GetValue: function (context, elementData, expression, type) {
-      var value = '';
+      var nodeWise = type == Expression.NodeWise;
+      var value = nodeWise || type == Expression.Raw ? [] : '';
       var length = expression.length;
       var index = -1;
       var chunk;
-
+      var lastNodeIndex;
+      var tempValue;
+      type = type || Expression.Html;
       if (!context) {
         return expression.text;
       }
-      
+      if (type !== Expression.ValueOnly) {
+        expression.nodeLength = 0;  // reset for recalculation
+      }
       if (length == 1) {
-        value = Expression.Execute(context, elementData, expression[0], expression, type);
+        if (nodeWise) {
+          lastNodeIndex = expression.nodeLength;
+          tempValue = Expression.Execute(context, elementData, expression[0], expression, type);
+          if (expression.nodeLength - lastNodeIndex == 2) {
+            value[expression.nodeLength - 2] = null;
+          }
+          value[expression.nodeLength - 1] = tempValue;
+        } else {
+          value = Expression.Execute(context, elementData, expression[0], expression, type);
+        }
       } else {
         while (++index < length) {
+          lastNodeIndex = expression.nodeLength;
           chunk = expression[index];
-          if (typeof chunk == 'string') {
-            value += chunk;
+          if (chunk.value) {
+            if (type !== Expression.ValueOnly && expression.nodeLength === 0) {
+              expression.nodeLength++;
+            }
+            tempValue = chunk.value;
           } else {
-            value += Expression.Execute(context, elementData, chunk, expression, type);
+            tempValue = Expression.Execute(context, elementData, chunk, expression, type);
+            if (nodeWise && expression.nodeLength - lastNodeIndex == 2) {
+              value[expression.nodeLength - 2] = null;  // dom comments that got rendered in the expression
+            }
           }
-        }  
+          if (nodeWise) {
+            value[expression.nodeLength - 1] = (value[expression.nodeLength - 1] || '') + tempValue;
+          } else if (type == Expression.Raw) {
+            value.push(tempValue);
+          } else {
+            value += tempValue;
+          }
+        }
       }
-
       expression.lastResult = value;
-
       return value;
     },
-
     Execute: function (context, elementData, expressionData, entireExpression, type) {
       var expression = expressionData.expression;
       var attributeName = expressionData.attributeName;
@@ -4523,38 +4669,38 @@ return result;
       var result;
       var value;
       var func;
-
       // jshint -W054
       // Disable JSHint error: The Function constructor is a form of eval
-      func = parameterQueryCache[expression] = parameterQueryCache[expression] ||
-        new Function('c', 'with(c){with($this){ return ' + expression + '}}');
-
+      func = parameterQueryCache[expression] = parameterQueryCache[expression] || new Function('c', 'with(c){with($this){ return ' + expression + '}}'  /*@if DEBUG */ + '//# sourceURL=' + encodeURI(entireExpression.text)  /* @endif */);
       Observer.startObserving();
-
-      /* @if DEBUG */ {
+      /* @if DEBUG */
+      {
         try {
           value = func(context);
         } catch (ex) {
           blocks.debug.expressionFail(expression, entireExpression.element);
         }
-      } /* @endif */
-
+      }
+      /* @endif */
       value = func(context);
-
       isObservable = blocks.isObservable(value);
       result = isObservable ? value() : value;
       result = result == null ? '' : result.toString();
-      result = escapeValue(result);
-
+      result = attributeName ? Escape.forHTMLAttributes(result) : Escape.forHTML(result);
       observables = Observer.stopObserving();
-
-      if (type != Expression.ValueOnly && (isObservable || observables.length)) {
+      if (type == Expression.Raw) {
+        return {
+          observables: observables,
+          result: result,
+          value: value
+        };
+      }
+      if (type != Expression.ValueOnly && type != Expression.NodeWise && (isObservable || observables.length)) {
         if (!attributeName) {
           elementData = ElementsData.createIfNotExists();
         }
         if (elementData) {
           elementData.haveData = true;
-
           expressionObj = {
             length: result.length,
             attr: attributeName,
@@ -4563,31 +4709,35 @@ return result;
             expression: expression,
             entire: entireExpression
           };
-
           blocks.each(observables, function (observable) {
-            if (!observable._expressionKeys[elementData.id]) {
-              observable._expressionKeys[elementData.id] = true;
+            if (!observable._expressionKeys[elementData.id + (attributeName || 'expression') + '[' + expression + ']']) {
+              observable._expressionKeys[elementData.id + (attributeName || 'expression') + '[' + expression + ']'] = true;
               observable._expressions.push(expressionObj);
             }
-
             elementData.observables[observable.__id__ + (attributeName || 'expression') + '[' + expression + ']'] = observable;
           });
         }
         if (!attributeName) {
+          entireExpression.nodeLength += 2;
           result = '<!-- ' + elementData.id + ':blocks -->' + result;
         }
+      } else if (!attributeName && type !== Expression.ValueOnly) {
+        if (type == Expression.NodeWise && isObservable) {
+          entireExpression.nodeLength += 2;
+        } else if (entireExpression.nodeLength === 0) {
+          entireExpression.nodeLength++;
+        }
       }
-      
       return result;
     }
   };
-
-
+  return Expression;
+}();
+var VirtualElement = function () {
   function VirtualElement(tagName) {
     if (!VirtualElement.prototype.isPrototypeOf(this)) {
       return new VirtualElement(tagName);
     }
-
     this.__identity__ = virtualElementIdentity;
     this._tagName = tagName ? tagName.toString().toLowerCase() : null;
     this._attributes = {};
@@ -4602,12 +4752,10 @@ return result;
     this._style = {};
     this._states = null;
     this._state = null;
-
     if (blocks.isElement(tagName)) {
       this._el = tagName;
     }
   }
-
   blocks.VirtualElement = blocks.inherit(VirtualElement, {
     tagName: function (tagName) {
       if (tagName) {
@@ -4616,7 +4764,6 @@ return result;
       }
       return this._tagName;
     },
-
     /**
      * Gets or sets the inner HTML of the element.
      *
@@ -4641,25 +4788,24 @@ return result;
       }
       return this._innerHTML || '';
     },
-
     /**
      * Gets or sets the inner text of the element.
      *
-     * @param {String} [html] - The new text that will be set. Provide the parameter only if you want to set new text.
-     * @returns {String|VirtualElement} - returns itself if it is used as a setter(no parameters specified)
-     * and returns the inner text of the element if it used as a getter.
+     * @param {String} [text] - The new text that will be set. Provide the parameter only if you want to set new text.
+     * @returns {String|VirtualElement} - returns itself if it is used as a setter
+     * and returns the inner text of the element if it used as a getter (no parameters specified).
      */
     text: function (text) {
       if (arguments.length > 0) {
         if (text != null) {
-          text = escapeValue(text);
+          text = Escape.forHTML(text);
           this.html(text);
         }
         return this;
       }
+      // TODO strip tags of the html
       return this.html();
     },
-
     /**
      * Gets the parent VirtualElement
      *
@@ -4668,65 +4814,56 @@ return result;
     parent: function () {
       return this._parent;
     },
-
     children: function (value) {
       if (typeof value === 'number') {
         return this._children[value];
       }
       return this._children;
     },
-
     /**
      * Gets or sets an attribute value
      *
      * @param {String} attributeName - The attribute name to be set or retrieved.
-     * @param {String} [attributeValue] - The value to be set to the attribute.
+     * @param {String|Number|boolean} [attributeValue] - The value to be set to the attribute.
      * @returns {VirtualElement|String} - Returns the VirtualElement itself if you set an attribute.
      * Returns the attribute name value if only the first parameter is specified.
      */
     attr: function (attributeName, attributeValue) {
       var _this = this;
       var returnValue;
-
       if (typeof attributeName == 'string') {
         var tagName = this._tagName;
         var type = this._attributes.type;
         var rawAttributeValue = attributeValue;
         var elementData = ElementsData.data(this);
         var value = this._getAttr('value');
-
         attributeName = blocks.unwrapObservable(attributeName);
         attributeName = dom.attrFix[attributeName] || attributeName;
         attributeValue = blocks.unwrapObservable(attributeValue);
-
         if (blocks.isObservable(rawAttributeValue) && attributeName == 'value' && dom.valueTagNames[tagName] && (!type || dom.valueTypes[type])) {
           elementData.subscribe = tagName == 'select' ? 'change' : 'input';
           elementData.valueObservable = rawAttributeValue;
-        } else if (blocks.isObservable(rawAttributeValue) &&
-          attributeName == 'checked' && (type == 'checkbox' || type == 'radio')) {
-
+        } else if (blocks.isObservable(rawAttributeValue) && attributeName == 'checked' && (type == 'checkbox' || type == 'radio')) {
           elementData.subscribe = 'click';
           elementData.valueObservable = rawAttributeValue;
         }
-
         if (arguments.length == 1) {
           returnValue = this._getAttr(attributeName);
           return returnValue === undefined ? null : returnValue;
         }
-
         if (attributeName == 'checked' && attributeValue != null && !this._fake) {
-          if (this._attributes.type == 'radio' &&
-            typeof attributeValue == 'string' &&
-            value != attributeValue && value != null) {
-
+          if (this._attributes.type == 'radio' && typeof attributeValue == 'string' && value != attributeValue && value != null && !blocks.isArray(attributeValue)) {
             attributeValue = null;
           } else {
-            attributeValue = attributeValue ? 'checked' : null;
+            if (blocks.isArray(attributeValue)) {
+              attributeValue = attributeValue.indexOf(value) !== -1 ? 'checked' : null;
+            } else {
+              attributeValue = attributeValue ? 'checked' : null;
+            }
           }
         } else if (attributeName == 'disabled') {
           attributeValue = attributeValue ? 'disabled' : null;
         }
-
         if (tagName == 'textarea' && attributeName == 'value' && !this._el) {
           this.html(attributeValue);
         } else if (attributeName == 'value' && tagName == 'select') {
@@ -4749,10 +4886,8 @@ return result;
           _this.attr(key, val);
         });
       }
-
       return this;
     },
-
     /**
      * Removes a particular attribute from the VirtualElement
      *
@@ -4764,39 +4899,32 @@ return result;
       dom.removeAttr(this._el, attributeName);
       return this;
     },
-
     /**
      * Gets or sets a CSS property
      *
      * @param {String} name - The CSS property name to be set or retrieved
-     * @param {String} [value] - The value to be set to the CSS property
+     * @param {String|number|boolean} [value] - The value to be set to the CSS property
      * @returns {VirtualElement|String} - Returns the VirtualElement itself if you use the method as a setter.
      * Returns the CSS property value if only the first parameter is specified.
      */
     css: function (propertyName, value) {
       var _this = this;
-
       if (typeof propertyName == 'string') {
         propertyName = blocks.unwrap(propertyName);
         value = blocks.unwrap(value);
-
         if (!propertyName) {
           return;
         }
-
         propertyName = propertyName.toString().replace(/-\w/g, function (match) {
           return match.charAt(1).toUpperCase();
         });
-
         if (arguments.length === 1) {
           value = this._getCss(propertyName);
           return value === undefined ? null : value;
         }
-
         if (propertyName == 'display') {
-          value = value == 'none' || (!value && value !== '') ? 'none' : '';
+          value = value == 'none' || !value && value !== '' ? 'none' : '';
         }
-
         this._haveStyle = true;
         if (!VirtualElement.CssNumbers[propertyName]) {
           value = blocks.toUnit(value);
@@ -4815,14 +4943,11 @@ return result;
           _this.css(key, val);
         });
       }
-
       return this;
     },
-
     addChild: function (element, index) {
       var children = this._template || this._children;
       var fragment;
-
       if (element) {
         element._parent = this;
         if (this._childrenEach || this._each) {
@@ -4844,7 +4969,6 @@ return result;
       }
       return this;
     },
-
     /**
      * Adds a class to the element
      * @param {string|Array} classNames - A single className,
@@ -4856,7 +4980,6 @@ return result;
       dom.addClass(this._el, classNames);
       return this;
     },
-
     /**
      * Removes a class from the element
      * @param {string|Array} classNames - A single className,
@@ -4868,7 +4991,6 @@ return result;
       dom.removeClass(this._el, classNames);
       return this;
     },
-
     toggleClass: function (className, condition) {
       if (condition === false) {
         this.removeClass(className);
@@ -4876,7 +4998,6 @@ return result;
         this.addClass(className);
       }
     },
-
     /** Checks whether the element has the specified class name
      * @param {string} className - The class name to check for
      * @returns {boolean} - Returns a boolean determining if element has
@@ -4885,10 +5006,8 @@ return result;
     hasClass: function (className) {
       return getClassIndex(this._attributes[classAttr], className) != -1;
     },
-
     renderBeginTag: function () {
       var html;
-
       html = '<' + this._tagName;
       if (this._haveAttributes) {
         html += this._renderAttributes();
@@ -4897,41 +5016,34 @@ return result;
         html += generateStyleAttribute(this._style, this._state);
       }
       html += this._isSelfClosing ? ' />' : '>';
-
       return html;
     },
-
     renderEndTag: function () {
       if (this._isSelfClosing) {
         return '';
       }
       return '</' + this._tagName + '>';
     },
-
     render: function (domQuery, syncIndex) {
       var html = '';
       var childHtml = '';
       var htmlElement = this._el;
-
       if (syncIndex !== undefined) {
         this._state = {
           attributes: {},
           style: {},
           html: null,
-          expressions: {}
+          expressions: {},
+          template: blocks.clone(this._template || this._children)
         };
         if (!this._states) {
           this._states = {};
         }
         this._states[syncIndex] = this._state;
       }
-
       this._el = undefined;
-
       this._execute(domQuery);
-
       this._el = htmlElement;
-
       if (this._renderMode != VirtualElement.RenderMode.None) {
         if (this._renderMode != VirtualElement.RenderMode.ElementOnly) {
           if (this._state && this._state.html !== null) {
@@ -4942,27 +5054,20 @@ return result;
             childHtml = this.renderChildren(domQuery, syncIndex);
           }
         }
-
         html += this.renderBeginTag();
-
         html += childHtml;
-
         html += this.renderEndTag();
       }
-
       this._state = null;
-
       return html;
     },
-
     renderChildren: function (domQuery, syncIndex) {
       var html = '';
-      var children = this._template || this._children;
+      var children = this._state && this._state.template || this._template || this._children;
       var length = children.length;
       var index = -1;
       var child;
       var value;
-
       while (++index < length) {
         child = children[index];
         if (typeof child == 'string') {
@@ -4984,10 +5089,8 @@ return result;
           }
         }
       }
-
       return html;
     },
-
     sync: function (domQuery, syncIndex, element) {
       if (syncIndex) {
         this._state = this._states[syncIndex];
@@ -4995,17 +5098,12 @@ return result;
         this._each = false;
         this._sync = true;
       }
-
       this._execute(domQuery);
-
       this.renderBeginTag();
-
       if (!this._innerHTML && !this._childrenEach && this._renderMode != VirtualElement.RenderMode.None) {
         this.syncChildren(domQuery, syncIndex);
       }
-
       this.renderEndTag();
-
       if (syncIndex) {
         this._state = null;
         this._el = undefined;
@@ -5013,144 +5111,149 @@ return result;
         this._sync = false;
       }
     },
-
     syncChildren: function (domQuery, syncIndex, offset) {
-      var children = this._template || this._children;
+      var children = this._state && this._state.template || this._template || this._children;
       var length = children.length;
       var state = this._state;
-      var element = this._el.nodeType == 8 ? this._el.nextSibling : this._el.childNodes[offset || 0];
+      var element = this._el.nodeType == 8 ? this._el : this._el.childNodes[offset || 0];
       var index = -1;
       var elementForDeletion;
+      var deletionCount;
+      var fragment;
       var expression;
       var child;
-
+      var lastExpression;
       while (++index < length) {
         child = children[index];
         if (child.isExpression) {
           if (domQuery) {
-            expression = Expression.GetValue(domQuery._context, null, child, state ? Expression.ValueOnly : Expression.Html);
-
-            if (!state || (state && state.expressions[index] !== expression)) {
+            expression = Expression.GetValue(domQuery._context, null, child, state ? Expression.NodeWise : Expression.Html);
+            if (!state || state && state.expressions[index] !== expression) {
               if (state) {
+                lastExpression = state.expressions[index];
                 state.expressions[index] = expression;
                 if (element) {
-                  if (element.nodeType == 8) {
+                  blocks.each(expression, function (value, key) {
+                    // skipp comment (= null values) & unchanged nodes
+                    if (value == null || element.nodeType == 8 || blocks.isArray(lastExpression) && lastExpression[key] == value) {
+                      element = element.nextSibling;
+                      return;
+                    }
+                    element.nodeValue = value;
                     element = element.nextSibling;
-                  }
-                  element.nodeValue = expression;
-                  element = element.nextSibling;
+                  });
                 } else {
-                  this._el.textContent = expression;
+                  this._el.textContent = expression.join();
                 }
               } else {
-                this._el.insertBefore(createFragment(expression), element);
-                elementForDeletion = element;
-                element = element.nextSibling;
-                this._el.removeChild(elementForDeletion);
+                fragment = createFragment(expression);
+                deletionCount = syncIndex ? child.nodeLength : 1;
+                this._el.insertBefore(fragment, element);
+                while (deletionCount-- > 0) {
+                  elementForDeletion = element;
+                  element = element.nextSibling;
+                  this._el.removeChild(elementForDeletion);
+                }
               }
             }
           }
         } else if (typeof child != 'string' && child._renderMode != VirtualElement.RenderMode.None) {
           child._each = child._each || this._each;
-
           child.sync(domQuery, syncIndex, element);
-
           element = element.nextSibling;
         } else {
           element = element.nextSibling;
         }
       }
     },
-
     updateChildren: function (collection, updateCount, domQuery, domElement) {
-      var template = this._template;
+      var template = this._state && this._state.template || this._template;
       var child = template[0];
       var isOneChild = template.length === 1 && VirtualElement.Is(child);
       var childNodes = domElement.childNodes;
       var syncIndex = domQuery.getSyncIndex();
-      var childContexts = domQuery._context.childs;
       var chunkLength = this._length();
-      var offset = this._headers ? this._headers.length : 0;
+      var headers = this._state && this._state.headers || this._headers;
+      var offset = headers ? headers.length : 0;
       var index = -1;
-      var context;
-
       while (++index < updateCount) {
-        domQuery._context = context = childContexts[index];
-        context.$this = collection[index];
-        context.$parent = context.$parentContext.$this;
+        domQuery.dataIndex(blocks.observable.getIndex(collection, index));
+        domQuery.pushContext(collection[index]);
         if (isOneChild) {
           child.sync(domQuery, syncIndex + index, childNodes[index + offset]);
         } else {
-          this.syncChildren(domQuery, syncIndex + index, (index * chunkLength) + offset);
+          this.syncChildren(domQuery, syncIndex + index, index * chunkLength + offset);
         }
+        domQuery.popContext();
       }
-
       domQuery.popContext();
     },
-
+    clone: function () {
+      var element = this._el;
+      var parent = this._parent;
+      this._parent = null;
+      this._el = null;
+      this.clone = null;
+      var clone = blocks.clone(this, true);
+      clone.clone = this.clone = VirtualElement.prototype.clone;
+      clone._parent = this._parent = parent;
+      this._el = element;
+      return clone;
+    },
     _length: function () {
       var template = this._template;
       var index = -1;
       var length = 0;
-
       while (++index < template.length) {
         if (template[index]._renderMode !== VirtualElement.RenderMode.None) {
-          length += 1;
+          if (template[index].isExpression && template[index].nodeLength) {
+            length += template[index].nodeLength;
+          } else {
+            length += 1;
+          }
         }
       }
-
       return length;
     },
-
     _getAttr: function (name) {
       var state = this._state;
       return state && state.attributes[name] !== undefined ? state.attributes[name] : this._attributes[name];
     },
-
     _getCss: function (name) {
       var state = this._state;
       return state && state.style[name] !== undefined ? state.style[name] : this._style[name];
     },
-
     _execute: function (domQuery) {
       if (!domQuery) {
         return;
       }
-
       if (this._each) {
         this._el = undefined;
       }
-
       if (this._renderMode != VirtualElement.RenderMode.None) {
         var id = this._attributes[dataIdAttr];
         var data;
-
         if (!id || domQuery._serverData) {
           ElementsData.createIfNotExists(this);
           domQuery.applyContextToElement(this);
           id = this._attributes[dataIdAttr];
           data = ElementsData.byId(id);
         }
-
         if (this._attributeExpressions.length) {
           this._executeAttributeExpressions(domQuery._context);
         }
-
         domQuery.executeQuery(this, this._attributes[dataQueryAttr]);
-
         if (data && !data.haveData) {
           ElementsData.clear(this);
         }
       }
     },
-
     _renderAttributes: function () {
       var attributes = this._attributes;
       var state = this._state;
       var html = '';
       var key;
       var value;
-
       if (this._tagName == 'option' && this._parent._values) {
         if (state && typeof state.attributes.value !== 'undefined') {
           state.attributes.selected = this._parent._values[state.attributes.value] ? 'selected' : null;
@@ -5158,7 +5261,6 @@ return result;
           attributes.selected = this._parent._values[attributes.value] ? 'selected' : null;
         }
       }
-
       for (key in attributes) {
         value = attributes[key];
         if (state && hasOwn.call(state.attributes, key)) {
@@ -5167,36 +5269,31 @@ return result;
         if (value === '') {
           html += ' ' + key;
         } else if (value != null) {
-          html += ' ' + key + '="' + value + '"';
+          html += ' ' + key + '="' + Escape.forHTMLAttributes(value) + '"';
         }
       }
-
       if (state) {
         for (key in state.attributes) {
           value = state.attributes[key];
           if (value === '') {
             html += ' ' + key;
           } else if (value != null) {
-            html += ' ' + key + '="' + value + '"';
+            html += ' ' + key + '="' + Escape.forHTMLAttributes(value) + '"';
           }
         }
       }
-
       return html;
     },
-
     _createAttributeExpressions: function (serverData) {
       var attributeExpressions = this._attributeExpressions;
       var dataId = this._attributes[dataIdAttr];
       var each = this._each;
       var expression;
-
       blocks.each(this._attributes, function (attributeValue, attributeName) {
-        if(!attributeValue) {
+        if (!attributeValue) {
           // In Serverside rendering, some attributes will be set to null in some cases
           return;
         }
-
         if (!each && serverData && serverData[dataId + attributeName]) {
           expression = Expression.Create(serverData[dataId + attributeName], attributeName);
         } else {
@@ -5207,7 +5304,15 @@ return result;
         }
       });
     },
-
+    _setChildren: function (children) {
+      this._children = children;
+      if (this._template || this._each) {
+        this._template = blocks.clone(children, true);
+      }
+      if (this._state) {
+        this._state.template = blocks.clone(children, true);
+      }
+    },
     _executeAttributeExpressions: function (context) {
       var isVirtual = this._el ? false : true;
       var attributes = this._state && this._state.attributes;
@@ -5216,36 +5321,31 @@ return result;
       var attributeName;
       var expression;
       var value;
-
       for (var i = 0; i < expressions.length; i++) {
         expression = expressions[i];
         value = Expression.GetValue(context, elementData, expression);
         attributeName = expression.attributeName;
-        if ((attributes && attributes[attributeName] !== value) || !attributes) {
-          if (isVirtual) {
-            if (this._state) {
-              this._state.attributes[attributeName] = value;
-            } else {
-              this._attributes[attributeName] = value;
-            }
-          } else {
+        if (attributes && attributes[attributeName] !== value || !attributes) {
+          if (isVirtual && !this._state) {
+            this._attributes[attributeName] = value;
+          } else if (!isVirtual) {
             dom.attr(this._el, attributeName, value);
+          }
+          if (this._state) {
+            this._state.attributes[attributeName] = value;
           }
         }
       }
     }
   });
-
   VirtualElement.Is = function (value) {
     return value && value.__identity__ == virtualElementIdentity;
   };
-
   VirtualElement.RenderMode = {
     All: 0,
     ElementOnly: 2,
     None: 4
   };
-
   VirtualElement.CssNumbers = {
     columnCount: true,
     fillOpacity: true,
@@ -5260,13 +5360,11 @@ return result;
     zIndex: true,
     zoom: true
   };
-
   function generateStyleAttribute(style, state) {
     var html = ' style="';
     var haveStyle = false;
     var key;
     var value;
-
     for (key in style) {
       value = style[key];
       if (state && hasOwn.call(state.style, key)) {
@@ -5281,7 +5379,6 @@ return result;
         html += ';';
       }
     }
-
     if (state) {
       for (key in state.style) {
         value = state.style[key];
@@ -5295,16 +5392,18 @@ return result;
         }
       }
     }
-
     html += '"';
     return haveStyle ? html : '';
   }
-
   function replaceStyleAttribute(match) {
     return '-' + match.toLowerCase();
   }
-
-
+  //@if DEBUG
+  blocks.debug.addType('blocks.VirtualElement', VirtualElement.Is);
+  //@endif
+  return VirtualElement;
+}();
+var setClass = function () {
   var classListMultiArguments = true;
   if (typeof document !== 'undefined') {
     var element = document.createElement('div');
@@ -5313,7 +5412,6 @@ return result;
       classListMultiArguments = element.className == 'a b';
     }
   }
-
   function setClass(type, element, classNames) {
     if (classNames != null) {
       classNames = blocks.isArray(classNames) ? classNames : classNames.toString().split(' ');
@@ -5321,7 +5419,6 @@ return result;
       var classAttribute;
       var className;
       var index;
-
       if (VirtualElement.Is(element)) {
         classAttribute = element._getAttr(classAttr);
       } else if (element.classList) {
@@ -5337,7 +5434,6 @@ return result;
         classAttribute = element.className;
       }
       classAttribute = classAttribute || '';
-
       for (; i < classNames.length; i++) {
         className = classNames[i];
         index = getClassIndex(classAttribute, className);
@@ -5349,34 +5445,32 @@ return result;
             classAttribute += className;
           }
         } else if (index != -1) {
-          classAttribute = (classAttribute.substring(0, index) + ' ' +
-          classAttribute.substring(index + className.length + 1, classAttribute.length)).replace(trimRegExp, '');
+          classAttribute = (classAttribute.substring(0, index) + ' ' + classAttribute.substring(index + className.length + 1, classAttribute.length)).replace(trimRegExp, '');
         }
       }
-
       if (VirtualElement.Is(element)) {
         if (element._state) {
           element._state.attributes[classAttr] = classAttribute;
         } else {
-         element._attributes[classAttr] = classAttribute; 
+          element._attributes[classAttr] = classAttribute;
         }
       } else {
         element.className = classAttribute;
       }
     }
   }
-
+  return setClass;
+}();
+var animation = function () {
   var animation = {
     insert: function (parentElement, index, chunk) {
       index = getIndexOffset(parentElement, index);
       var insertPositionNode = parentElement.childNodes[index];
       var childNodesCount;
       var firstChild;
-
       blocks.each(chunk, function (node) {
         childNodesCount = node.nodeType == 11 ? node.childNodes.length : 0;
         firstChild = node.childNodes ? node.childNodes[0] : undefined;
-
         if (insertPositionNode) {
           //checkItemExistance(insertPositionNode);
           parentElement.insertBefore(node, insertPositionNode);
@@ -5384,7 +5478,6 @@ return result;
           //checkItemExistance(parentElement.childNodes[parentElement.childNodes.length - 1]);
           parentElement.appendChild(node);
         }
-
         if (childNodesCount) {
           while (childNodesCount) {
             animateDomAction('add', firstChild);
@@ -5396,13 +5489,10 @@ return result;
         }
       });
     },
-
     remove: function (parentElement, index, count) {
       var i = 0;
       var node;
-
       index = getIndexOffset(parentElement, index);
-
       for (; i < count; i++) {
         node = parentElement.childNodes[index];
         if (node) {
@@ -5412,7 +5502,6 @@ return result;
         }
       }
     },
-
     setVisibility: function (element, visible) {
       if (visible) {
         animation.show(element);
@@ -5420,16 +5509,13 @@ return result;
         animation.hide(element);
       }
     },
-
     show: function (element) {
       animateDomAction('show', element);
     },
-
     hide: function (element) {
       animateDomAction('hide', element);
     }
   };
-
   function getIndexOffset(parentElement, index) {
     var elementData = ElementsData.data(parentElement);
     if (elementData && elementData.animating > 0) {
@@ -5437,25 +5523,20 @@ return result;
       var childIndex = 0;
       var currentIndex = 0;
       var className;
-
       while (index != currentIndex) {
         if (!childNodes[childIndex]) {
           return Number.POSITIVE_INFINITY;
         }
         className = childNodes[childIndex].className;
         childIndex++;
-
         if (getClassIndex(className, 'b-hide') == -1) {
           currentIndex++;
         }
       }
-
       if (!childNodes[childIndex]) {
         return Number.POSITIVE_INFINITY;
       }
-
       className = childNodes[childIndex].className;
-
       while (getClassIndex(className, 'b-hide') != -1) {
         childIndex++;
         if (!childNodes[childIndex]) {
@@ -5463,13 +5544,10 @@ return result;
         }
         className = childNodes[childIndex].className;
       }
-
       return childIndex;
     }
-
     return index;
   }
-
   function animateDomAction(type, element) {
     var animating = false;
     var elementData = ElementsData.createIfNotExists(element);
@@ -5491,21 +5569,17 @@ return result;
         disposeCallback();
       }
     };
-
     if (element.nodeType != 1) {
       disposeCallback();
       return;
     }
-
     if (type == 'show') {
       element.style.display = '';
     }
-
     if (elementData.preprocess) {
       disposeCallback();
       return;
     }
-
     if (animateCallback) {
       animating = true;
       elementData.animating += 1;
@@ -5516,14 +5590,12 @@ return result;
     }
     return animating || cssAnimate(cssType, element, disposeCallback, readyCallback);
   }
-
   function cssAnimate(type, element, disposeCallback, readyCallback) {
     if (typeof window == 'undefined' || window.ontransitionend === undefined) {
       disposeCallback();
       return;
     }
     setClass('add', element, 'b-' + type);
-
     var computedStyle = window.getComputedStyle(element);
     var prefix = '';
     var eventName;
@@ -5533,30 +5605,22 @@ return result;
     } else {
       eventName = 'animationend';
     }
-
     var transitionDuration = parseFloat(computedStyle['transition-duration']) || 0;
     var transitionDelay = parseFloat(computedStyle['transition-delay']) || 0;
     var animationDuration = parseFloat(computedStyle[prefix + 'animation-duration']) || 0;
     var animationDelay = parseFloat(computedStyle[prefix + 'animation-delay']) || 0;
-
-    if ((transitionDuration <= 0 && transitionDelay <= 0 &&
-      animationDuration <= 0 && animationDelay <= 0) ||
-      !willAnimate(element, type)) {
-
+    if (transitionDuration <= 0 && transitionDelay <= 0 && animationDuration <= 0 && animationDelay <= 0 || !willAnimate(element, type)) {
       setClass('remove', element, 'b-' + type);
       disposeCallback();
       return;
     }
-
     ElementsData.createIfNotExists(element).animating += 1;
     ElementsData.createIfNotExists(element.parentNode).animating += 1;
-
     setTimeout(function () {
       setClass('add', element, 'b-' + type + '-end');
       element.addEventListener('transitionend', end, false);
       element.addEventListener(eventName, end, false);
     }, 1);
-
     function end() {
       setClass('remove', element, 'b-' + type);
       setClass('remove', element, 'b-' + type + '-end');
@@ -5564,16 +5628,12 @@ return result;
       element.removeEventListener('transitionend', end, false);
       element.removeEventListener(eventName, end, false);
     }
-
     return true;
   }
-
-
   // cache the willAnimate results
   // each element with identical className, style attribute and tagName
   // can be cached because the result will always be the same
   var willAnimateCache = {};
-
   // determines if the element will be transitioned or animated
   // check if the transitionProperty changes after applying b-type and b-type-end classes
   // if it changes this means that the element have styles for animating the element
@@ -5585,28 +5645,20 @@ return result;
     var transitionProperties;
     var startStyle;
     var endStyle;
-
     if (fromCache || fromCache === false) {
       return fromCache;
     }
-
     setClass('remove', element, 'b-' + type);
-
     startStyle = blocks.extend({}, window.getComputedStyle(element));
-
     setClass('add', element, 'b-' + type);
     setClass('add', element, 'b-' + type + '-end');
-
     endStyle = window.getComputedStyle(element);
-
     // transitionProperty could return multiple properties - "color, opacity, font-size"
     transitionProperties = endStyle.transitionProperty.split(',');
-
     blocks.each(transitionProperties, function (property) {
       property = property.trim().replace(/-\w/g, function (match) {
         return match.charAt(1).toUpperCase();
       });
-
       if (property == 'all') {
         for (var key in endStyle) {
           if (endStyle[key] != startStyle[key]) {
@@ -5621,21 +5673,18 @@ return result;
         }
       }
     });
-
     setClass('remove', element, 'b-' + type + '-end');
-
     willAnimateCache[element.className + element.getAttribute('style') + element.tagName] = result;
-
     return result;
   }
-
+  return animation;
+}();
+var VirtualComment = function () {
   function VirtualComment(commentText) {
     if (!VirtualComment.prototype.isPrototypeOf(this)) {
       return new VirtualComment(commentText);
     }
-
     this.__Class__();
-
     if (commentText.nodeType == 8) {
       this._commentText = commentText.nodeValue;
       this._el = commentText;
@@ -5643,40 +5692,46 @@ return result;
       this._commentText = commentText;
     }
   }
-
   blocks.VirtualComment = blocks.inherit(VirtualElement, VirtualComment, {
     renderBeginTag: function () {
       var dataId = this._getAttr(dataIdAttr);
       var html = '<!-- ';
-
       if (dataId) {
         html += dataId + ':';
       }
-      html += this._commentText.replace(trimRegExp, '') + ' -->';
-
+      html += Escape.forHTML(this._commentText.replace(trimRegExp, '')) + ' -->';
       return html;
     },
-
     renderEndTag: function () {
       var dataId = this._getAttr(dataIdAttr);
       var html = '<!-- ';
-
       if (dataId) {
         html += dataId + ':';
       }
       html += '/blocks -->';
       return html;
     },
-
     _executeAttributeExpressions: blocks.noop
   });
-
   VirtualComment.Is = function (value) {
     return VirtualComment.prototype.isPrototypeOf(value);
   };
-
+  return VirtualComment;
+}();
+var serverData = function () {
+  var serverData = null;
+  if (global.document && global.document.body) {
+    var data = document.body.getAttribute('data-blocks-server-data');
+    if (data) {
+      document.body.removeAttribute('data-blocks-server-data');
+      /* global JSON */
+      serverData = JSON.parse(data.replace('&quot;', '"'));
+    }
+  }
+  return serverData;
+}();
+var createVirtual = function () {
   function createVirtual(htmlElement, parentElement) {
-    var serverData = window.__blocksServerData__;
     var elements = [];
     var element;
     var tagName;
@@ -5687,7 +5742,6 @@ return result;
     var commentText;
     var commentTextTrimmed;
     var data;
-
     while (htmlElement) {
       nodeType = htmlElement.nodeType;
       if (nodeType == 1) {
@@ -5705,36 +5759,30 @@ return result;
         for (var i = 0; i < htmlAttributes.length; i++) {
           htmlAttribute = htmlAttributes[i];
           // the style should not be part of the attributes. The style is handled individually.
-          if (htmlAttribute.nodeName !== 'style' &&
-            (htmlAttribute.specified ||
-              //IE7 wil return false for .specified for the "value" attribute - WTF!
-            (browser.IE < 8 && htmlAttribute.nodeName == 'value' && htmlAttribute.nodeValue))) {
+          if (htmlAttribute.nodeName !== 'style' && (htmlAttribute.specified || browser.IE < 8 && htmlAttribute.nodeName == 'value' && htmlAttribute.nodeValue)) {
             elementAttributes[htmlAttribute.nodeName.toLowerCase()] = browser.IE < 11 ? htmlAttribute.nodeValue : htmlAttribute.value;
             element._haveAttributes = true;
           }
         }
         element._attributes = elementAttributes;
         element._createAttributeExpressions(serverData);
-
         if (htmlElement.style.cssText) {
           element._haveStyle = true;
           element._style = generateStyleObject(htmlElement.style.cssText);
         }
-
         setIsSelfClosing(element);
         if (tagName == 'script' || tagName == 'style' || tagName == 'code' || element.hasClass('bl-skip')) {
           element._innerHTML = htmlElement.innerHTML;
         } else {
           element._children = createVirtual(htmlElement.childNodes[0], element);
         }
-
         elements.push(element);
       } else if (nodeType == 3) {
         // TextNode
         //if (htmlElement.data.replace(trimRegExp, '').replace(/(\r\n|\n|\r)/gm, '') !== '') {
         //
         //}
-        data = escapeValue(htmlElement.data);
+        data = htmlElement.data;
         elements.push(Expression.Create(data, null, htmlElement) || data);
       } else if (nodeType == 8) {
         // Comment
@@ -5769,33 +5817,31 @@ return result;
     }
     return elements;
   }
-
   function generateStyleObject(styleString) {
     var styles = styleString.split(';');
     var styleObject = {};
     var index;
     var style;
     var values;
-
     for (var i = 0; i < styles.length; i++) {
       style = styles[i];
       if (style) {
         index = style.indexOf(':');
         if (index != -1) {
-          values = [style.substring(0, index), style.substring(index + 1)];
+          values = [
+            style.substring(0, index),
+            style.substring(index + 1)
+          ];
           styleObject[values[0].toLowerCase().replace(trimRegExp, '')] = values[1].replace(trimRegExp, '');
         }
       }
     }
-
     return styleObject;
   }
-
   var isSelfClosingCache = {};
   function setIsSelfClosing(element) {
     var tagName = element._tagName;
     var domElement;
-
     if (isSelfClosingCache[tagName] !== undefined) {
       element._isSelfClosing = isSelfClosingCache[tagName];
       return;
@@ -5804,7 +5850,9 @@ return result;
     domElement.appendChild(document.createElement(tagName));
     isSelfClosingCache[tagName] = element._isSelfClosing = domElement.innerHTML.indexOf('</') === -1;
   }
-
+  return createVirtual;
+}();
+var createProperty = function () {
   function createProperty(propertyName) {
     return function (value) {
       if (arguments.length === 0) {
@@ -5814,8 +5862,9 @@ return result;
       return this;
     };
   }
-
-
+  return createProperty;
+}();
+var parseQuery = function () {
   function parseQuery(query, callback) {
     var character = 0;
     var bracketsCount = 0;
@@ -5827,12 +5876,9 @@ return result;
     var parameters = [];
     var currentParameter;
     var methodName;
-
     query = query || '';
-
     for (var i = 0; i < query.length; i++) {
       character = query.charAt(i);
-
       if (!isInSingleQuotes && !isInDoubleQuotes) {
         if (character == '[') {
           squareBracketsCount++;
@@ -5844,21 +5890,17 @@ return result;
           curlyBracketsCount--;
         }
       }
-
       if (curlyBracketsCount !== 0 || squareBracketsCount !== 0) {
         continue;
       }
-
       if (character == '\'') {
         isInSingleQuotes = !isInSingleQuotes;
       } else if (character == '"') {
         isInDoubleQuotes = !isInDoubleQuotes;
       }
-
       if (isInSingleQuotes || isInDoubleQuotes) {
         continue;
       }
-
       if (character == '(') {
         if (bracketsCount === 0) {
           methodName = query.substring(startIndex, i).replace(trimRegExp, '');
@@ -5872,9 +5914,9 @@ return result;
           if (currentParameter.length) {
             parameters.push(currentParameter);
           }
-
           if (methodName) {
-            methodName = methodName.replace(/^("|')+|("|')+$/g, ''); // trim single and double quotes
+            methodName = methodName.replace(/^("|')+|("|')+$/g, '');
+            // trim single and double quotes
             callback(methodName, parameters);
           }
           parameters = [];
@@ -5891,55 +5933,45 @@ return result;
       }
     }
   }
-
+  return parseQuery;
+}();
+var DomQuery = function () {
   function DomQuery(options) {
     this._options = options || {};
   }
-
   DomQuery.QueryCache = {};
-
   DomQuery.prototype = {
     options: function () {
       return this._options;
     },
-
     dataIndex: createProperty('_dataIndex'),
-
     context: createProperty('_context'),
-
     popContext: function () {
       if (this._context) {
         this._context = this._context.$parentContext;
       }
     },
-
     applyContextToElement: function (element) {
       var data = ElementsData.createIfNotExists(element);
       data.domQuery = this;
       data.context = this._context;
-
-      if (this._hasChanged || (element._each && !element._parent._each)) {
+      if (this._hasChanged || element._each && !element._parent._each) {
         if (element._parent && !element._each) {
           data = ElementsData.createIfNotExists(element._parent);
           data.childrenContext = this._context;
         }
-
         this._hasChanged = false;
         data.haveData = true;
       }
     },
-
     pushContext: function (newModel) {
       var context = this._context;
       var models = context ? context.$parents.slice(0) : [];
       var newContext;
-
       this._hasChanged = true;
-
       if (context) {
         models.unshift(context.$this);
       }
-
       newContext = {
         $this: newModel,
         $root: context ? context.$root : newModel,
@@ -5947,66 +5979,51 @@ return result;
         $parents: context ? models : [],
         $index: this._dataIndex || null,
         $parentContext: context || null,
-        __props__: context && context.__props__
+        __props__: blocks.clone(context && context.__props__)
       };
       newContext.$context = newContext;
       this._context = newContext;
       this.applyProperties();
-
       return newContext;
     },
-
     getSyncIndex: function () {
       var context = this._context;
       var index = '';
-
       while (context && context.$index) {
         index = context.$index.__value__ + '_' + index;
         context = context.$parentContext;
       }
-
       return index;
     },
-
     contextBubble: function (context, callback) {
       var currentContext = this._context;
       this._context = context;
       callback();
       this._context = currentContext;
     },
-
     addProperty: function (name, value) {
       var context = this._context;
-
       context.__props__ = context.__props__ || {};
       context.__props__[name] = value;
       this.applyProperties();
     },
-
     applyProperties: function () {
       var properties = this._context.__props__;
       var key;
-
       for (key in properties) {
         this._context[key] = properties[key];
       }
     },
-
     executeElementQuery: function (element) {
-      var query = VirtualElement.Is(element) ? element._attributes[dataQueryAttr] :
-          element.nodeType == 1 ? element.getAttribute(dataQueryAttr) : element.nodeValue.substring(element.nodeValue.indexOf('blocks') + 6).replace(trimRegExp, '');
-
+      var query = VirtualElement.Is(element) ? element._attributes[dataQueryAttr] : element.nodeType == 1 ? element.getAttribute(dataQueryAttr) : element.nodeValue.substring(element.nodeValue.indexOf('blocks') + 6).replace(trimRegExp, '');
       if (query) {
         this.executeQuery(element, query);
       }
     },
-
     executeQuery: function (element, query) {
       var cache = DomQuery.QueryCache[query] || createCache(query, element);
-
       this.executeMethods(element, cache);
     },
-
     executeMethods: function (element, methods) {
       var elementData = ElementsData.data(element);
       var lastObservablesLength = 0;
@@ -6018,7 +6035,6 @@ return result;
       var parameter;
       var context;
       var func;
-
       for (; i < methods.length; i++) {
         context = this._context;
         method = blocks.queries[methods[i].name];
@@ -6031,8 +6047,8 @@ return result;
             elementData.executeHash = {};
           }
           if (!elementData.executeHash[methods[i].query]) {
-             elementData.execute.push(methods[i]);
-             elementData.executeHash[methods[i].query] = true;
+            elementData.execute.push(methods[i]);
+            elementData.executeHash[methods[i].query] = true;
           }
           continue;
         }
@@ -6041,23 +6057,21 @@ return result;
           parameter = parameters[j];
           // jshint -W054
           // Disable JSHint error: The Function constructor is a form of eval
-          func = parameterQueryCache[parameter] = parameterQueryCache[parameter] ||
-              new Function('c', 'with(c){with($this){ return ' + parameter + '}}');
-
+          func = parameterQueryCache[parameter] = parameterQueryCache[parameter] || new Function('c', 'with(c){with($this){ return ' + parameter + '}}');
           currentParameter = {};
-
-          /* @if DEBUG */ {
+          /* @if DEBUG */
+          {
             try {
               currentParameter.rawValue = func(context);
             } catch (e) {
               blocks.debug.queryParameterFail(methods[i], parameter, element);
             }
-          } /* @endif */
+          }
+          /* @endif */
           currentParameter.rawValue = func(context);
-
           currentParameter.value = blocks.unwrapObservable(currentParameter.rawValue);
-
           if (method.passDetailValues) {
+            currentParameter.parameterName = parameter;
             currentParameter.isObservable = blocks.isObservable(currentParameter.rawValue);
             currentParameter.containsObservable = Observer.currentObservables().length > lastObservablesLength;
             lastObservablesLength = Observer.currentObservables().length;
@@ -6067,12 +6081,10 @@ return result;
           } else {
             executedParameters.push(currentParameter.value);
           }
-
           // Handling 'if' queries
           // Example: data-query='if(options.templates && options.templates.item, options.templates.item)'
           if (method === blocks.queries['if'] || method === blocks.queries.ifnot) {
-            if ((!currentParameter.value && method === blocks.queries['if']) ||
-                (currentParameter.value && method === blocks.queries.ifnot)) {
+            if (!currentParameter.value && method === blocks.queries['if'] || currentParameter.value && method === blocks.queries.ifnot) {
               if (!parameters[2]) {
                 break;
               }
@@ -6083,21 +6095,22 @@ return result;
             break;
           }
         }
-
-        /* @if DEBUG */ {
+        /* @if DEBUG */
+        {
           var params = executedParameters;
           if (method.passDomQuery) {
             params = blocks.clone(executedParameters).slice(1);
           }
           blocks.debug.checkQuery(methods[i].name, params, methods[i], element);
-        }/* @endif */
-
+        }
+        /* @endif */
         if (VirtualElement.Is(element)) {
           if (VirtualComment.Is(element) && !method.supportsComments) {
-            // TODO: Should throw debug message
+            // @if DEBUG
+            blocks.debug.throwMessage('data-query ' + methods[i].name + ' does not support to be executed as on a comment.', blocks.debug.queries[methods[i].name], 'Error');
+            // @endif
             continue;
           }
-
           if (method.call) {
             if (method.call === true) {
               element[methods[i].name].apply(element, executedParameters);
@@ -6129,14 +6142,11 @@ return result;
         } else if (method.update) {
           method.update.apply(element, executedParameters);
         }
-
         this.subscribeObservables(methods[i], elementData, context);
       }
     },
-
     subscribeObservables: function (method, elementData, context) {
       var observables = Observer.stopObserving();
-
       if (elementData) {
         elementData.haveData = true;
         blocks.each(observables, function (observable) {
@@ -6144,6 +6154,7 @@ return result;
             elementData.observables[observable.__id__ + method.query] = observable;
             observable._elements.push({
               elementId: elementData.id,
+              element: elementData.dom || elementData.virtual._el,
               cache: [method],
               context: context
             });
@@ -6151,12 +6162,10 @@ return result;
         });
       }
     },
-
     createElementObservableDependencies: function (elements) {
       var currentElement;
       var elementData;
       var tagName;
-
       for (var i = 0; i < elements.length; i++) {
         currentElement = elements[i];
         tagName = (currentElement.tagName || '').toLowerCase();
@@ -6175,55 +6184,41 @@ return result;
             elementData.preprocess = false;
             this._context = elementData.childrenContext || this._context;
           }
-          if (tagName != 'script' && tagName != 'code' &&
-            (' ' + currentElement.className + ' ').indexOf('bl-skip') == -1) {
-
+          if (tagName != 'script' && tagName != 'code' && (' ' + currentElement.className + ' ').indexOf('bl-skip') == -1) {
             this.createElementObservableDependencies(currentElement.childNodes);
           }
         }
       }
-
-      this._context = null;
     },
-
     createFragment: function (html) {
       var fragment = createFragment(html);
       this.createElementObservableDependencies(fragment.childNodes);
-
       return fragment;
     },
-
     cloneContext: function (context) {
       var newContext = blocks.clone(context);
       newContext.$context = newContext;
       return newContext;
     }
   };
-
   var UpdateHandlers = {
     change: function (e) {
       var target = e.target || e.srcElement;
       UpdateHandlers.getSetValue(target, ElementsData.data(target).valueObservable);
     },
-
     click: function (e) {
       UpdateHandlers.change(e);
     },
-
     //keyup: function (e) {
-
     //},
-
     input: function (e) {
       var target = e.target || e.srcElement;
       UpdateHandlers.getSetValue(target, ElementsData.data(target).valueObservable);
     },
-
     keydown: function (e) {
       var target = e.target || e.srcElement;
       var oldValue = target.value;
       var elementData = ElementsData.data(target);
-
       if (elementData) {
         setTimeout(function () {
           if (oldValue != target.value) {
@@ -6232,14 +6227,21 @@ return result;
         });
       }
     },
-
     getSetValue: function (element, value) {
       var tagName = element.tagName.toLowerCase();
       var type = element.getAttribute('type');
-
-      if (type == 'checkbox') {
+      if (blocks.isArray(value()) && (type == 'checkbox' || type == 'radio')) {
+        var unwrapedValue = value();
+        if (element.checked) {
+          if (unwrapedValue.indexOf(element.value) == -1) {
+            value.add(element.value);
+          }
+        } else if (unwrapedValue.indexOf(element.value) !== -1) {
+          value.splice(unwrapedValue.indexOf(element.value), 1);
+        }
+      } else if (type == 'checkbox') {
         value(element.checked);
-      } else if (tagName == 'select' && element.getAttribute('multiple')) {
+      } else if (tagName == 'select' && element.getAttribute('multiple') !== null) {
         var values = [];
         var selectedOptions = element.selectedOptions;
         if (selectedOptions) {
@@ -6253,7 +6255,6 @@ return result;
             }
           });
         }
-
         value(values);
       } else {
         blocks.core.skipExecution = {
@@ -6265,10 +6266,8 @@ return result;
       }
     }
   };
-
   function createCache(query, element) {
     var cache = DomQuery.QueryCache[query] = [];
-
     parseQuery(query, function (methodName, parameters) {
       var method = blocks.queries[methodName];
       var methodObj = {
@@ -6276,7 +6275,6 @@ return result;
         params: parameters,
         query: methodName + '(' + parameters.join(',') + ')'
       };
-
       if (method) {
         // TODO: Think of a way to remove this approach
         if (methodName == 'attr' || methodName == 'val') {
@@ -6284,18 +6282,15 @@ return result;
         } else {
           cache.push(methodObj);
         }
-      }
-      /* @if DEBUG */
-      else {
+      }  /* @if DEBUG */ else {
         blocks.debug.queryNotExists(methodObj, element);
-      }
-      /* @endif */
+      }  /* @endif */
     });
-
     return cache;
   }
-
-
+  return DomQuery;
+}();
+(function () {
   /**
   * @namespace blocks.queries
   */
@@ -6317,7 +6312,6 @@ return result;
      * <div data-query="if(false, setClass('success'), setClass('fail'))" class="fail"></div>
      */
     'if': {},
-
     /**
      * Executes particular query depending on the condition specified.
      * The opposite query of the 'if'
@@ -6336,7 +6330,6 @@ return result;
      * <div data-query="ifnot(false, setClass('success'), setClass('fail'))" class="success"></div>
      */
     ifnot: {},
-
     /**
      * Queries and sets the inner html of the element from the template specified
      *
@@ -6368,17 +6361,20 @@ return result;
      */
     template: {
       passDomQuery: true,
-      passRawValues: true,
-
+      passDetailValues: true,
       preprocess: function (domQuery, template, value) {
         var serverData = domQuery._serverData;
         var html;
-
+        var templateName = template.parameterName;
+        template = template.rawValue;
+        if (value) {
+          value = value.rawValue;
+        }
         template = blocks.$unwrap(template);
         if (blocks.isElement(template)) {
           html = template.innerHTML;
         } else {
-          html = document.getElementById(template);
+          html = document.getElementById(blocks.isString(template) ? template : templateName);
           if (html) {
             html = html.innerHTML;
           } else {
@@ -6393,7 +6389,8 @@ return result;
             if (!this._el) {
               var element = document.createElement('div');
               element.innerHTML = html;
-              this._children = createVirtual(element.childNodes[0], this);
+              var children = createVirtual(element.childNodes[0], this);
+              this._setChildren(children);
               this._innerHTML = null;
             } else {
               this.html(html);
@@ -6406,7 +6403,6 @@ return result;
         }
       }
     },
-
     /**
      * Creates a variable name that could be used in child elements
      *
@@ -6436,17 +6432,14 @@ return result;
      */
     define: {
       passDomQuery: true,
-
       preprocess: function (domQuery, propertyName, propertyValue) {
         if (this._renderMode != VirtualElement.RenderMode.None) {
           var currentContext = domQuery.context();
           var newContext = domQuery.cloneContext(currentContext);
           var renderEndTag = this.renderEndTag;
-
           ElementsData.data(this).context = newContext;
           domQuery.context(newContext);
           domQuery.addProperty(propertyName, propertyValue);
-
           this.renderEndTag = function () {
             domQuery.context(currentContext);
             return renderEndTag.call(this);
@@ -6454,7 +6447,6 @@ return result;
         }
       }
     },
-
     /**
      * Changes the current context for the child elements.
      * Useful when you will work a lot with a particular value
@@ -6487,16 +6479,13 @@ return result;
     'with': {
       passDomQuery: true,
       passRawValues: true,
-
       preprocess: function (domQuery, value, name) {
         if (this._renderMode != VirtualElement.RenderMode.None) {
           var renderEndTag = this.renderEndTag;
-
+          domQuery.pushContext(value);
           if (name) {
             domQuery.addProperty(name, value);
           }
-          domQuery.pushContext(value);
-
           this.renderEndTag = function () {
             domQuery.popContext();
             return renderEndTag.call(this);
@@ -6504,7 +6493,6 @@ return result;
         }
       }
     },
-
     /**
      * The each method iterates through an array items or object values
      * and repeats the child elements by using them as a template
@@ -6530,25 +6518,20 @@ return result;
      */
     each: {
       passDomQuery: true,
-
       passRawValues: true,
-
       supportsComments: true,
-
       _getStaticHtml: function (domQuery, element) {
-        var children = element._children;
-        var headers = element._headers;
-        var footers = element._footers;
+        var children = element._state && element._state.template || element._template || element._children;
+        var headers = element._state && element._state.headers || element._headers;
+        var footers = element._state && element._state.footer || element._footers;
         var index = -1;
         var headerHtml = '';
         var footerHtml = '';
         var length;
         var dataRole;
         var child;
-
         if (headers) {
           length = Math.max(headers.length, footers.length);
-
           while (++index < length) {
             if (headers[index]) {
               headerHtml += headers[index].render(domQuery);
@@ -6558,9 +6541,13 @@ return result;
             }
           }
         } else {
-          headers = element._headers = [];
-          footers = element._footers = [];
-
+          if (element._state) {
+            headers = element._state.headers = [];
+            footers = element._state.footers = [];
+          } else {
+            headers = element._headers = [];
+            footers = element._footers = [];
+          }
           while (++index < children.length) {
             child = children[index];
             if (child.isExpression) {
@@ -6585,7 +6572,6 @@ return result;
             }
           }
         }
-
         return {
           header: headerHtml,
           headersCount: headers.length,
@@ -6593,7 +6579,6 @@ return result;
           footersCount: footers.length
         };
       },
-
       preprocess: function (domQuery, collection) {
         var syncIndex = domQuery.getSyncIndex();
         var element = this;
@@ -6601,18 +6586,13 @@ return result;
         var rawCollection;
         var elementData;
         var staticHtml;
-        var childs;
         var html;
-
-        if (this._sync) {
+        if (element._sync) {
           element.updateChildren(collection, collection.length, domQuery, this._el);
           return;
         }
-
-        this._template = this._template || this._children;
-
-        this._childrenEach = true;
-
+        element._template = element._template || element._children;
+        element._childrenEach = true;
         if (domQuery._serverData) {
           elementData = domQuery._serverData[ElementsData.id(this)];
           domQuery._serverData[ElementsData.id(this)] = undefined;
@@ -6620,12 +6600,13 @@ return result;
             var div = document.createElement('div');
             div.innerHTML = elementData;
             element._template = element._children = createVirtual(div.childNodes[0], element);
+            if (element._state) {
+              element._state.template = blocks.clone(element._template, true);
+            }
           }
         }
-
         staticHtml = queries.each._getStaticHtml(domQuery, element);
         html = staticHtml.header;
-
         if (blocks.isObservable(collection)) {
           elementData = ElementsData.data(element);
           elementData.eachData = {
@@ -6635,15 +6616,11 @@ return result;
             endOffset: staticHtml.footersCount
           };
         }
-
         rawCollection = blocks.unwrapObservable(collection);
-
-        childs = domQuery._context.childs = [];
-
         if (blocks.isArray(rawCollection)) {
           for (index = 0; index < rawCollection.length; index++) {
             domQuery.dataIndex(blocks.observable.getIndex(collection, index));
-            childs.push(domQuery.pushContext(rawCollection[index]));
+            domQuery.pushContext(rawCollection[index]);
             html += this.renderChildren(domQuery, syncIndex + index);
             domQuery.popContext();
             domQuery.dataIndex(undefined);
@@ -6658,15 +6635,11 @@ return result;
             index++;
           }
         }
-
         this.html(html + staticHtml.footer);
-      }
-
-      // update: function () {
-      //
-      // }
+      }  // update: function () {
+         //
+         // }
     },
-
     /**
      * Render options for a <select> element by providing an collection.
      *
@@ -6699,9 +6672,7 @@ return result;
      */
     options: {
       passDomQuery: true,
-
       passRawValues: true,
-
       preprocess: function (domQuery, collection, options) {
         options = options || {};
         var $thisStr = '$this';
@@ -6709,32 +6680,65 @@ return result;
         var value = Expression.Create('{{' + (options.value || $thisStr) + '}}', 'value');
         var caption = blocks.isString(options.caption) && new VirtualElement('option');
         var option = new VirtualElement('option');
-        var children = this._children;
+        var children = this._state && this._state.template || this._template || this._children;
         var i = 0;
         var child;
-
+        if (this._sync) {
+          blocks.queries.each.preprocess.call(this, domQuery, collection);
+          return;
+        }
         for (; i < children.length; i++) {
           child = children[i];
-          if (!child._attributes || (child._attributes && !child._attributes['data-role'])) {
+          if (!child._attributes || child._attributes && !child._attributes['data-role']) {
             children.splice(i--, 1);
           }
         }
-
         option._attributeExpressions.push(value);
         option._children.push(text);
         option._parent = this;
-        this._children.push(option);
-
+        children.push(option);
         if (caption) {
           caption._attributes['data-role'] = 'header';
           caption._innerHTML = options.caption;
-          this.addChild(caption);
+          caption._parent = this;
+          children.push(caption);
         }
-
         blocks.queries.each.preprocess.call(this, domQuery, collection);
+      },
+      update: function (domQuery, collection) {
+        var elementData = ElementsData.data(this);
+        var rawCollection = collection();
+        var state = elementData.virtual._state;
+        var headers = state && state.headers || elementData.virtual._headers;
+        var valueObservable = elementData.valueObservable;
+        var valueExpression = (state && state.template[0] || elementData.virtual._template[0])._attributeExpressions[0];
+        var rawValue = blocks.isObservable(valueObservable) ? valueObservable._getValue() : this.value;
+        var expression;
+        var value;
+        if (blocks.isArray(rawCollection)) {
+          for (var i = 0; i < rawCollection.length; i++) {
+            domQuery.dataIndex(blocks.observable.getIndex(collection, i));
+            domQuery.pushContext(rawCollection[i]);
+            expression = Expression.GetValue(domQuery._context, null, valueExpression, Expression.ValueOnly);
+            domQuery.popContext();
+            if (i === 0) {
+              value = expression;
+            }
+            if (expression === rawValue) {
+              return;
+            }
+          }
+        }
+        if (headers && headers[0]) {
+          value = headers[0]._attributes.value || headers[0]._innerHTML;
+        }
+        if (blocks.isObservable(valueObservable)) {
+          valueObservable(value);
+        } else {
+          dom.attr(this, 'value', value);
+        }
       }
     },
-
     /**
     * The render query allows elements to be skipped from rendering and not to exist in the HTML result
     *
@@ -6751,21 +6755,17 @@ return result;
     */
     render: {
       passDetailValues: true,
-
       preprocess: function (condition) {
         if (!this._each && !this._sync) {
           throw new Error('render() is supported only() in each context');
         }
-
         this._renderMode = condition.value ? VirtualElement.RenderMode.All : VirtualElement.RenderMode.None;
-
         if (condition.containsObservable && this._renderMode == VirtualElement.RenderMode.None) {
           this._renderMode = VirtualElement.RenderMode.ElementOnly;
           this.css('display', 'none');
           ElementsData.data(this, 'renderCache', this);
         }
       },
-
       update: function (condition) {
         var elementData = ElementsData.data(this);
         if (elementData.renderCache && condition.value) {
@@ -6774,11 +6774,9 @@ return result;
           blocks.domQuery(this).createElementObservableDependencies(this.childNodes);
           elementData.renderCache = null;
         }
-
         this.style.display = condition.value ? '' : 'none';
       }
     },
-
     /**
      * Determines when an observable value will be synced from the DOM.
      * Only applicable when using the 'val' data-query.
@@ -6795,7 +6793,6 @@ return result;
         ElementsData.data(this).updateOn = eventName;
       }
     },
-
     /**
      * Could be used for custom JavaScript animation by providing a callback function
      * that will be called the an animation needs to be performed
@@ -6836,7 +6833,6 @@ return result;
         ElementsData.data(this).animateCallback = callback;
       }
     },
-
     /**
     * Adds or removes a class from an element
     *
@@ -6858,7 +6854,6 @@ return result;
           this.addClass(className);
         }
       },
-
       update: function (className, condition) {
         var virtual = ElementsData.data(this).virtual;
         if (virtual._each) {
@@ -6872,7 +6867,6 @@ return result;
         }
       }
     },
-
     /**
     * Sets the inner html to the element
     *
@@ -6886,10 +6880,7 @@ return result;
     * <!-- will result in -->
     * <div data-query="html('<b>some content</b>')"><b>some content</b></div>
     */
-    html: {
-      call: true
-    },
-
+    html: { call: true },
     /**
     * Adds or removes the inner text from an element. Escapes any HTML provided
     *
@@ -6903,10 +6894,7 @@ return result;
     * <!-- will result in -->
     * <div data-query="html('some content')">some content</div>
     */
-    text: {
-      call: true
-    },
-
+    text: { call: true },
     /**
     * Determines if an html element will be visible. Sets the CSS display property.
     *
@@ -6923,10 +6911,8 @@ return result;
     */
     visible: {
       call: 'css',
-
       prefix: 'display'
     },
-
     /**
     * Gets, sets or removes an element attribute.
     * Passing only the first parameter will return the attributeName value
@@ -6943,15 +6929,13 @@ return result;
     */
     attr: {
       passRawValues: true,
-
       call: true
     },
-
     /**
     * Sets the value attribute on an element.
     *
     * @memberof blocks.queries
-    * @param {(string|number|Array|undefined)} value - The new value for the element.
+    * @param {(string|number|Array|undefined|null)} value - The new value for the element.
     *
     * @example {html}
     * <script>
@@ -6966,12 +6950,9 @@ return result;
     */
     val: {
       passRawValues: true,
-
       call: 'attr',
-
       prefix: 'value'
     },
-
     /**
     * Sets the checked attribute on an element
     *
@@ -6988,10 +6969,8 @@ return result;
     */
     checked: {
       passRawValues: true,
-
       call: 'attr'
     },
-
     /**
     * Sets the disabled attribute on an element
     *
@@ -7000,128 +6979,126 @@ return result;
     */
     disabled: {
       passRawValues: true,
-
       call: 'attr'
     },
-
     /**
-      * Gets, sets or removes a CSS style from an element.
-      * Passing only the first parameter will return the CSS propertyName value.
-      *
-      * @memberof blocks.queries
-      * @param {string} name - The name of the CSS property that will be get, set or removed
-      * @param {string} value - The value of the of the attribute. It will be set if condition is true
-      *
-      * @example {html}
-      * <script>
-      *   blocks.query({
-      *     h1FontSize: 12
-      *   });
-      * </script>
-      * <h1 data-query="css('font-size', h1FontSize)"></h1>
-      * <h1 data-query="css('fontSize', h1FontSize)"></h1>
-      *
-      * <!-- will result in -->
-      * <h1 data-query="css('font-size', h1FontSize)" style="font-size: 12px;"></h1>
-      * <h1 data-query="css('fontSize', h1FontSize)" style="font-size: 12px;"></h1>
-      */
-    css: {
-      call: true
-    },
-
+    * Gets, sets or removes a CSS style from an element.
+    * Passing only the first parameter will return the CSS propertyName value.
+    *
+    * @memberof blocks.queries
+    * @param {string} name - The name of the CSS property that will be get, set or removed
+    * @param {string} value - The value of the of the attribute. It will be set if condition is true
+    *
+    * @example {html}
+    * <script>
+    *   blocks.query({
+    *     h1FontSize: 12
+    *   });
+    * </script>
+    * <h1 data-query="css('font-size', h1FontSize)"></h1>
+    * <h1 data-query="css('fontSize', h1FontSize)"></h1>
+    *
+    * <!-- will result in -->
+    * <h1 data-query="css('font-size', h1FontSize)" style="font-size: 12px;"></h1>
+    * <h1 data-query="css('fontSize', h1FontSize)" style="font-size: 12px;"></h1>
+    */
+    css: { call: true },
     /**
-      * Sets the width of the element
-      *
-      * @memberof blocks.queries
-      * @param {(number|string)} value - The new width of the element
-      */
-    width: {
-      call: 'css'
-    },
-
+    * Sets the width of the element
+    *
+    * @memberof blocks.queries
+    * @param {(number|string)} value - The new width of the element
+    */
+    width: { call: 'css' },
     /**
-      * Sets the height of the element
-      *
-      * @memberof blocks.queries
-      * @param {number|string} value - The new height of the element
-      */
-    height: {
-      call: 'css'
-    },
-
+    * Sets the height of the element
+    *
+    * @memberof blocks.queries
+    * @param {number|string} value - The new height of the element
+    */
+    height: { call: 'css' },
     focused: {
       preprocess: blocks.noop,
-
       update: function (value) {
         if (value) {
           this.focus();
         }
       }
     },
-
     /**
      * Subscribes to an event
      *
      * @memberof blocks.queries
      * @param {(String|Array)} events - The event or events to subscribe to
      * @param {Function} callback - The callback that will be executed when the event is fired
-     * @param {*} [args] - Optional arguments that will be passed as second parameter to
+     * @param {...*} [args] - Optional arguments that will be passed as second parameter to
      * the callback function after the event arguments
      */
     on: {
-      ready: function (events, callbacks, args) {
+      ready: function (events, callbacks) {
         if (!events || !callbacks) {
           return;
         }
+        var originalArgs = blocks.toArray(arguments).slice(2);
         var element = this;
         var context = blocks.context(this);
         var thisArg;
-
         callbacks = blocks.toArray(callbacks);
-
         var handler = function (e) {
+          var args = blocks.clone(originalArgs);
+          args.splice(0, 0, e);
           context = blocks.context(this) || context;
           thisArg = context.$template || context.$view || context.$root;
           blocks.each(callbacks, function (callback) {
-            callback.call(thisArg, e, args);
+            callback.apply(thisArg, args);
           });
         };
-
         events = blocks.isArray(events) ? events : events.toString().split(' ');
-
         blocks.each(events, function (event) {
           addListener(element, event, handler);
         });
       }
     }
   });
-
   blocks.each([
     // Mouse
-    'click', 'dblclick', 'mousedown', 'mouseup', 'mouseover', 'mousemove', 'mouseout',
+    'click',
+    'dblclick',
+    'mousedown',
+    'mouseup',
+    'mouseover',
+    'mousemove',
+    'mouseout',
     // HTML form
-    'select', 'change', 'submit', 'reset', 'focus', 'blur',
+    'select',
+    'change',
+    'submit',
+    'reset',
+    'focus',
+    'blur',
     // Keyboard
-    'keydown', 'keypress', 'keyup'
+    'keydown',
+    'keypress',
+    'keyup'
   ], function (eventName) {
     blocks.queries[eventName] = {
       passRawValues: true,
-
-      ready: function (callback, data) {
-        blocks.queries.on.ready.call(this, eventName, callback, data);
+      ready: function () {
+        var args = blocks.toArray(arguments);
+        args.splice(0, 0, eventName);
+        blocks.queries.on.ready.apply(this, args);
       }
     };
   });
-
+}());
     var OBSERVABLE = '__blocks.observable__';
 
-
+var ChunkManager = function () {
   function ChunkManager(observable) {
     this.observable = observable;
     this.chunkLengths = {};
     this.dispose();
   }
-
   ChunkManager.prototype = {
     dispose: function () {
       this.childNodesCount = undefined;
@@ -7130,96 +7107,72 @@ return result;
       this.startOffset = 0;
       this.endOffset = 0;
     },
-
     setStartIndex: function (index) {
       this.startIndex = index + this.startOffset;
     },
-
     setChildNodesCount: function (count) {
       if (this.childNodesCount === undefined) {
-        this.observableLength = this.observable.__value__.length;
+        this.observableLength = this.observable._getValue().length;
       }
       this.childNodesCount = count - (this.startOffset + this.endOffset);
     },
-
     chunkLength: function (wrapper) {
       var chunkLengths = this.chunkLengths;
       var id = ElementsData.id(wrapper);
-      var length = chunkLengths[id] || (this.childNodesCount || wrapper.childNodes.length) / (this.observableLength || this.observable.__value__.length);
+      var length = chunkLengths[id] || (this.childNodesCount || wrapper.childNodes.length) / (this.observableLength || this.observable._getValue().length);
       var result;
-
       if (blocks.isNaN(length) || length === Infinity) {
         result = 0;
       } else {
         result = Math.round(length);
       }
-
       chunkLengths[id] = result;
-
       return result;
     },
-
     getAt: function (wrapper, index) {
       var chunkLength = this.chunkLength(wrapper);
       var childNodes = wrapper.childNodes;
       var result = [];
-
       for (var i = 0; i < chunkLength; i++) {
         result[i] = childNodes[index * chunkLength + i + this.startIndex];
       }
       return result;
     },
-
     insertAt: function (wrapper, index, chunk) {
-      animation.insert(
-        wrapper,
-        this.chunkLength(wrapper) * index + this.startIndex,
-        blocks.isArray(chunk) ? chunk : [chunk]);
+      animation.insert(wrapper, this.chunkLength(wrapper) * index + this.startIndex, blocks.isArray(chunk) ? chunk : [chunk]);
     },
-
     remove: function (index, howMany) {
       var _this = this;
-
       this.each(function (domElement) {
-        blocks.context(domElement).childs.splice(index, howMany);
-
         for (var j = 0; j < howMany; j++) {
           _this._removeAt(domElement, index);
         }
       });
-
       ElementsData.collectGarbage();
-
       this.dispose();
-
       this.observable._indexes.splice(index, howMany);
     },
-
     add: function (addItems, index) {
       var _this = this;
       var observable = this.observable;
-
       blocks.each(addItems, function (item, i) {
         observable._indexes.splice(index + i, 0, blocks.observable(index + i));
       });
-
       this.each(function (domElement, virtualElement) {
         var domQuery = blocks.domQuery(domElement);
         var context = blocks.context(domElement);
         var html = '';
         var syncIndex;
-
         domQuery.contextBubble(context, function () {
           syncIndex = domQuery.getSyncIndex();
           for (var i = 0; i < addItems.length; i++) {
             domQuery.dataIndex(blocks.observable.getIndex(observable, i + index, true));
-            context.childs.splice(i + index, 0, domQuery.pushContext(addItems[i]));
+            domQuery.pushContext(addItems[i]);
             html += virtualElement.renderChildren(domQuery, syncIndex + (i + index));
             domQuery.popContext();
             domQuery.dataIndex(undefined);
           }
         });
-
         if (domElement.childNodes.length === 0) {
           dom.html(domElement, html);
           domQuery.createElementObservableDependencies(domElement.childNodes);
@@ -7228,14 +7181,11 @@ return result;
           _this.insertAt(domElement, index, fragment);
         }
       });
-
       this.dispose();
     },
-
     each: function (callback) {
       var i = 0;
       var domElements = this.observable._elements;
-
       for (; i < domElements.length; i++) {
         var data = domElements[i];
         if (!data.element) {
@@ -7244,26 +7194,21 @@ return result;
         this.setup(data.element, callback);
       }
     },
-
     setup: function (domElement, callback) {
       if (!domElement) {
         return;
       }
-
       var eachData = ElementsData.data(domElement).eachData;
       var element;
       var commentId;
       var commentIndex;
       var commentElement;
-
       if (!eachData || eachData.id != this.observable.__id__) {
         return;
       }
-
       element = eachData.element;
       this.startOffset = eachData.startOffset;
       this.endOffset = eachData.endOffset;
-
       if (domElement.nodeType == 1) {
         // HTMLElement
         this.setStartIndex(0);
@@ -7287,25 +7232,19 @@ return result;
         callback(domElement.parentNode, element, domElement);
       }
     },
-
     _removeAt: function (wrapper, index) {
       var chunkLength = this.chunkLength(wrapper);
-
-      animation.remove(
-        wrapper,
-        chunkLength * index + this.startIndex,
-        chunkLength);
+      animation.remove(wrapper, chunkLength * index + this.startIndex, chunkLength);
     }
   };
-
-
-
+  return ChunkManager;
+}();
+(function () {
   var observableId = 1;
-
   /**
   * @namespace blocks.observable
-  * @param {*} initialValue -
-  * @param {*} [context] -
+  * @param {*} initialValue - The inital value of the observable. This value will also specify the functions the observable inherits (e.g. array specific functions). Do not change types of observables later.
+  * @param {*} [context] - The context the observable will be bound to.
   * @returns {blocks.observable}
   */
   blocks.observable = function (initialValue, thisArg) {
@@ -7313,36 +7252,40 @@ return result;
       if (arguments.length === 0) {
         Events.trigger(observable, 'get', observable);
       }
-
       var currentValue = getObservableValue(observable);
       var update = observable.update;
-
+      if (!observable._executed) {
+        observable._firstExecution(currentValue);
+        observable._executed = true;
+      }
       if (arguments.length === 0) {
         Observer.registerObservable(observable);
         return currentValue;
       } else if (!blocks.equals(value, currentValue, false) && Events.trigger(observable, 'changing', value, currentValue) !== false) {
         observable.update = blocks.noop;
         if (!observable._dependencyType) {
-          if (blocks.isArray(currentValue) && blocks.isArray(value) && observable.reset) {
+          if (blocks.isArray(currentValue) && (blocks.isArray(value) || !value) && observable.reset) {
             observable.reset(value);
-          } else {
+          } else if (!blocks.isArray(currentValue) && !observable.reset) {
             observable.__value__ = value;
           }
         } else if (observable._dependencyType == 2) {
           observable.__value__.set.call(observable.__context__, value);
         }
-
         observable.update = update;
         observable.update();
-
         Events.trigger(observable, 'change', value, currentValue);
       }
       return observable;
     };
-
     initialValue = blocks.unwrap(initialValue);
-
+    /* @if DEBUG */
+    blocks.debug.pause();
+    /* @endif */
     blocks.extend(observable, blocks.observable.fn.base);
+    /* @if DEBUG */
+    blocks.debug.resume();
+    /* @endif */
     observable.__id__ = observableId++;
     observable.__value__ = initialValue;
     observable.__context__ = thisArg || blocks.__viewInInitialize__ || observable;
@@ -7350,41 +7293,56 @@ return result;
     observable._expressions = [];
     observable._elementKeys = {};
     observable._elements = [];
-
+    observable._executed = false;
+    observable._getValue = function () {
+      return getObservableValue(observable);
+    };
     if (blocks.isArray(initialValue)) {
+      /* @if DEBUG */
+      blocks.debug.pause();
+      /* @endif */
       blocks.extend(observable, blocks.observable.fn.array);
-      observable._indexes = [];
-      observable._chunkManager = new ChunkManager(observable);
+      /* @if DEBUG */
+      blocks.debug.resume();  /* @endif */
     } else if (blocks.isFunction(initialValue)) {
-      observable._dependencyType = 1; // Function dependecy
+      observable._dependencyType = 1;  // Function dependency
     } else if (initialValue && !initialValue.__Class__ && blocks.isFunction(initialValue.get) && blocks.isFunction(initialValue.set)) {
-      observable._dependencyType = 2; // Custom object
+      observable._dependencyType = 2;  // Custom object
     }
-
+    if (observable._dependencyType) {
+      /* @if DEBUG */
+      blocks.debug.pause();
+      /* @endif */
+      blocks.extend(observable, blocks.observable.fn.dependency);
+      /* @if DEBUG */
+      blocks.debug.resume();  /* @endif */
+    }
+    observable._initialize();
     updateDependencies(observable);
-
     return observable;
   };
-
   function updateDependencies(observable) {
     if (observable._dependencyType) {
+      /* @if DEBUG */
+      blocks.debug.pause();
+      /* @endif */
       observable._getDependency = blocks.bind(getDependency, observable);
+      /* @if DEBUG */
+      blocks.debug.resume();
+      /* @endif */
       observable.on('get', observable._getDependency);
     }
   }
-
   function getDependency() {
     var observable = this;
     var value = observable.__value__;
     var accessor = observable._dependencyType == 1 ? value : value.get;
-
     Events.off(observable, 'get', observable._getDependency);
     observable._getDependency = undefined;
-
     Observer.startObserving();
     accessor.call(observable.__context__);
     blocks.each(Observer.stopObserving(), function (dependency) {
-      var dependencies = (dependency._dependencies = dependency._dependencies || []);
+      var dependencies = dependency._dependencies = dependency._dependencies || [];
       var exists = false;
       blocks.each(dependencies, function (value) {
         if (observable === value) {
@@ -7397,16 +7355,11 @@ return result;
       }
     });
   }
-
   function getObservableValue(observable) {
     var context = observable.__context__;
-    return observable._dependencyType == 1 ? observable.__value__.call(context)
-      : observable._dependencyType == 2 ? observable.__value__.get.call(context)
-      : observable.__value__;
+    return observable._dependencyType == 1 ? observable.__value__.call(context) : observable._dependencyType == 2 ? observable.__value__.get.call(context) : observable.__value__;
   }
-
   var observableIndexes = {};
-
   blocks.extend(blocks.observable, {
     getIndex: function (observable, index, forceGet) {
       if (!blocks.isObservable(observable)) {
@@ -7417,7 +7370,6 @@ return result;
       }
       var indexes = observable._indexes;
       var $index;
-
       if (indexes) {
         if (indexes.length == observable.__value__.length || forceGet) {
           $index = indexes[index];
@@ -7428,14 +7380,14 @@ return result;
       } else {
         $index = blocks.observable(index);
       }
-
       return $index;
     },
-
     fn: {
       base: {
         __identity__: OBSERVABLE,
-
+        // noops for 'special' observables
+        _firstExecution: blocks.noop,
+        _initialize: blocks.noop,
         /**
          * Updates all elements, expressions and dependencies where the observable is used
          *
@@ -7450,39 +7402,30 @@ return result;
           var element;
           var offset;
           var value;
-          var isProperty;
-          var propertyName;
-
+          var rawValue;
+          Observer.startObserving();
           blocks.eachRight(this._expressions, function updateExpression(expression) {
             element = expression.element;
             context = expression.context;
-
             if (!element) {
               elementData = ElementsData.data(expression.elementId);
               element = expression.element = elementData.dom;
             }
-
             try {
-              value = blocks.unwrap(parameterQueryCache[expression.expression](context));
+              rawValue = parameterQueryCache[expression.expression](context);
+              value = blocks.unwrap(rawValue);
             } catch (ex) {
               value = '';
             }
-
             value = value == null ? '' : value.toString();
-
             offset = expression.length - value.length;
             expression.length = value.length;
-
-            isProperty = dom.props[expression.attr];
-            propertyName = expression.attr ? dom.propFix[expression.attr.toLowerCase()] || expression.attr : null;
-
             if (element) {
+              if (blocks.isObservable(rawValue) && rawValue._expressions.indexOf(expression) == -1) {
+                rawValue._expressions.push(expression);
+              }
               if (expression.attr) {
-                if(isProperty) {
-                  element[propertyName] = Expression.GetValue(context, null, expression.entire);
-                } else {
-                  element.setAttribute(expression.attr, Expression.GetValue(context, null, expression.entire));
-                }
+                dom.attr(element, expression.attr, Expression.GetValue(context, null, expression.entire));
               } else {
                 if (element.nextSibling) {
                   element = element.nextSibling;
@@ -7492,13 +7435,12 @@ return result;
                 }
               }
             } else {
-             element = elementData.virtual;
-             if (expression.attr) {
-               element.attr(expression.attr, Expression.GetValue(context, null, expression.entire));
-             }
+              element = elementData.virtual;
+              if (expression.attr) {
+                element.attr(expression.attr, Expression.GetValue(context, null, expression.entire));
+              }
             }
           });
-
           for (var i = 0; i < elements.length; i++) {
             value = elements[i];
             element = value.element;
@@ -7518,35 +7460,32 @@ return result;
               i -= 1;
             }
           }
-
-          blocks.each(this._dependencies, function updateDependency(dependency) {
-            updateDependencies(dependency);
-            dependency.update();
-          });
-
-          blocks.each(this._indexes, function updateIndex(observable, index) {
-            observable(index);
-          });
-
+          if (this._dependencies) {
+            blocks.each(this._dependencies, function updateDependency(dependency) {
+              updateDependencies(dependency);
+              dependency.update();
+            });
+          }
+          if (this._indexes) {
+            blocks.each(this._indexes, function updateIndex(observable, index) {
+              observable(index);
+            });
+          }
+          Observer.stopObserving();
           return this;
         },
-
-
         on: function (eventName, callback, thisArg) {
           Events.on(this, eventName, callback, thisArg || this.__context__);
           return this;
         },
-
         once: function (eventName, callback, thisArg) {
           Events.once(this, eventName, callback, thisArg || this.__context__);
           return this;
         },
-
         off: function (eventName, callback) {
           Events.off(this, eventName, callback);
           return this;
         },
-
         /**
          * Extends the current observable with particular functionality depending on the parameters
          * specified. If the method is called without arguments and jsvalue framework is included
@@ -7566,10 +7505,9 @@ return result;
          * var data = blocks.observable([1, 2, 3]).extend('formatter');
          *
          */
-        extend: function (name /*, options*/) {
+        extend: function (name) {
           var extendFunc = blocks.observable[name];
           var result;
-
           if (arguments.length === 0) {
             if (blocks.core.expressionsCreated) {
               blocks.core.applyExpressions(blocks.type(this()), this);
@@ -7580,39 +7518,37 @@ return result;
             return blocks.isObservable(result) ? result : this;
           }
         },
-
         clone: function (cloneValue) {
           var value = this.__value__;
           return blocks.observable(cloneValue ? blocks.clone(value) : value, this.__context__);
         },
-
         toString: function () {
-          var context = this.__context__;
-          var value = this._dependencyType == 1 ? this.__value__.call(context)
-            : this._dependencyType == 2 ? this.__value__.get.call(context)
-            : this.__value__;
-
+          var value = getObservableValue(this);
           Observer.registerObservable(this);
-
           if (value != null && blocks.isFunction(value.toString)) {
             return value.toString();
           }
           return String(value);
+        },
+        toJSON: function () {
+          return this();
         }
       },
-
       /**
        * @memberof blocks.observable
        * @class array
        */
       array: {
-
+        _initialize: function () {
+          this._indexes = [];
+          this._chunkManager = new ChunkManager(this);
+        },
         /**
          * Removes all items from the collection and replaces them with the new value provided.
          * The value could be Array, observable array or jsvalue.Array
          *
          * @memberof array
-         * @param {Array} value - The new value that will be populated
+         * @param {Array|Null|Undefined} [value] - The new value that will be populated
          * @returns {blocks.observable} - Returns the observable itself - return this;
          *
          * @example {javascript}
@@ -7627,58 +7563,51 @@ return result;
             this.removeAll();
             return this;
           }
-
           array = blocks.unwrap(array);
-
+          if (!blocks.isArray(array) && !!array) {
+            //@debugMessage('Array-Observables can not be reseted to a non array type! Reset got aborted.', Warning);
+            return;
+          }
           var current = this.__value__;
           var chunkManager = this._chunkManager;
           var addCount = Math.max(array.length - current.length, 0);
           var removeCount = Math.max(current.length - array.length, 0);
           var updateCount = array.length - addCount;
-
           Events.trigger(this, 'removing', {
             type: 'removing',
             items: current,
             index: 0
           });
-
           Events.trigger(this, 'adding', {
             type: 'adding',
             items: array,
             index: 0
           });
-
           chunkManager.each(function (domElement, virtualElement) {
             var domQuery = blocks.domQuery(domElement);
-
             domQuery.contextBubble(blocks.context(domElement), function () {
-                virtualElement.updateChildren(array, updateCount, domQuery, domElement);
+              virtualElement.updateChildren(array, updateCount, domQuery, domElement);
             });
           });
-
           if (addCount > 0) {
             chunkManager.add(array.slice(current.length), current.length);
           } else if (removeCount > 0) {
             chunkManager.remove(array.length, removeCount);
           }
-
           this.__value__ = array;
-
+          this.update();
           Events.trigger(this, 'remove', {
             type: 'remove',
             items: current,
             index: 0
           });
-
           Events.trigger(this, 'add', {
             type: 'add',
             items: array,
             index: 0
           });
-
           return this;
         },
-
         /**
          * Adds values to the end of the observable array
          *
@@ -7696,10 +7625,8 @@ return result;
          */
         add: function (value, index) {
           this.splice(blocks.isNumber(index) ? index : this.__value__.length, 0, value);
-
           return this;
         },
-
         /**
          * Adds the values from the provided array(s) to the end of the collection
          *
@@ -7715,10 +7642,12 @@ return result;
          * items.addMany([4, 5], [6]);
          */
         addMany: function (value, index) {
-          this.splice.apply(this, [blocks.isNumber(index) ? index : this.__value__.length, 0].concat(blocks.toArray(value)));
+          this.splice.apply(this, [
+            blocks.isNumber(index) ? index : this.__value__.length,
+            0
+          ].concat(blocks.toArray(value)));
           return this;
         },
-
         /**
          * Swaps two values in the observable array.
          * Note: Faster than removing the items and adding them at the locations
@@ -7739,9 +7668,7 @@ return result;
           var elements = this._elements;
           var chunkManager = this._chunkManager;
           var element;
-
           blocks.swap(array, indexA, indexB);
-
           for (var i = 0; i < elements.length; i++) {
             element = elements[i].element;
             if (indexA > indexB) {
@@ -7752,10 +7679,8 @@ return result;
               chunkManager.insertAt(element, indexA, chunkManager.getAt(element, indexB));
             }
           }
-
           return this;
         },
-
         /**
          * Moves an item from one location to another in the array.
          * Note: Faster than removing the item and adding it at the location
@@ -7776,21 +7701,16 @@ return result;
           var elements = this._elements;
           var chunkManager = this._chunkManager;
           var element;
-
           blocks.move(array, sourceIndex, targetIndex);
-
           if (targetIndex > sourceIndex) {
             targetIndex++;
           }
-
           for (var i = 0; i < elements.length; i++) {
             element = elements[i].element;
             chunkManager.insertAt(element, targetIndex, chunkManager.getAt(element, sourceIndex));
           }
-
           return this;
         },
-
         /**
          * Removes an item from the observable array
          *
@@ -7806,7 +7726,6 @@ return result;
         remove: function (value, thisArg) {
           return this.removeAll(value, thisArg, true);
         },
-
         /**
          * Removes an item at the specified index
          *
@@ -7821,26 +7740,25 @@ return result;
             count = 1;
           }
           this.splice(index, count);
-
           return this;
         },
-
         /**
          * Removes all items from the observable array and optionally filter which items
          * to be removed by providing a callback
          *
          * @memberof array
-         * @param {Function} [callback] - Optional callback function which filters which items
-         * to be removed. Returning a truthy value will remove the item and vice versa
+         * @param {Function|*} [callbackOrValue] - Optional callback function which filters which items
+         * to be removed. Returning a truthy value will remove the item and vice versa.
+         * If the passed value is not a function value matching the passed value will be removed.
          * @param {*} [thisArg] - Optional this context for the callback function
+         * @param {boolean} [removeOne] - If set only the first entry will be removed. Mostly used in internal functions.
          * @returns {blocks.observable} - Returns the observable itself - return this;
          */
-        removeAll: function (callback, thisArg, removeOne) {
+        removeAll: function (callbackOrValue, thisArg, removeOne) {
           var array = this.__value__;
           var chunkManager = this._chunkManager;
           var items;
           var i;
-
           if (arguments.length === 0) {
             if (Events.has(this, 'removing') || Events.has(this, 'remove')) {
               items = blocks.clone(array);
@@ -7850,9 +7768,7 @@ return result;
               items: items,
               index: 0
             });
-
             chunkManager.remove(0, array.length);
-
             //this._indexes.splice(0, array.length);
             this._indexes = [];
             items = array.splice(0, array.length);
@@ -7862,12 +7778,11 @@ return result;
               index: 0
             });
           } else {
-            var isCallbackAFunction = blocks.isFunction(callback);
+            var isCallbackAFunction = blocks.isFunction(callbackOrValue);
             var value;
-
             for (i = 0; i < array.length; i++) {
               value = array[i];
-              if (value === callback || (isCallbackAFunction && callback.call(thisArg, value, i, array))) {
+              if (value === callbackOrValue || isCallbackAFunction && callbackOrValue.call(thisArg, value, i, array)) {
                 this.splice(i, 1);
                 i -= 1;
                 if (removeOne) {
@@ -7876,14 +7791,10 @@ return result;
               }
             }
           }
-
           this.update();
-
           return this;
         },
-
         //#region Base
-
         /**
          * The concat() method is used to join two or more arrays
          *
@@ -7895,7 +7806,6 @@ return result;
           var array = this();
           return array.concat.apply(array, blocks.toArray(arguments));
         },
-
         //
         /**
          * The slice() method returns the selected elements in an array, as a new array object
@@ -7912,7 +7822,6 @@ return result;
           }
           return this().slice(start);
         },
-
         /**
          * The join() method joins the elements of an array into a string, and returns the string
          *
@@ -7926,7 +7835,6 @@ return result;
           }
           return this().join();
         },
-
         ///**
         // * The indexOf() method returns the position of the first occurrence of a specified value in a string.
         // * @param {*} item The item to search for.
@@ -7936,8 +7844,6 @@ return result;
         //indexOf: function (item, index) {
         //    return blocks.indexOf(this(), item, index);
         //},
-
-
         ///**
         // * The lastIndexOf() method returns the position of the last occurrence of a specified value in a string.
         // * @param {*} item The item to search for.
@@ -7951,9 +7857,7 @@ return result;
         //    }
         //    return blocks.lastIndexOf(array, item);
         //},
-
         //#endregion
-
         /**
          * The pop() method removes the last element of a observable array, and returns that element
          *
@@ -7963,10 +7867,8 @@ return result;
         pop: function () {
           var that = this;
           var array = that();
-
           return that.splice(array.length - 1, 1)[0];
         },
-
         /**
          * The push() method adds new items to the end of the observable array, and returns the new length
          *
@@ -7975,10 +7877,9 @@ return result;
          * @returns {number} The new length of the observable array
          */
         push: function () {
-          this.addMany(arguments);
+          this.addMany(blocks.toArray(arguments));
           return this.__value__.length;
         },
-
         /**
          * Reverses the order of the elements in the observable array
          *
@@ -7988,20 +7889,15 @@ return result;
         reverse: function () {
           var array = this().reverse();
           var chunkManager = this._chunkManager;
-
           this._indexes.reverse();
-
           chunkManager.each(function (domElement) {
             for (var j = 1; j < array.length; j++) {
               chunkManager.insertAt(domElement, 0, chunkManager.getAt(domElement, j));
             }
           });
-
           this.update();
-
           return array;
         },
-
         /**
          * Removes the first element of a observable array, and returns that element
          *
@@ -8009,10 +7905,8 @@ return result;
          * @returns {*} The removed array item
          */
         shift: function () {
-          return this.splice(0, 1)[0];
-          //returns - The removed array item
+          return this.splice(0, 1)[0];  //returns - The removed array item
         },
-
         /**
          * Sorts the elements of an array
          *
@@ -8029,10 +7923,11 @@ return result;
           var i = 0;
           var j;
           var item;
-
           for (; i < length; i++) {
-            var result = [array[i], i];
-
+            var result = [
+              array[i],
+              i
+            ];
             chunkManager.each(function (domElement) {
               result.push(chunkManager.getAt(domElement, i));
             });
@@ -8041,13 +7936,11 @@ return result;
             //}
             array[i] = result;
           }
-
           //if (useSortFunction) { // TODO: Test performance
           //    array.sort(function (a, b) {
           //        return sortfunction.call(this, a[0], b[0])
           //    });
           //}
-
           // TODO: Test performance (Comment)
           array.sort(function (a, b) {
             a = a[0];
@@ -8063,17 +7956,14 @@ return result;
             }
             return 0;
           });
-
           if (indexes.length > 0) {
             this._indexes = [];
           }
-
           for (i = 0; i < length; i++) {
             item = array[i];
             if (indexes.length > 0) {
               this._indexes.push(indexes[item[1]]);
             }
-
             j = 2;
             chunkManager.each(function (domElement) {
               chunkManager.insertAt(domElement, length, item[j]);
@@ -8081,22 +7971,18 @@ return result;
             });
             array[i] = item[0];
           }
-
           this.update();
-
           //chunkManager.dispose();
-
           return array;
         },
-
         /**
          * Adds and/or removes elements from the observable array
          *
          * @memberof array
-         * @param {number} index An integer that specifies at what position to add/remove items.
+         * @param {number} index - An integer that specifies at what position to add/remove items.
          * Use negative values to specify the position from the end of the array.
-         * @param {number} howMany The number of items to be removed. If set to 0, no items will be removed.
-         * @param {...*} The new item(s) to be added to the array.
+         * @param {number} howMany - The number of items to be removed. If set to 0, no items will be removed.
+         * @param {...*} [items] - The new item(s) to be added to the array.
          * @returns {Array} A new array containing the removed items, if any.
          */
         splice: function (index, howMany) {
@@ -8105,9 +7991,7 @@ return result;
           var returnValue = [];
           var args = arguments;
           var addItems;
-
           index = index < 0 ? array.length - index : index;
-
           if (howMany && index < array.length && index >= 0) {
             howMany = Math.min(array.length - index, howMany);
             returnValue = array.slice(index, index + howMany);
@@ -8116,9 +8000,7 @@ return result;
               items: returnValue,
               index: index
             });
-
             chunkManager.remove(index, howMany);
-
             returnValue = array.splice(index, howMany);
             Events.trigger(this, 'remove', {
               type: 'remove',
@@ -8126,7 +8008,6 @@ return result;
               index: index
             });
           }
-
           if (args.length > 2) {
             addItems = blocks.toArray(args);
             addItems.splice(0, 2);
@@ -8135,21 +8016,20 @@ return result;
               index: index,
               items: addItems
             });
-
             chunkManager.add(addItems, index);
-
-            array.splice.apply(array, [index, 0].concat(addItems));
+            array.splice.apply(array, [
+              index,
+              0
+            ].concat(addItems));
             Events.trigger(this, 'add', {
               type: 'add',
               index: index,
               items: addItems
             });
           }
-
           this.update();
           return returnValue;
         },
-
         /**
          * The unshift() method adds new items to the beginning of an array, and returns the new length.
          *
@@ -8159,20 +8039,64 @@ return result;
          * @returns {number} The new length of the observable array.
          */
         unshift: function () {
-          this.addMany(arguments, 0);
+          this.addMany(blocks.toArray(arguments), 0);
           return this.__value__.length;
+        }
+      },
+      dependency: {
+        _firstExecution: function (value) {
+          if (blocks.isArray(value)) {
+            this._indexes = [];
+            this._chunkManager = new ChunkManager(this);
+            this._length = value.length;
+          }
+        },
+        update: function () {
+          var value = this._getValue();
+          var length = this._length;
+          var chunkManager = this._chunkManager;
+          var addCount = Math.max(value.length - length, 0);
+          var removeCount = Math.max(length - value.length, 0);
+          var updateCount = value.length - addCount;
+          blocks.observable.fn.base.update.apply(this);
+          // Update 'each'-queries for dependencie obseravbles if the value is an array
+          if (blocks.isArray(value)) {
+            chunkManager.each(function (domElement, virtualElement) {
+              var domQuery = blocks.domQuery(domElement);
+              domQuery.contextBubble(blocks.context(domElement), function () {
+                virtualElement.updateChildren(value, updateCount, domQuery, domElement);
+              });
+            });
+            if (addCount > 0) {
+              chunkManager.add(value.slice(length), length);
+            } else if (removeCount > 0) {
+              chunkManager.remove(length, removeCount);
+            }
+            this._length = value.length;
+          }
         }
       }
     }
   });
-
-
+}());
+var ExtenderHelper = function () {
+  var Action = {
+    NOOP: 0,
+    ADD: 1,
+    REMOVE: 2,
+    EXISTS: 3
+  };
   var ExtenderHelper = {
     waiting: {},
-
+    operations: {
+      FILTER: 1,
+      STEP: 2,
+      SKIP: 3,
+      TAKE: 4,
+      SORT: 5
+    },
     initExpressionExtender: function (observable) {
       var newObservable = observable.clone();
-
       newObservable.view = blocks.observable([]);
       newObservable.view._connections = {};
       newObservable.view._observed = [];
@@ -8180,9 +8104,7 @@ return result;
       newObservable._operations = observable._operations ? blocks.clone(observable._operations) : [];
       newObservable._getter = blocks.bind(ExtenderHelper.getter, newObservable);
       newObservable.view._initialized = false;
-
       newObservable.view.on('get', newObservable._getter);
-      
       newObservable.on('add', function () {
         if (newObservable.view._initialized) {
           newObservable.view._connections = {};
@@ -8190,7 +8112,6 @@ return result;
           ExtenderHelper.executeOperations(newObservable);
         }
       });
-  
       newObservable.on('remove', function () {
         if (newObservable.view._initialized) {
           newObservable.view._connections = {};
@@ -8198,34 +8119,28 @@ return result;
           ExtenderHelper.executeOperations(newObservable);
         }
       });
-
       return newObservable;
     },
-
     getter: function () {
       Events.off(this.view, 'get', this._getter);
       this._getter = undefined;
       this.view._initialized = true;
       ExtenderHelper.executeOperationsPure(this);
     },
-
     updateObservable: function () {
       ExtenderHelper.executeOperations(this);
     },
-
     executeOperationsPure: function (observable) {
       var chunk = [];
       var observed = observable.view._observed;
       var updateObservable = observable.view._updateObservable;
-
       blocks.each(observed, function (observable) {
         Events.off(observable, 'change', updateObservable);
       });
       observed = observable.view._observed = [];
       Observer.startObserving();
-
       blocks.each(observable._operations, function (operation) {
-        if (operation.type == 'step') {
+        if (operation.type == ExtenderHelper.operations.STEP) {
           var view = observable.view;
           observable.view = blocks.observable([]);
           observable.view._connections = {};
@@ -8238,21 +8153,17 @@ return result;
           chunk.push(operation);
         }
       });
-
       if (chunk.length) {
         ExtenderHelper.executeOperationsChunk(observable, chunk);
       }
-
       blocks.each(Observer.stopObserving(), function (observable) {
         observed.push(observable);
         observable.on('change', updateObservable);
       });
     },
-
     executeOperations: function (observable) {
       var id = observable.__id__;
       var waiting = ExtenderHelper.waiting;
-
       if (!waiting[id]) {
         waiting[id] = true;
         setTimeout(function () {
@@ -8261,131 +8172,193 @@ return result;
         }, 0);
       }
     },
-
     executeOperationsChunk: function (observable, operations) {
-      var ADD = 'add';
-      var REMOVE = 'remove';
-      var EXISTS = 'exists';
-      var action = EXISTS;
-
-      var collection = observable.__value__;
+      var action = Action.NOOP;
+      var collection = observable._getValue();
       var view = observable.view;
+      // key = index of the __value__ array, value = index of the same value in the view
       var connections = view._connections;
+      // key = index in the sorted collection, value = index in the (unsorted) connections
+      var sortedConnections = {};
+      var sorted = false;
       var newConnections = {};
-      var viewIndex = 0;
+      var collectionIndex;
+      var targetViewIndex = 0;
       var update = view.update;
       var skip = 0;
       var take = collection.length;
       view.update = blocks.noop;
-
-      blocks.each(operations, function (operation) {
-        if (operation.type == 'skip') {
+      function getConnection(index) {
+        return sorted ? connections[sortedConnections[index]] : connections[index];
+      }
+      blocks.each(operations, function prepareOperations(operation) {
+        switch (operation.type) {
+        case ExtenderHelper.operations.SKIP:
           skip = operation.skip;
           if (blocks.isFunction(skip)) {
             skip = skip.call(observable.__context__);
           }
           skip = blocks.unwrap(skip);
-        } else if (operation.type == 'take') {
+          break;
+        case ExtenderHelper.operations.TAKE:
           take = operation.take;
           if (blocks.isFunction(take)) {
             take = take.call(observable.__context__);
           }
           take = blocks.unwrap(take);
-        } else if (operation.type == 'sort') {
+          break;
+        case ExtenderHelper.operations.SORT:
           if (blocks.isString(operation.sort)) {
             collection = blocks.clone(collection).sort(function (valueA, valueB) {
-              return valueA[operation.sort] - valueB[operation.sort];
+              valueA = blocks.unwrap(valueA[operation.sort]);
+              valueB = blocks.unwrap(valueB[operation.sort]);
+              if (valueA > valueB) {
+                return 1;
+              }
+              if (valueA < valueB) {
+                return -1;
+              }
+              return 0;
             });
           } else if (blocks.isFunction(operation.sort)) {
-            collection = blocks.clone(collection).sort(operation.sort);
+            collection = blocks.clone(collection).sort(operation.sort.bind(observable.__context__));
           } else {
             collection = blocks.clone(collection).sort();
           }
           if (operations.length == 1) {
-            operations.push({ type: 'filter', filter: function () { return true; }});
+            operations.push({
+              type: ExtenderHelper.operations.FILTER,
+              filter: noopFilter
+            });
           }
+          sorted = true;
+          break;
         }
       });
-
+      if (sorted) {
+        // create sortedConnections to match the sorted collection to connections
+        blocks.each(observable._getValue(), function (original, originalIndex) {
+          blocks.each(collection, function (value, newIndex) {
+            if (value == original) {
+              sortedConnections[newIndex] = originalIndex;
+              return false;
+            }
+          });
+        });
+      }
       blocks.each(collection, function iterateCollection(value, index) {
+        var currentViewIndex;
         if (take <= 0) {
-          while (view().length - viewIndex > 0) {
+          while (view().length - targetViewIndex > 0) {
             view.removeAt(view().length - 1);
+            view._connections = {};
           }
           return false;
         }
         blocks.each(operations, function executeExtender(operation) {
           var filterCallback = operation.filter;
-
-          action = undefined;
-
-          if (filterCallback) {
+          operation.type = operation.type || filterCallback && ExtenderHelper.operations.FILTER;
+          switch (operation.type) {
+          case ExtenderHelper.operations.FILTER:
             if (filterCallback.call(observable.__context__, value, index, collection)) {
-              action = EXISTS;
-
-              if (connections[index] === undefined) {
-                action = ADD;
+              action = Action.EXISTS;
+              if (getConnection(index) === undefined) {
+                action = Action.ADD;
               }
             } else {
-              action = undefined;
-              if (connections[index] !== undefined) {
-                action = REMOVE;
+              action = Action.NOOP;
+              if (getConnection(index) !== undefined) {
+                action = Action.REMOVE;
               }
               return false;
             }
-          } else if (operation.type == 'skip') {
-            action = EXISTS;
+            break;
+          case ExtenderHelper.operations.SKIP:
+            action = Action.EXISTS;
             skip -= 1;
             if (skip >= 0) {
-              action = REMOVE;
+              if (getConnection(index) !== undefined) {
+                action = Action.REMOVE;
+              } else {
+                action = Action.NOOP;
+              }
               return false;
-            } else if (skip < 0 && connections[index] === undefined) {
-              action = ADD;
+            } else if (skip < 0 && getConnection(index) === undefined) {
+              action = Action.ADD;
             }
-          } else if (operation.type == 'take') {
+            break;
+          case ExtenderHelper.operations.TAKE:
             if (take <= 0) {
-              action = REMOVE;
+              if (getConnection(index) === undefined) {
+                action = Action.NOOP;
+              } else {
+                action = Action.REMOVE;
+              }
               return false;
             } else {
               take -= 1;
-              action = EXISTS;
-
-              if (connections[index] === undefined) {
-                action = ADD;
+              action = Action.EXISTS;
+              if (getConnection(index) === undefined) {
+                action = Action.ADD;
               }
             }
+            break;
           }
         });
-
+        currentViewIndex = getConnection(index);
+        collectionIndex = sorted ? sortedConnections[index] : index;
         switch (action) {
-          case ADD:
-            newConnections[index] = viewIndex;
-            view.splice(viewIndex, 0, value);
-            viewIndex++;
-            break;
-          case REMOVE:
-            view.removeAt(viewIndex);
-            break;
-          case EXISTS:
-            newConnections[index] = viewIndex;
-            viewIndex++;
-            break;
+        case Action.ADD:
+          newConnections[collectionIndex] = targetViewIndex;
+          view.splice(targetViewIndex, 0, value);
+          // update connections so that the connections reflect the changes on the view-array
+          blocks.each(connections, function (valueViewIndex, i) {
+            if (valueViewIndex >= targetViewIndex) {
+              connections[i] = ++valueViewIndex;
+            }
+          });
+          targetViewIndex++;
+          break;
+        case Action.REMOVE:
+          view.removeAt(currentViewIndex);
+          // update connections so that the connections reflect the changes on the view-array
+          blocks.each(connections, function (valueViewIndex, i) {
+            if (valueViewIndex > currentViewIndex) {
+              connections[i] = --valueViewIndex;
+            }
+          });
+          break;
+        case Action.EXISTS:
+          newConnections[collectionIndex] = targetViewIndex;
+          if (currentViewIndex != targetViewIndex) {
+            view.move(currentViewIndex, targetViewIndex);
+            // update connections so that the connections reflect the changes on the view-array
+            blocks.each(connections, function (valueViewIndex, i) {
+              if (sorted ? i == sortedConnections[index] : i == index) {
+                return;
+              }
+              connections[i] = valueViewIndex > currentViewIndex ? --valueViewIndex : ++valueViewIndex;
+            });
+          }
+          targetViewIndex++;
+          break;
         }
       });
-
       view._connections = newConnections;
       view.update = update;
       view.update();
     }
   };
-
-
-
+  function noopFilter() {
+    return true;
+  }
+  return ExtenderHelper;
+}();
+(function () {
   /**
    * @memberof blocks.observable
    * @class extenders
    */
-
   /**
    * Extends the observable by adding a .view property which is filtered
    * based on the provided options
@@ -8399,76 +8372,62 @@ return result;
   blocks.observable.filter = function (options) {
     var observable = ExtenderHelper.initExpressionExtender(this);
     var callback = options;
-
     if (!blocks.isFunction(callback) || blocks.isObservable(callback)) {
       callback = function (value) {
         var filter = blocks.unwrap(options);
         var filterString = String(filter).toLowerCase();
         value = String(blocks.unwrap(value)).toLowerCase();
-
         return !filter || value.indexOf(filterString) != -1;
       };
     }
-
     observable._operations.push({
-      type: 'filter',
+      type: ExtenderHelper.operations.FILTER,
       filter: callback
     });
-
     return observable;
   };
-
   blocks.observable.step = function (options) {
     var observable = ExtenderHelper.initExpressionExtender(this);
-
     observable._operations.push({
-      type: 'step',
+      type: ExtenderHelper.operations.STEP,
       step: options
     });
-
     return observable;
   };
-
   /**
    * Extends the observable by adding a .view property in which the first n
    * items are skipped
    *
    * @memberof extenders
-   * @param {(number|blocks.observable)} value - The number of items to be skipped
+   * @param {(number|blocks.observable|Function)} value - The number of items to be skipped
    * @returns {blocks.observable} - Returns a new observable
    * containing a .view property with the manipulated data
    */
   blocks.observable.skip = function (value) {
     var observable = ExtenderHelper.initExpressionExtender(this);
-
     observable._operations.push({
-      type: 'skip',
+      type: ExtenderHelper.operations.SKIP,
       skip: value
     });
-
     return observable;
   };
-
   /**
    * Extends the observable by adding a .view property in which there is
    * always maximum n items
    *
    * @memberof extenders
-   * @param {(number|blocks.observable))} value - The max number of items to be in the collection
+   * @param {(number|blocks.observable|Function)} value - The max number of items to be in the collection
    * @returns {blocks.observable} - Returns a new observable
    * containing a .view property with the manipulated data
    */
   blocks.observable.take = function (value) {
     var observable = ExtenderHelper.initExpressionExtender(this);
-
     observable._operations.push({
-      type: 'take',
+      type: ExtenderHelper.operations.TAKE,
       take: value
     });
-
     return observable;
   };
-
   /**
    * Extends the observable by adding a .view property which is sorted
    * based on the provided options
@@ -8480,16 +8439,14 @@ return result;
    */
   blocks.observable.sort = function (options) {
     var observable = ExtenderHelper.initExpressionExtender(this);
-
     observable._operations.push({
-      type: 'sort',
+      type: ExtenderHelper.operations.SORT,
       sort: options
     });
-
     return observable;
   };
-
-
+}());
+(function () {
   /**
    * Performs a query operation on the DOM. Executes all data-query attributes
    * and renders the html result to the specified HTMLElement if not specified
@@ -8516,14 +8473,10 @@ return result;
         if (!blocks.isElement(element)) {
           element = document.body;
         }
-
         var domQuery = new DomQuery();
         var rootElement = createVirtual(element)[0];
-        var serverData = window.__blocksServerData__;
-
         domQuery.pushContext(model);
         domQuery._serverData = serverData;
-
         if (serverData) {
           rootElement.render(domQuery);
         } else {
@@ -8533,8 +8486,7 @@ return result;
       });
     });
   };
-
-  blocks.executeQuery = function executeQuery(element, queryName /*, ...args */) {
+  blocks.executeQuery = function executeQuery(element, queryName) {
     var methodName = VirtualElement.Is(element) ? 'preprocess' : 'update';
     var args = Array.prototype.slice.call(arguments, 2);
     var query = blocks.queries[queryName];
@@ -8543,7 +8495,6 @@ return result;
     }
     query[methodName].apply(element, args);
   };
-
   /**
    * Gets the context for a particular element. Searches all parents until it finds the context.
    *
@@ -8566,7 +8517,6 @@ return result;
    */
   blocks.context = function context(element, isRecursive) {
     element = blocks.$unwrap(element);
-
     if (element) {
       var elementData = ElementsData.data(element);
       if (elementData) {
@@ -8577,12 +8527,10 @@ return result;
           return elementData.context;
         }
       }
-
       return blocks.context(VirtualElement.Is(element) ? element._parent : element.parentNode, true);
     }
     return null;
   };
-
   /**
    * Gets the associated dataItem for a particlar element. Searches all parents until it finds the context
    *
@@ -8607,7 +8555,6 @@ return result;
     var context = blocks.context(element);
     return context ? context.$this : null;
   };
-
   /**
    * Determines if particular value is an blocks.observable
    *
@@ -8625,7 +8572,6 @@ return result;
   blocks.isObservable = function isObservable(value) {
     return !!value && value.__identity__ === OBSERVABLE;
   };
-
   /**
    * Gets the raw value of an observable or returns the value if the specified object is not an observable
    *
@@ -8646,7 +8592,6 @@ return result;
     }
     return value;
   };
-
   blocks.domQuery = function domQuery(element) {
     element = blocks.$unwrap(element);
     if (element) {
@@ -8658,11 +8603,61 @@ return result;
     }
     return null;
   };
-
+  /**
+   * Executes expressions on a specified context.
+   *
+   * @param  {string} expression The expression to execute.
+   * @param  {Object} context    The context to exute the expression on.
+   *                             The context for an element can be get via block.context().
+   * @param  {Object} [options]  An optional options objecz.
+   * @param  {bool}   [options.raw] If true the function returns an array with the raw value. Default: false
+   *
+   * @returns {string|Object[]}]  Returns the result of the expressions as a string.
+   *                             Or if options.raw is specified it returns an array of objects (see second example for details);
+   * @example {javascript}
+   * var context = {greeter: blocks.observable("world")};
+   * var expression = "Hello {{greeter}}!";
+   * blocks.executeExpression(expression, context);
+   * // -> "Hello world!"
+   *
+   * blocks.executeExpression(expression, context, {raw: true});
+   * // -> [{observables: [], value: "Hello ", result: "Hello "},
+   * //    {observables: [observable<"world">], value: observable<"world">, result: "world"},
+   * //    {observable: [], value: "!", result: "!"}]
+   */
+  blocks.executeExpression = function (expression, context, options) {
+    options = options || {};
+    var expressionData = Expression.Create(blocks.unwrapObservable(expression));
+    var setContext = false;
+    var value;
+    var values = [];
+    context = blocks.unwrapObservable(context);
+    if (!blocks.isObject(context)) {
+      context = { $this: context };
+    } else if (!context.$this) {
+      setContext = true;
+      context.$this = context;
+    }
+    value = Expression.GetValue(context, null, expressionData, options.raw ? Expression.Raw : Expression.ValueOnly);
+    if (setContext) {
+      context.$this = undefined;
+    }
+    if (options.raw) {
+      blocks.each(blocks.toArray(value), function (val, i) {
+        values[i] = blocks.isObject(val) ? val : {
+          observables: [],
+          result: val,
+          value: val
+        };
+      });
+    }
+    return options.raw ? values : value;
+  };
+}());
 
 
 })();// @source-code
-  })();
+
 
   /* @if DEBUG */
   (function() {
@@ -8689,16 +8684,6 @@ return result;
 
     return blocks;
   };
-
-  if (typeof define === 'function' && define.amd) {
-    define('blocks', [], function () {
-      return blocks;
-    });
-  }
-
-  if (noGlobal !== true) {
-    global.blocks = blocks;
-  }
 
   return blocks;
 
