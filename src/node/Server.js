@@ -19,14 +19,30 @@ define([
   });
 
   Server.prototype = {
+    /**
+     * Returns the express instance used by the blocks server internally.
+     * When called synchronous directly after the server has been crated
+     * pre middlewares can be added.
+     * But the server will need to be started explicitly.
+     * @return {object} the express app
+     * @example {javascript}
+     * var server = blocks.server();
+     * var app = blocks.express();
+     * app.use('/test', function (req, res) {
+     *   res.json({some: 'test'});
+     * });
+     * // required for ssr to work now
+     * server.start();
+     */
     express: function () {
+      this._delayStart = true;
       return this._app;
     },
 
     _init: function () {
       var options = this._options;
       var app = this._app;
-      var middleware = this._middleware;
+      var self = this;
 
       app.listen(options.port);
 
@@ -40,7 +56,22 @@ define([
         index: false
       }));
 
-      app.get('/*', function (req, res, next) {
+      process.nextTick(function () {
+        if (!self._delayStart) {
+          self.start();
+        }
+      });
+
+    },
+
+    /**
+     * Starts the ssr server.
+     * Does not need to be called if server.express()
+     * is not called.
+     */
+    start: function () {
+      var middleware = this._middleware;
+      this._app.get('/*', function (req, res, next) {
         middleware.tryServePage(req, res, next);
       });
     }
