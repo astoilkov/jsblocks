@@ -2,8 +2,9 @@ define([
   '../core',
   '../DataSource',
   './clonePrototype',
-  './Property'
-], function (blocks, DataSource, clonePrototype, Property) {
+  './Property',
+  './var/MODEL'
+], function (blocks, DataSource, clonePrototype, Property, MODEL) {
 
   /**
    * @namespace Model
@@ -53,6 +54,7 @@ define([
   }
 
   Model.prototype = {
+    __identity__: MODEL,
     /**
      * The options for the Model
      *
@@ -301,6 +303,7 @@ define([
 
     _ensurePropertiesCreated: function (dataItem) {
       var properties = this._properties;
+      var prototype = this._prototype;
       var property;
       var key;
       var field;
@@ -316,8 +319,18 @@ define([
             this._setPropertyValue(property, dataItem[key]);
           } else if (blocks.isObservable(this[key])) {
             this[key](dataItem[key]);
+          } else if (prototype[key] &&  prototype[key].prototype && prototype[key].prototype.__identity__ == MODEL) {
+            this[key] = new prototype[key](dataItem[key]);
           } else {
             this[key] = dataItem[key];
+          }
+        }
+      }
+
+      for (key in prototype) {
+        if (prototype[key].prototype && prototype[key].prototype.__identity__ == MODEL) {
+          if (!(this[key] instanceof prototype[key])) {
+            this[key] = new prototype[key]();
           }
         }
       }

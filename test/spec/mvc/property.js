@@ -233,6 +233,24 @@ describe('blocks.Application.Property: ', function () {
 
   });
 
+  it('defaultValue=ModelConstructor can take a ModelConstructor and initializes it', function () {
+    var Child = Application.Model({
+      test: 1
+    });
+    var Parent = Application.Model({
+      child: Application.Property({
+        defaultValue: Child
+      })
+    });
+    var instance = Parent();
+    expect(instance.child() instanceof Child).toBe(true);
+    expect(instance.child().test).toBe(1);
+
+    var instance1 = Parent({child: {test: 42}});
+    expect(instance1.child() instanceof Child).toBe(true);
+    expect(instance1.child().test).toBe(42);
+  });
+
   it('value is extracted based on the property key', function () {
     var Product = Application.Model({
       FirstName: Application.Property()

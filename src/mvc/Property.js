@@ -1,6 +1,7 @@
 ﻿define([
-  '../core'
-], function (blocks) {
+  '../core',
+  './var/MODEL'
+], function (blocks, MODEL) {
   function Property(options) {
     this._options = options || {};
   }
@@ -13,12 +14,18 @@
     var properties = {};
     var key;
     var value;
+    var defaultValue;
 
     for (key in object) {
       value = object[key];
       if (Property.Is(value)) {
         value = value._options;
+        defaultValue = value.defaultValue;
         value.propertyName = key;
+        value.isModel = defaultValue && (value.defaultValue.prototype && defaultValue.prototype.__identity__ == MODEL || defaultValue.__identity__ == MODEL);
+        if (value.isModel) {
+          value.modelConstructor = defaultValue.__identity__ == MODEL ? defaultValue.constructor : defaultValue;
+        }
         properties[value.field || key] = value;
       }
     }
@@ -33,6 +40,16 @@
       value = options.value || options.defaultValue;
     }
     thisArg = options.thisArg ? options.thisArg : thisArg;
+
+    if (options.isModel && !(value instanceof options.modelConstructor)) {
+      if (value == options.modelConstructor) {
+        value = new options.modelConstructor();
+      } else {
+        value = new options.modelConstructor(value);
+      }
+    } else {
+      value = blocks.clone(value);
+    }
 
     observable = blocks
       .observable(value, thisArg)
