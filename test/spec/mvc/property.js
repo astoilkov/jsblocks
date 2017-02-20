@@ -99,14 +99,6 @@ describe('blocks.Application.Property: ', function () {
     Product();
   });
 
-  it('it wraps an value into an observable if it is specified in the constructor', function () {
-    var TestConstructor = Application.Model({
-      test: blocks.observable()
-    });
-    var testItem = TestConstructor({test: 1});
-    expect(blocks.isObservable(testItem.test)).toBe(true);
-    expect(testItem.test()).toBe(1);
-  });
 
   it('changing Application.Property.Defaults affects the default property options', function () {
     Application.Property.Defaults.set('isObservable', false);
@@ -168,7 +160,7 @@ describe('blocks.Application.Property: ', function () {
     expect(model.FirstName()).toBe(null);
   });
 
-  it('defaultValue=(blank) makes the default value to null', function () {
+  it('defaultValue=(blank) makes the default value to (blank)', function () {
     var Product = Application.Model({
       FirstName: Application.Property({
         defaultValue: '(blank)'
@@ -177,6 +169,68 @@ describe('blocks.Application.Property: ', function () {
     Application.start();
     var model = Product();
     expect(model.FirstName()).toBe('(blank)');
+  });
+
+  it('defaultValue=ModelInstance makes the default value a model instance', function () {
+    var Child = Application.Model({
+      test: 1
+    });
+    var Parent = Application.Model({
+      child: Application.Property({
+        defaultValue: Child()
+      })
+    });
+    var instance = Parent();
+    expect(instance.child() instanceof Child).toBe(true);
+    expect(instance.child().test).toBe(1);
+  });
+
+  it('defaultValue=ModelInstance clones the defaultValue', function () {
+    var Child = Application.Model({
+      test: 1
+    });
+    var Parent = Application.Model({
+      child: Application.Property({
+        defaultValue: Child()
+      })
+    });
+    var instance = Parent();
+    var instance2 = Parent();
+    expect(instance.child().test).toBe(instance2.child().test);
+    expect(instance.child() == instance2.child()).toBe(false);
+  });
+
+  it('defaultValue=ModelInstance applies a value correctly to the Model constructor', function () {
+    var Child = Application.Model({
+      test: 1
+    });
+    var Parent = Application.Model({
+      child: Application.Property({
+        defaultValue: Child()
+      })
+    });
+    var instance = Parent({
+      child: {
+        test: 42
+      }
+    });
+    expect(instance.child() instanceof Child).toBe(true);
+  });
+
+  it('defaultValue=ModelInstance can take a existing ModelInstance as a value', function () {
+    var Child = Application.Model({
+      test: 1
+    });
+    var Parent = Application.Model({
+      child: Application.Property({
+        defaultValue: Child()
+      })
+    });
+    var child = Child({test: 42});
+    var instance = Parent({child: child});
+    expect(instance.child() instanceof Child).toBe(true);
+    expect(instance.child() == child).toBe(false);
+
   });
 
   it('value is extracted based on the property key', function () {

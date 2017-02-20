@@ -228,7 +228,7 @@
     });
 
     describe('read()', function () {
-
+      // @TODO
     });
 
     describe('hasChanges()', function () {
@@ -305,8 +305,17 @@
       });
     });
 
-    describe('sync()', function () {
+    it('it wraps an value into an observable if it is specified in the constructor', function () {
+      var TestConstructor = Application.Model({
+       test: blocks.observable()
+      });
+      var testItem = TestConstructor({test: 1});
+      expect(blocks.isObservable(testItem.test)).toBe(true);
+      expect(testItem.test()).toBe(1);
+    });
 
+    describe('sync()', function () {
+      // @TODO
     });
   });
 })();
