@@ -184,11 +184,16 @@ define([
       var dataItem = {};
       var key;
       var property;
+      var value;
 
       for (key in properties) {
         property = properties[key];
         if (key != '__id__' && blocks.isFunction(this[property.propertyName])) {
-          dataItem[property.field || property.propertyName] = this[property.propertyName]();
+          value = this[property.propertyName]();
+          if (value && value.__identity__ == MODEL) {
+            value = value.dataItem();
+          }
+          dataItem[property.field || property.propertyName] = value;
         }
       }
       if (this.isNew()) {

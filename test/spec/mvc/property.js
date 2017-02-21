@@ -233,6 +233,21 @@ describe('blocks.Application.Property: ', function () {
 
   });
 
+  it('defaultValue=ModelConstructor calling dataItem() will call dataItem on a nested model', function () {
+    var Child = Application.Model({
+      test: Application.Property({
+        defaultValue: 1
+      })
+    });
+    var Parent = Application.Model({
+      child: Application.Property({
+        defaultValue: Child
+      })
+    });
+    var instance = Parent();
+    expect(instance.dataItem().child.test).toBe(1);
+  });
+
   it('defaultValue=ModelConstructor can take a ModelConstructor and initializes it', function () {
     var Child = Application.Model({
       test: 1
