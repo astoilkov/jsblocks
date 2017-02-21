@@ -42,7 +42,12 @@ module.exports = function (grunt) {
       },
 
       client: {
-        src: 'dist/blocks-source.js',
+        src: [
+          'dist/blocks-source.js',
+          'dist/mvc/blocks-mvc.js',
+          'dist/query/blocks-query.js',
+          'dist/query/blocks-query-data.js'
+        ],
         options: {
           inline: true,
           context: {
