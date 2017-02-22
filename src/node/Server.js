@@ -19,6 +19,7 @@ define([
   });
 
   Server.prototype = {
+    _started: false,
     /**
      * Returns the express instance used by the blocks server internally.
      * When called synchronous directly after the server has been crated
@@ -70,10 +71,22 @@ define([
      * is not called.
      */
     start: function () {
+      if (this._started) {
+        return;
+      }
       var middleware = this._middleware;
       this._app.get('/*', function (req, res, next) {
         middleware.tryServePage(req, res, next);
       });
+      this._started = true;
+    },
+
+    /**
+     * Returns if the server has been started.
+     * @return {boolean}
+     */
+    started: function () {
+      return this._started;
     }
   };
   return Server;
