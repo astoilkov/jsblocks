@@ -54,7 +54,20 @@
 
       });
     });
-
+    it('custom validators get executed in the correct context', function () {
+      var context;
+      var Model = Application.Model({
+        Test: Application.Property({
+          validate: function (value) {
+            context = this;
+            return value;
+          }
+        })
+      });
+      var model = new Model({test: true});
+      model.validate();
+      expect(context).toBe(model);
+    });
     describe('Property.errorMessage', function () {
       it('errorMessage is empty string when property is valid', function () {
         var Product = Application.Model({
@@ -584,6 +597,7 @@
           })
         }, undefined, true);
       });
+
 
       it('accepts functions as compare values (validates successfully)', function () {
         testValidation({

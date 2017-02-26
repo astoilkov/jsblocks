@@ -26,7 +26,7 @@
       } else if (key == 'validate' || key == 'asyncValidate') {
         validatorsArray.push({
           option: '',
-          validate: option.validate ? option.validate : option,
+          validate: blocks.bind(option.validate ? option.validate : option, this.__context__),
           priority: option.priority || Number.POSITIVE_INFINITY,
           isAsync: key == 'asyncValidate'
         });
@@ -40,7 +40,7 @@
     this.valid = blocks.observable(true);
 
     this.validate = function () {
-      var value = _this.__value__;
+      var value = _this._getValue();
       var isValid = true;
       var errorsCount = 0;
       var i = 0;
