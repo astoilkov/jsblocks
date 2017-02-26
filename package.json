@@ -27,6 +27,8 @@
     "grunt-preprocess": "^5.1.0",
     "highlight.js": "^9.6.0",
     "jasmine-core": "^2.2.0",
+    "jasmine-jquery": "^2.1.1",
+    "jquery": "^1.11.2",
     "karma": "^1.2.0",
     "karma-chrome-launcher": "^2.0.0",
     "karma-firefox-launcher": "^1.0.0",

@@ -6,8 +6,10 @@ module.exports = function (grunt) {
         'dist/blocks.js',
 
         // dependencies
-        'lib/jquery-1.11.2/jquery-1.11.2.js',
-        'lib/jasmine-jquery-2.2.0/jasmine-jquery.js',
+        require.resolve('jquery/dist/jquery.js'),
+        //'lib/jquery-1.11.2/jquery-1.11.2.js',
+        require.resolve('jasmine-jquery'),
+        //'lib/jasmine-jquery-2.2.0/jasmine-jquery.js',
         'test/blocks.testing.js',
 
         // tests location

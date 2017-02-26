@@ -1082,10 +1082,10 @@
 
         for (var i = 0; i < length; i++) {
           expect($('#testElement1').find('.firstName').eq(i)).toHaveClass('FirstName' + indexes[i]);
-          expect($('#testElement1').find('.firstName').eq(i)).toHaveAttr('data-index', i);
+          expect($('#testElement1').find('.firstName').eq(i)).toHaveAttr('data-index', i.toString());
           expect($('#testElement1').find('.lastName').eq(i)).toHaveHtml('LastName' + indexes[i]);
           expect($('#testElement2').find('.firstName').eq(i)).toHaveClass('FirstName' + indexes[i]);
-          expect($('#testElement2').find('.firstName').eq(i)).toHaveAttr('data-index', i);
+          expect($('#testElement2').find('.firstName').eq(i)).toHaveAttr('data-index', i.toString());
           expect($('#testElement2').find('.lastName').eq(i)).toHaveHtml('LastName' + indexes[i]);
           if (i % 2 == 0) {
             expect($('#testElement2').find('.firstName').eq(i)).toBeVisible();
