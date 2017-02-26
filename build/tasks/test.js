@@ -19,7 +19,12 @@ module.exports = function (grunt) {
       //browserNoActivityTimeout: 30000,
       // browserDisconnectTimeout
       // browserDisconnectTolerance
-      frameworks: ['jasmine']
+      frameworks: ['jasmine'],
+      reporters: ['spec'],
+      browserConsoleLogOptions: {
+        level: "error",
+        terminal: false
+      }
     },
 
     test: {
@@ -50,6 +55,22 @@ module.exports = function (grunt) {
         dir: 'coverage/'
       },
       browsers: ['Firefox'],
+    browserstack: {
+      browserStack: {
+        username: 'joscharohmann1',
+        accessKey: 'NiYr5irzQbXL6psbAZcD'
+      },
+      customLaunchers: {
+        bs_safari_mac_6: {
+          base: 'BrowserStack',
+          browser: 'safari',
+          browser_version: 6,
+          os: 'OS X',
+          os_version: 'Lion'
+        }
+      },
+      reporters: ['spec', 'BrowserStack'],
+      browsers: ['bs_safari_mac_6'],
       singleRun: true
     },
 
