@@ -3,6 +3,8 @@
 node_modules
 /examples
 /dist/npm
+# at least for now exclude the coverage parts
+/coverage
 
 # Files
 .DS_Store

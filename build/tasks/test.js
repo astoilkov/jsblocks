@@ -37,6 +37,22 @@ module.exports = function (grunt) {
       singleRun: true
     },
 
+    coverage: {
+      browserConsoleLogOptions: {
+        terminal: false
+      },
+      reporters: ['dots', 'coverage'],
+      preprocessors: {
+        'dist/blocks.js': ['coverage']
+      },
+      coverageReporter: {
+        type: 'html',
+        dir: 'coverage/'
+      },
+      browsers: ['Firefox'],
+      singleRun: true
+    },
+
     watch: {
       browsers: ['PhantomJS'],
       background: true
