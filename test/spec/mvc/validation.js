@@ -26,7 +26,57 @@
 
       });
     });
+    describe('hasValidator', function () {
+      it('is false if no validator is passed and property has no validators', function () {
+        var Model = Application.Model({
+          test: Application.Property()
+        });
+        var m = Model();
+        expect(m.test.hasValidator()).toBe(false);
+      });
 
+      it('is true if no validator is passed and property has validators', function () {
+        var Model = Application.Model({
+          test: Application.Property({
+            required: true
+          })
+        });
+        var m = Model();
+        expect(m.test.hasValidator()).toBe(true);
+      });
+
+      it('is false if validator does not exist on the property', function () {
+        var Model = Application.Model({
+          test: Application.Property({
+            required: true
+          })
+        });
+        var m = Model();
+        expect(m.test.hasValidator('min')).toBe(false);
+      });
+
+      it('is true if validator does exist on the property', function () {
+        var Model = Application.Model({
+          test: Application.Property({
+            min: {
+              value: 1
+            }
+          })
+        });
+        var m = Model();
+        expect(m.test.hasValidator('min')).toBe(true);
+      });
+      it('is true when a custom validator is passed and exists on the property', function () {
+        var validator = function () {};
+        var Model = Application.Model({
+          test: Application.Property({
+            validate: validator
+          })
+        });
+        var m = Model();
+        expect(m.test.hasValidator(validator)).toBe(true);
+      });
+    });
     describe('valid =>', function () {
       it('default value is true', function () {
         var Product = Application.Model();

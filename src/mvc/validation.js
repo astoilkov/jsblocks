@@ -26,7 +26,7 @@
       } else if (key == 'validate' || key == 'asyncValidate') {
         validatorsArray.push({
           option: '',
-          validate: blocks.bind(option.validate ? option.validate : option, this.__context__),
+          validate: option.validate || option,
           priority: option.priority || Number.POSITIVE_INFINITY,
           isAsync: key == 'asyncValidate'
         });
@@ -38,6 +38,26 @@
     });
 
     this.valid = blocks.observable(true);
+
+    this.hasValidator = function (validator) {
+      if (!validator) {
+        return validatorsArray.length > 0;
+      }
+
+      if (blocks.isString(validator)) {
+        validator = validators[validator].validate;
+      }
+
+      if (!validator) {
+        return false;
+      }
+      for (var i = 0; i < validatorsArray.length; i++) {
+        if (validatorsArray[i].validate == validator) {
+          return true;
+        }
+      }
+      return false;
+    };
 
     this.validate = function () {
       var value = _this._getValue();
@@ -55,7 +75,7 @@
         }
         validator = validatorsArray[i];
         if (validator.isAsync) {
-          validator.validate(value, function (result) {
+          validator.validate.call(_this.__context__, value, function (result) {
             validationComplete(_this, options, !!result);
           });
           return true;
@@ -68,7 +88,7 @@
           if (blocks.isFunction(option)) {
             option = option.call(_this.__context__);
           }
-          message = validator.validate(value, options, option);
+          message = validator.validate.call(_this.__context__, value, options, option);
           if (blocks.isString(message)) {
             message = [message];
           }
