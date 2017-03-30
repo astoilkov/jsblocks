@@ -189,11 +189,7 @@ define([
       for (key in properties) {
         property = properties[key];
         if (key != '__id__' && blocks.isFunction(this[property.propertyName])) {
-          value = this[property.propertyName]();
-          if (value && value.__identity__ == MODEL) {
-            value = value.dataItem();
-          }
-          dataItem[property.field || property.propertyName] = value;
+          dataItem[property.field || property.propertyName] = this[property.propertyName]();
         }
       }
       if (this.isNew()) {
@@ -324,8 +320,6 @@ define([
             this._setPropertyValue(property, dataItem[key]);
           } else if (blocks.isObservable(this[key])) {
             this[key](dataItem[key]);
-          } else if (prototype[key] &&  prototype[key].prototype && prototype[key].prototype.__identity__ == MODEL) {
-            this[key] = new prototype[key](dataItem[key]);
           } else {
             this[key] = dataItem[key];
           }
@@ -335,7 +329,7 @@ define([
       for (key in prototype) {
         if (prototype[key].prototype && prototype[key].prototype.__identity__ == MODEL) {
           if (!(this[key] instanceof prototype[key])) {
-            this[key] = new prototype[key]();
+            this[key] = new prototype[key](this[key]);
           }
         }
       }
