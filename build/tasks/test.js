@@ -56,6 +56,7 @@ module.exports = function (grunt) {
       },
       browsers: ['Firefox'],
     browserstack: {
+      username: process.env.BROWSERSTACK_USER || process.env.BROWSER_STACK_USER,
       startTunnel: !process.env.BROWSERSTACK_LOCAL_IDENTIFIER,
       tunnelIdentifier: process.env.BROWSERSTACK_LOCAL_IDENTIFIER,
       customLaunchers: {
