@@ -849,32 +849,58 @@ define([
      * the callback function after the event arguments
      */
     on: {
-      ready: function (events, callbacks) {
+      passQuery: true,
+
+      ready: function (query, events, callbacks) {
         if (!events || !callbacks) {
           return;
         }
-        var originalArgs = blocks.toArray(arguments).slice(2);
+        var originalArgs = blocks.toArray(arguments).slice(3);
         var element = this;
         var context = blocks.context(this);
-        var thisArg;
 
-        callbacks = blocks.toArray(callbacks);
+        var data = ElementsData.data(element);
+        var eventData = data.eventData = data.eventData || {};
 
-        var handler = function (e) {
-          var args = blocks.clone(originalArgs);
-          args.splice(0,0, e);
-          context = blocks.context(this) || context;
-          thisArg = context.$template || context.$view || context.$root;
-          blocks.each(callbacks, function (callback) {
-            callback.apply(thisArg, args);
-          });
+        var eventContext = {
+          args: originalArgs,
+          context: context,
+          callbacks: blocks.toArray(callbacks)
         };
 
         events = blocks.isArray(events) ? events : events.toString().split(' ');
 
         blocks.each(events, function (event) {
-          addListener(element, event, handler);
+          if (!eventData[event.toLowerCase()]) {
+            addListener(element, event, blocks.queries.on.handleEvent);
+            eventData[event] = {};
+          }
+          eventData[event.toLowerCase()][query] = eventContext;
         });
+      },
+
+      update: function (query, events/*, callbacks*/) {
+        var args = blocks.toArray(arguments).slice(3);
+        events = blocks.isArray(events) ? events : events.toString().split(' ');
+        ElementsData.data(this).eventData[events[0].toLowerCase()][query].args = args;
+      },
+
+      handleEvent: function (e) {
+        var eventData = ElementsData.data(this, 'eventData');
+        if (!eventData) {
+          return;
+        }
+        var eventContexts = eventData[e.type.toLowerCase()];
+        for (var query in eventContexts) {
+          var eventContext = eventContexts[query];
+          var context = blocks.context(this) || eventContext.context;
+          var thisArg = context.$template || context.$view || context.$root;
+          var args = blocks.clone(eventContext.args);
+          args.splice(0, 0, e);
+          for (var i = 0; i < eventContext.callbacks.length; i++) {
+            eventContext.callbacks[i].apply(thisArg, args);
+          }
+        }
       }
     }
   });
@@ -889,11 +915,16 @@ define([
   ], function (eventName) {
     blocks.queries[eventName] = {
       passRawValues: true,
-
+      passQuery: true,
       ready: function (/*callback, data*/) {
         var args = blocks.toArray(arguments);
-        args.splice(0, 0, eventName);
+        args.splice(1, 0, eventName);
         blocks.queries.on.ready.apply(this, args);
+      },
+      update: function () {
+        var args = blocks.toArray(arguments);
+        args.splice(1, 0, eventName);
+        blocks.queries.on.update.apply(this, args);
       }
     };
   });

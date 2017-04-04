@@ -157,6 +157,9 @@ define([
           }
           continue;
         }
+        if (method.passQuery) {
+          executedParameters.push(methods[i].query);
+        }
         Observer.startObserving();
         for (var j = 0; j < parameters.length; j++) {
           parameter = parameters[j];

@@ -3,7 +3,6 @@
   './var/virtualElementIdentity',
   './VirtualElement'
 ], function (dataIdAttr, virtualElementIdentity, VirtualElement) {
-  var ElementsData = (function () {
     var data = {};
     var globalId = 1;
 
@@ -25,7 +24,7 @@
       }
     }
 
-    return {
+    var ElementsData = {
       id: function (element) {
         return getDataId(element);
       },
@@ -140,7 +139,5 @@
         }
       }
     };
-  })();
-
-  return ElementsData;
+    return ElementsData;
 });

@@ -478,9 +478,9 @@ define([
                 state.expressions[index] = expression;
                 if (element) {
                   blocks.each(expression, function (value, key) {
-                    // skipp comment (= null values) & unchanged nodes
+                    // skip comment (= null values) & unchanged nodes
                     if (value == null || element.nodeType == 8 || (blocks.isArray(lastExpression) && lastExpression[key] == value)) {
-                      element = element.nextSibling;
+                      element = element.nextSibling || element;
                       return;
                     }
                     element.nodeValue = value;
