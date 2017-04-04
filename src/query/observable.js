@@ -497,6 +497,9 @@ define([
 
           for (var i = 0; i < elements.length; i++) {
             element = elements[i].element;
+            if (!element && ElementsData.byId(elements[i].elementId)) {
+              element = elements[i].element = ElementsData.byId(elements[i].elementId).dom;
+            }
             if (indexA > indexB) {
               chunkManager.insertAt(element, indexA, chunkManager.getAt(element, indexB));
               chunkManager.insertAt(element, indexB, chunkManager.getAt(element, indexA));
@@ -537,7 +540,11 @@ define([
           }
 
           for (var i = 0; i < elements.length; i++) {
+            // @TODO: Think about a way to remove this. Maybe remove the reference to an element from observables.
             element = elements[i].element;
+            if (!element && ElementsData.byId(elements[i].elementId)) {
+              element = elements[i].element = ElementsData.byId(elements[i].elementId).dom;
+            }
             chunkManager.insertAt(element, targetIndex, chunkManager.getAt(element, sourceIndex));
           }
 

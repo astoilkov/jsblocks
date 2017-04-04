@@ -400,32 +400,31 @@ define([
 
   function createCache(query, element) {
     var cache = DomQuery.QueryCache[query] = [];
-
-    parseQuery(query, function (methodName, parameters) {
-      var method = blocks.queries[methodName];
-      var methodObj = {
-        name: methodName,
-        params: parameters,
-        query: methodName + '(' + parameters.join(',') + ')'
-      };
-
-      if (method) {
-        // TODO: Think of a way to remove this approach
-        if (methodName == 'attr' || methodName == 'val') {
-          cache.unshift(methodObj);
-        } else {
-          cache.push(methodObj);
-        }
-      }
-      /* @if DEBUG */
-      else {
-        blocks.debug.queryNotExists(methodObj, element);
-      }
-      /* @endif */
-    });
-
+    parseQuery(query, createCacheCallback, {cache: cache, element: element});
     return cache;
   }
+  
+  function createCacheCallback(methodName, parameters) {
+    var method = blocks.queries[methodName];
+    var methodObj = {
+      name: methodName,
+      params: parameters,
+      query: methodName + '(' + parameters.join(',') + ')'
+    };
 
+    if (method) {
+      // TODO: Think of a way to remove this approach
+      if (methodName == 'attr' || methodName == 'val') {
+        this.cache.unshift(methodObj);
+      } else {
+        this.cache.push(methodObj);
+      }
+    }
+    /* @if DEBUG */
+    else {
+      blocks.debug.queryNotExists(methodObj, this.element);
+    }
+    /* @endif */
+  }
   return DomQuery;
 });

@@ -2,7 +2,7 @@
   '../var/trimRegExp'
 ], function (trimRegExp) {
 
-  function parseQuery(query, callback) {
+  function parseQuery(query, callback, context) {
     var character = 0;
     var bracketsCount = 0;
     var curlyBracketsCount = 0;
@@ -61,7 +61,11 @@
 
           if (methodName) {
             methodName = methodName.replace(/^("|')+|("|')+$/g, ''); // trim single and double quotes
-            callback(methodName, parameters);
+            if (context) {
+              callback.call(context, methodName, parameters);
+            } else {
+              callback(methodName, parameters);
+            }
           }
           parameters = [];
           methodName = undefined;

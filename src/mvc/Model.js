@@ -184,7 +184,6 @@ define([
       var dataItem = {};
       var key;
       var property;
-      var value;
 
       for (key in properties) {
         property = properties[key];
