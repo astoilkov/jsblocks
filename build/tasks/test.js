@@ -56,10 +56,6 @@ module.exports = function (grunt) {
       },
       browsers: ['Firefox'],
     browserstack: {
-      browserStack: {
-        username: 'joscharohmann1',
-        accessKey: 'NiYr5irzQbXL6psbAZcD'
-      },
       customLaunchers: {
         bs_safari_mac_6: {
           base: 'BrowserStack',
