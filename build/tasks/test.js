@@ -1,5 +1,3 @@
-console.log(process.env);
-
 module.exports = function (grunt) {
   var karmaConfig = {
     options: {
@@ -131,7 +129,6 @@ module.exports = function (grunt) {
       singleRun: true
     }
   };
-  console.log(JSON.stringify(karmaConfig, null ,2));
   grunt.config.set('karma', karmaConfig);
 
   grunt.registerTask('test', function (browser) {
