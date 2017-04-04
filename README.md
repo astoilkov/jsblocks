@@ -56,3 +56,7 @@ and the [jsblocks starter template project](https://github.com/astoilkov/jsblock
 
 ### Contribute
  * Documentation can be found under [jsblocks-docs](https://github.com/astoilkov/jsblocks-docs)
+
+#
+#### We are running our automated tests cross-browser on  [BrowserStack](https://www.browserstack.com). Check them out if you want to know more.
+[![BrowserStack](.github/browserstack-logo.png)](https://www.browserstack.com/)
