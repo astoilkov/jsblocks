@@ -6,6 +6,7 @@ before_script:
   - grunt compile
   - export DISPLAY=:99.0
   - sh -e /etc/init.d/xvfb start
+script: grunt test:browserstack
 after_success:
   - grunt publish
 addons:
@@ -14,3 +15,7 @@ addons:
       - ubuntu-toolchain-r-test
     packages:
       - g++-4.8
+  browserstack:
+    username: "jsblocksci1"
+    access_key:
+      secure: "AXPyd2rjDckoribeFUJVMCqAgdPy97QLBMzJyzLGhMN8UDulxI3XMuF5ohFDxANQr5ziliu1Vw9zKxLX3NtW0hQu41RVYToLdL47Tu86ymvF4qpDSN+PQ73jDmzh20A+B6OtOF6kbi76KFn1ieuG7gexBKnqfdOkVoJtAx1XGOc="
