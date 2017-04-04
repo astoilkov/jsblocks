@@ -41,6 +41,8 @@ module.exports = function (grunt) {
     },
 
     browserstack: {
+      startTunnel: !process.env.BROWSERSTACK_LOCAL_IDENTIFIER,
+      tunnelIdentifier: process.env.BROWSERSTACK_LOCAL_IDENTIFIER,
       customLaunchers: {
         bs_safari_mac_6: {
           base: 'BrowserStack',
