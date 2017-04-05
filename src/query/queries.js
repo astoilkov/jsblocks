@@ -18,6 +18,17 @@ define([
 ], function (blocks, slice, trimRegExp, keys, classAttr, queries, addListener, getClassIndex, animation, createFragment, createVirtual,
   ElementsData, DomQuery, Expression, VirtualElement, dom) {
 
+  function ifQuery (domQuery, condition, consequent, alternate) {
+    if (condition) {
+      domQuery.executeQuery(this, consequent);
+    } else if (alternate) {
+      domQuery.executeQuery(this, alternate);
+    }
+  }
+
+  function ifnotQuery (domQuery, condition, consequent, alternate) {
+    return ifQuery.call(this, domQuery, !condition, consequent, alternate);
+  }
   /**
   * @namespace blocks.queries
   */
@@ -38,7 +49,16 @@ define([
      * <div data-query="if(true, setClass('success'), setClass('fail'))" class="success"></div>
      * <div data-query="if(false, setClass('success'), setClass('fail'))" class="fail"></div>
      */
-    'if': {},
+    'if': {
+      passDomQuery: true,
+      passRaw: {
+        1: true,
+        2: true
+      },
+      preprocess: ifQuery,
+      ready: ifQuery,
+      update: ifQuery
+    },
 
     /**
      * Executes particular query depending on the condition specified.
@@ -57,7 +77,16 @@ define([
      * <div data-query="ifnot(true, setClass('success'), setClass('fail'))" class="fail"></div>
      * <div data-query="ifnot(false, setClass('success'), setClass('fail'))" class="success"></div>
      */
-    ifnot: {},
+    ifnot: {
+      passDomQuery: true,
+      passRaw: {
+        1: true,
+        2: true
+      },
+      preprocess: ifnotQuery,
+      ready: ifnotQuery,
+      update: ifnotQuery
+    },
 
     /**
      * Queries and sets the inner html of the element from the template specified

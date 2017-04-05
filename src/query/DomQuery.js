@@ -163,6 +163,11 @@ define([
         Observer.startObserving();
         for (var j = 0; j < parameters.length; j++) {
           parameter = parameters[j];
+
+          if (method.passRaw && method.passRaw[j]) {
+            executedParameters.push(parameter);
+            continue;
+          }
           // jshint -W054
           // Disable JSHint error: The Function constructor is a form of eval
           func = parameterQueryCache[parameter] = parameterQueryCache[parameter] ||
@@ -193,20 +198,6 @@ define([
             executedParameters.push(currentParameter.value);
           }
 
-          // Handling 'if' queries
-          // Example: data-query='if(options.templates && options.templates.item, options.templates.item)'
-          if (method === blocks.queries['if'] || method === blocks.queries.ifnot) {
-            if ((!currentParameter.value && method === blocks.queries['if']) ||
-                (currentParameter.value && method === blocks.queries.ifnot)) {
-              if (!parameters[2]) {
-                break;
-              }
-              this.executeQuery(element, parameters[2]);
-              break;
-            }
-            this.executeQuery(element, parameters[1]);
-            break;
-          }
         }
 
         /* @if DEBUG */ {
