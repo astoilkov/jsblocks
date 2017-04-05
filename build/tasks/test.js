@@ -61,17 +61,10 @@ module.exports = function (grunt) {
         startTunnel: !process.env.BROWSERSTACK_LOCAL_IDENTIFIER,
         tunnelIdentifier: process.env.BROWSERSTACK_LOCAL_IDENTIFIER
       },
-      customLaunchers: {
-        bs_safari_mac_6: {
-          base: 'BrowserStack',
-          browser: 'safari',
-          browser_version: 6,
-          os: 'OS X',
-          os_version: 'Lion'
-        }
-      },
+      customLaunchers: {},
       reporters: ['spec', 'BrowserStack'],
-      browsers: ['bs_safari_mac_6'],
+      browsers: [],
+      concurrency: 1,
       singleRun: true
     },
 
@@ -144,10 +137,20 @@ module.exports = function (grunt) {
       singleRun: true
     }
   };
+
+  require('./browserstack-browsers')(karmaConfig.browserstack);
+  
   grunt.config.set('karma', karmaConfig);
 
   grunt.registerTask('test', function (browser) {
     if (browser) {
+      if (browser.toLowerCase() == 'travis') {
+        if (process.env.BROWSERSTACK_LOCAL_IDENTIFIER) {
+          browser = 'browserstack';
+        } else {
+          browser = 'firefox';
+        }
+      }
       grunt.task.run('karma:' + browser);
     } else {
       grunt.task.run('karma:test');
