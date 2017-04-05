@@ -41,7 +41,6 @@ module.exports = function (grunt) {
       },
       singleRun: true
     },
-
     coverage: {
       browserConsoleLogOptions: {
         terminal: false
@@ -56,6 +55,7 @@ module.exports = function (grunt) {
       },
       browsers: ['Firefox'],
     },
+
     browserstack: {
       browserStack: {
         username: process.env.BROWSERSTACK_USER || process.env.BROWSER_STACK_USER,
