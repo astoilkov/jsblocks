@@ -494,9 +494,11 @@ define([
           var element;
 
           blocks.swap(array, indexA, indexB);
+          blocks.swap(array, indexA, indexB);
 
           for (var i = 0; i < elements.length; i++) {
             element = elements[i].element;
+            //@TODO think about a way to remove this
             if (!element && ElementsData.byId(elements[i].elementId)) {
               element = elements[i].element = ElementsData.byId(elements[i].elementId).dom;
             }
@@ -508,7 +510,8 @@ define([
               chunkManager.insertAt(element, indexA, chunkManager.getAt(element, indexB));
             }
           }
-
+          chunkManager.smoothIndexes();
+          this.update();
           return this;
         },
 
@@ -534,20 +537,21 @@ define([
           var element;
 
           blocks.move(array, sourceIndex, targetIndex);
+          blocks.move(this._indexes, sourceIndex, targetIndex);
 
           if (targetIndex > sourceIndex) {
             targetIndex++;
           }
 
           for (var i = 0; i < elements.length; i++) {
-            // @TODO: Think about a way to remove this. Maybe remove the reference to an element from observables.
             element = elements[i].element;
             if (!element && ElementsData.byId(elements[i].elementId)) {
               element = elements[i].element = ElementsData.byId(elements[i].elementId).dom;
             }
             chunkManager.insertAt(element, targetIndex, chunkManager.getAt(element, sourceIndex));
           }
-
+          chunkManager.smoothIndexes();
+          this.update();
           return this;
         },
 

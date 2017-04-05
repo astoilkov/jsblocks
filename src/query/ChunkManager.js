@@ -117,7 +117,11 @@ define([
 
       this.dispose();
     },
-
+    smoothIndexes: function () {
+      for (var i = 0; i < this.observable._indexes.length; i++) {
+        this.observable._indexes[i](i);
+      }
+    },
     each: function (callback) {
       var i = 0;
       var domElements = this.observable._elements;
