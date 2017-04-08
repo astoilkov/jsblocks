@@ -9,8 +9,6 @@ before_script:
 script: grunt test:browserstack
 after_success:
   - grunt publish
-env:
-  - secure: "DGXaA415vfEGbdwtO8kL0Et2H5o6aE56udJoPKCni8olMhrBpVDoi+p7+Og2grpjZhJ+BCxGHIgJ0/+I5yKB0/9oAgFU54tfJvgKx7qfC38M9hR25oCmNwSkE64RdrGvcIdKA9Zq2c6YFK9ruF4SPObnbOcrn1uRZj0N/MQFI="
 addons:
   apt:
     sources:

@@ -57,13 +57,20 @@ module.exports = function (grunt) {
     },
 
     browserstack: {
+      /*
+      * 10 seconds is probably way too high.
+      * But the connection to browserstack can sometimes be a little lagy.
+      */
+      browserNoActivityTimeout: 10000,
       browserStack: {
         username: process.env.BROWSERSTACK_USER || process.env.BROWSER_STACK_USER,
         startTunnel: !process.env.BROWSERSTACK_LOCAL_IDENTIFIER,
         tunnelIdentifier: process.env.BROWSERSTACK_LOCAL_IDENTIFIER
       },
+      project: 'jsblocks-' + (process.env.TRAVIS_BRANCH || 'dev'),
+      build: process.env.TRAVIS_BUILD_NUMBER || ('dev-' + (new Date()).toISOString()),
       customLaunchers: {},
-      reporters: ['spec', 'BrowserStack'],
+      reporters: ['dots', 'BrowserStack'],
       browsers: [],
       concurrency: 1,
       singleRun: true
@@ -139,8 +146,8 @@ module.exports = function (grunt) {
     }
   };
 
-  require('./browserstack-browsers')(karmaConfig.browserstack);
-  
+  require('../browserstack-browsers')(karmaConfig.browserstack);
+
   grunt.config.set('karma', karmaConfig);
 
   grunt.registerTask('test', function (browser) {
