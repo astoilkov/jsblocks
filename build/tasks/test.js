@@ -57,11 +57,7 @@ module.exports = function (grunt) {
     },
 
     browserstack: {
-      /*
-      * 10 seconds is probably way too high.
-      * But the connection to browserstack can sometimes be a little lagy.
-      */
-      browserNoActivityTimeout: 10000,
+      browserNoActivityTimeout: 25000,
       browserStack: {
         username: process.env.BROWSERSTACK_USER || process.env.BROWSER_STACK_USER,
         startTunnel: !process.env.BROWSERSTACK_LOCAL_IDENTIFIER,
@@ -72,7 +68,7 @@ module.exports = function (grunt) {
       customLaunchers: {},
       reporters: ['dots', 'BrowserStack'],
       browsers: [],
-      concurrency: 1,
+      concurrency: 2,
       singleRun: true
     },
 
