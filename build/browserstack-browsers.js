@@ -66,9 +66,10 @@ var browsers = {
 		}
 	},
 	android: {
-		'4.4': {
+		// Commented out 'till bugs are fixed. Debugging in the failing stock browser isn't that easy.
+		/*'4.4': {
 			android: [null]
-		},
+		},*/
 		'5.0': {
 			android: [null]
 		},
