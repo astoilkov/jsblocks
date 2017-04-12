@@ -318,6 +318,23 @@
       expect(true).toBe(true); // just not to throw error
     });
 
+    it('updates nodes correctly after a previous "undefined" value', function () {
+      $('#wrapperElement li').text('{{$this}}');
+      var items = blocks.observable([
+        blocks.observable(null),
+        blocks.observable('test')
+      ]);
+      query({items: items});
+      expect($('#wrapperElement li:first-child')).toHaveText('');
+      expect($('#wrapperElement li:last-child')).toHaveText('test');
+      items.reset([
+        blocks.observable('test1'),
+        blocks.observable('test2')
+      ]);
+      expect($('#wrapperElement li:first-child')).toHaveText('test1');
+      expect($('#wrapperElement li:last-child')).toHaveText('test2');
+    });
+
     // http://knockoutjs.com/documentation/foreach-binding.html
     // afterRender/afterAdd/beforeRemove/beforeMove/afterMove
     //it('fail - events', function () {

@@ -480,7 +480,12 @@ define([
                   blocks.each(expression, function (value, key) {
                     // skip comment (= null values) & unchanged nodes
                     if (value == null || element.nodeType == 8 || (blocks.isArray(lastExpression) && lastExpression[key] == value)) {
-                      element = element.nextSibling || element;
+                      if (element.nextSibling) {
+                        element = element.nextSibling;
+                      } else {
+                        element.parentNode.appendChild(document.createTextNode(''));
+                        element = element.nextSibling;
+                      }
                       return;
                     }
                     element.nodeValue = value;
