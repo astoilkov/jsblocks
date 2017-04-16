@@ -1,5 +1,7 @@
 # [![jsblocks](http://jsblocks.com/img/logoBeta.png)](http://jsblocks.com?ref=github_readme) &nbsp;&nbsp; [![Build Status](https://travis-ci.org/astoilkov/jsblocks.svg?branch=master)](https://travis-ci.org/astoilkov/jsblocks)
 
+[![Join the chat at https://gitter.im/astoilkov/jsblocks](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/astoilkov/jsblocks?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 ### Better MV-ish Framework
 
 ##### From simple user interfaces to complex single-page applications using faster, server-side rendered and easy to learn framework.
