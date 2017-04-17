@@ -44,7 +44,7 @@
     return route;
   };
 
-  Route.prototype = {
+  blocks.extend(Route.prototype, {
     wildcard: function () {
       var wildcard = this._wildcard;
       var wildcards = blocks.flatten(blocks.toArray(arguments));
@@ -111,7 +111,7 @@
         metadata[nameOrObject] = value;
       }
     }
-  };
+  });
 
   function Router() {
     this._currentRoute = {};
@@ -133,7 +133,7 @@
     return route;
   };
 
-  Router.prototype = {
+  blocks.extend(Router.prototype, {
     registerRoute: function (route, parentRoute) {
       route = Route(route);
       parentRoute = parentRoute ? Route(this._routes[Route(parentRoute).toString()].route) : Route(undefined);
@@ -401,7 +401,7 @@
         this._baseUrl = url;
       }
     }
-  };
+  });
 
   return Router;
 });
