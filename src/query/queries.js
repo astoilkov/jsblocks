@@ -752,7 +752,7 @@ define([
     */
     attr: {
       passRawValues: true,
-
+      prioritize: true,
       call: true
     },
 
@@ -775,7 +775,7 @@ define([
     */
     val: {
       passRawValues: true,
-
+      prioritize: true,
       call: 'attr',
 
       prefix: 'value'

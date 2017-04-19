@@ -397,7 +397,7 @@ define([
     parseQuery(query, createCacheCallback, {cache: cache, element: element});
     return cache;
   }
-  
+
   function createCacheCallback(methodName, parameters) {
     var method = blocks.queries[methodName];
     var methodObj = {
@@ -407,8 +407,7 @@ define([
     };
 
     if (method) {
-      // TODO: Think of a way to remove this approach
-      if (methodName == 'attr' || methodName == 'val') {
+      if (method.prioritize) {
         this.cache.unshift(methodObj);
       } else {
         this.cache.push(methodObj);
