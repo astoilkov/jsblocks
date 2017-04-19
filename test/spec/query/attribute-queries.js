@@ -1084,7 +1084,7 @@
 
           values.removeAll();
 
-          expect($('#testSelect').val()).toBe(null);
+          expect($('#testSelect').val()).toEqual([]);
         });
 
         it('should set the value to an <select multiple=multiple> element when values are not strings', function () {
@@ -1123,7 +1123,7 @@
 
           values.removeAll();
 
-          expect($('#testSelect').val()).toBe(null);
+          expect($('#testSelect').val()).toEqual([]);
         });
 
         it('shouldnt set any option as selected when setting empty array as a value for an <select multiple=multiple> element', function () {
@@ -1148,7 +1148,7 @@
             values: values
           });
 
-          expect($('#testSelect').val()).toBe(null);
+          expect($('#testSelect').val()).toEqual([]);
         });
 
         it('shouldnt set the value attribute to an element', function () {
