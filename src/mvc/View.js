@@ -200,7 +200,7 @@ define([
       var url = this.options.url;
       var serverData = this._application._serverData;
 
-      if (serverData && serverData.views && serverData.views[url]) {
+      if (serverData.hasData && serverData.data.views && serverData.data.views[url]) {
         url = this.options.url = undefined;
         this._tryInitialize(true);
       }

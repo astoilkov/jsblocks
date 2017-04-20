@@ -42,7 +42,7 @@ define([
         domQuery.pushContext(model);
         domQuery._serverData = serverData;
 
-        if (serverData) {
+        if (serverData.hasData) {
           rootElement.render(domQuery);
         } else {
           rootElement.sync(domQuery);

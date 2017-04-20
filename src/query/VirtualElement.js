@@ -597,7 +597,7 @@ define([
         var id = this._attributes[dataIdAttr];
         var data;
 
-        if (!id || domQuery._serverData) {
+        if (!id || domQuery._serverData.hasData) {
           ElementsData.createIfNotExists(this);
           domQuery.applyContextToElement(this);
           id = this._attributes[dataIdAttr];
@@ -669,8 +669,8 @@ define([
           return;
         }
 
-        if (!each && serverData && serverData[dataId + attributeName]) {
-          expression = Expression.Create(serverData[dataId + attributeName], attributeName);
+        if (!each && serverData.hasData && serverData.data[dataId + attributeName]) {
+          expression = Expression.Create(serverData.data[dataId + attributeName], attributeName);
         } else {
           expression = Expression.Create(attributeValue, attributeName);
         }

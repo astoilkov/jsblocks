@@ -87,10 +87,10 @@ define([
           };
         } else if (VirtualComment.Is(parentElement)) {
           elements.push('<!--' + commentText + '-->');
-        } else if (serverData) {
+        } else if (serverData.hasData) {
           var number = parseInt(/[0-9]+/.exec(commentTextTrimmed), 10);
-          if (!blocks.isNaN(number) && serverData[number]) {
-            elements.push(Expression.Create(serverData[number]));
+          if (!blocks.isNaN(number) && serverData.data[number]) {
+            elements.push(Expression.Create(serverData.data[number]));
           }
         } else if (commentTextTrimmed.indexOf('/blocks') !== 0) {
           elements.push('<!--' + commentText + '-->');

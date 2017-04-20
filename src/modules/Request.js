@@ -62,8 +62,10 @@
         this.appendDataToUrl(options.data);
       }
 
-      if (serverData && serverData.requests && serverData.requests[options.url]) {
-        this.callSuccess(serverData.requests[options.url]);
+      if (serverData.hasData && serverData.data.requests && serverData.data.requests[options.url]) {
+        setTimeout(function (self) {
+          self.callSuccess(serverData.data.requests[options.url]);
+        }, 5, this);
       } else {
         try {
           if (options.dataType == 'jsonp') {

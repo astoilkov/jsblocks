@@ -145,7 +145,7 @@ define([
           if (value) {
             blocks.queries['with'].preprocess.call(this, domQuery, value, '$template');
           }
-          if (!serverData || !serverData.templates || !serverData.templates[ElementsData.id(this)]) {
+          if (!serverData.hasData || !serverData.data.templates || !serverData.data.templates[ElementsData.id(this)]) {
             if (!this._el) {
               var element = document.createElement('div');
               element.innerHTML = html;
@@ -375,9 +375,9 @@ define([
 
         element._childrenEach = true;
 
-        if (domQuery._serverData) {
-          elementData = domQuery._serverData[ElementsData.id(this)];
-          domQuery._serverData[ElementsData.id(this)] = undefined;
+        if (domQuery._serverData.hasData) {
+          elementData = domQuery._serverData.data[ElementsData.id(this)];
+          domQuery._serverData.data[ElementsData.id(this)] = undefined;
           if (elementData) {
             var div = document.createElement('div');
             div.innerHTML = elementData;

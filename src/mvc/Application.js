@@ -295,8 +295,8 @@ define([
         this._started = true;
         this._serverData = serverData;
 
-        if (this._serverData && this._serverData.baseUrl) {
-          this._router._setBaseUrl(this._serverData.baseUrl);
+        if (this._serverData.hasData && this._serverData.data.baseUrl) {
+          this._router._setBaseUrl(this._serverData.data.baseUrl);
         }
 
         this._createViews();
@@ -361,7 +361,7 @@ define([
         blocks.each(_this._views, function (view) {
           if (view.options.routeName == route.id) {
             if (!currentView && (view.options.initialPreload ||
-              (data.initial && _this._serverData && _this.options.history == 'pushState'))) {
+              (data.initial && _this._serverData.hasData && _this.options.history == 'pushState'))) {
               view.options.url = undefined;
             }
             if (currentView && currentView != view) {
