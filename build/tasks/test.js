@@ -58,6 +58,7 @@ module.exports = function (grunt) {
 
     browserstack: {
       browserNoActivityTimeout: 25000,
+      captureTimeout: 120000,
       browserStack: {
         username: process.env.BROWSERSTACK_USER || process.env.BROWSER_STACK_USER,
         startTunnel: !process.env.BROWSERSTACK_LOCAL_IDENTIFIER,
