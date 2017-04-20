@@ -14,9 +14,10 @@ define([
   './DomQuery',
   './Expression',
   './VirtualElement',
-  './dom'
+  './dom',
+  './serverData'
 ], function (blocks, slice, trimRegExp, keys, classAttr, queries, addListener, getClassIndex, animation, createFragment, createVirtual,
-  ElementsData, DomQuery, Expression, VirtualElement, dom) {
+  ElementsData, DomQuery, Expression, VirtualElement, dom, serverData) {
 
   function ifQuery (domQuery, condition, consequent, alternate) {
     if (condition) {
@@ -122,7 +123,6 @@ define([
       passDetailValues: true,
 
       preprocess: function (domQuery, template, value) {
-        var serverData = domQuery._serverData;
         var html;
         var templateName = template.parameterName;
         template = template.rawValue;
@@ -375,9 +375,9 @@ define([
 
         element._childrenEach = true;
 
-        if (domQuery._serverData.hasData) {
-          elementData = domQuery._serverData.data[ElementsData.id(this)];
-          domQuery._serverData.data[ElementsData.id(this)] = undefined;
+        if (serverData.hasData) {
+          elementData = serverData.data[ElementsData.id(this)];
+          serverData.data[ElementsData.id(this)] = undefined;
           if (elementData) {
             var div = document.createElement('div');
             div.innerHTML = elementData;

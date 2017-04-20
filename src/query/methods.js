@@ -40,7 +40,6 @@ define([
         var rootElement = createVirtual(element)[0];
 
         domQuery.pushContext(model);
-        domQuery._serverData = serverData;
 
         if (serverData.hasData) {
           rootElement.render(domQuery);

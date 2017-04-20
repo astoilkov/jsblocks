@@ -36,7 +36,6 @@ define([
     this._currentRoutedView = undefined;
     this._started = false;
     this.options = blocks.extend({}, this.options, options);
-    this._serverData = null;
 
     this._setDefaults();
 
@@ -293,10 +292,9 @@ define([
     start: function (element) {
       if (!this._started) {
         this._started = true;
-        this._serverData = serverData;
 
-        if (this._serverData.hasData && this._serverData.data.baseUrl) {
-          this._router._setBaseUrl(this._serverData.data.baseUrl);
+        if (serverData.hasData && serverData.data.baseUrl) {
+          this._router._setBaseUrl(serverData.data.baseUrl);
         }
 
         this._createViews();
@@ -361,7 +359,7 @@ define([
         blocks.each(_this._views, function (view) {
           if (view.options.routeName == route.id) {
             if (!currentView && (view.options.initialPreload ||
-              (data.initial && _this._serverData.hasData && _this.options.history == 'pushState'))) {
+              (data.initial && serverData.hasData && _this.options.history == 'pushState'))) {
               view.options.url = undefined;
             }
             if (currentView && currentView != view) {

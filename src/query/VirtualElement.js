@@ -12,9 +12,10 @@ define([
   './createFragment',
   './dom',
   './Expression',
-  './ElementsData'
+  './ElementsData',
+  './serverData'
 ], function (blocks, hasOwn, keys, Escape, virtualElementIdentity, classAttr, dataIdAttr, dataQueryAttr, getClassIndex, setClass, createFragment, dom,
-             Expression, ElementsData) {
+             Expression, ElementsData, serverData) {
 
   function VirtualElement(tagName) {
     if (!VirtualElement.prototype.isPrototypeOf(this)) {
@@ -597,7 +598,7 @@ define([
         var id = this._attributes[dataIdAttr];
         var data;
 
-        if (!id || domQuery._serverData.hasData) {
+        if (!id || serverData.hasData) {
           ElementsData.createIfNotExists(this);
           domQuery.applyContextToElement(this);
           id = this._attributes[dataIdAttr];
@@ -657,7 +658,7 @@ define([
       return html;
     },
 
-    _createAttributeExpressions: function (serverData) {
+    _createAttributeExpressions: function () {
       var attributeExpressions = this._attributeExpressions;
       var dataId = this._attributes[dataIdAttr];
       var each = this._each;

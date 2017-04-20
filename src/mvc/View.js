@@ -2,8 +2,9 @@ define([
   '../core',
   '../modules/ajax',
   '../modules/Events',
-  './bindContext'
-], function (blocks, ajax, Events, bindContext) {
+  './bindContext',
+  '../query/serverData'
+], function (blocks, ajax, Events, bindContext, serverData) {
   /**
    * @namespace View
    */
@@ -198,8 +199,6 @@ define([
 
     _load: function () {
       var url = this.options.url;
-      var serverData = this._application._serverData;
-
       if (serverData.hasData && serverData.data.views && serverData.data.views[url]) {
         url = this.options.url = undefined;
         this._tryInitialize(true);
