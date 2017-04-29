@@ -70,9 +70,10 @@ var browsers = {
 		/*'4.4': {
 			android: [null]
 		},*/
-		'5.0': {
+		// commented out because the 5.0 browser for some reason never connects.
+		/*'5.0': {
 			android: [null]
-		},
+		},*/
 	}
 };
 
