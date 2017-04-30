@@ -56,14 +56,14 @@ var browsers = {
 		}
 	},
 	ios: {
-		'8.3': {
+		/*'8.3': {
 			'iphone': [null],
 			'ipad': [null]
 		},
 		'9.1': {
 			'iphone': [null],
 			'ipad': [null]
-		}
+		}*/
 	},
 	android: {
 		// Commented out 'till bugs are fixed. Debugging in the failing stock browser isn't that easy.
