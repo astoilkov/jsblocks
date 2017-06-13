@@ -6,9 +6,6 @@
 
 [[ official website ]](http://jsblocks.com?ref=github_readme)
 
-
-> I am also working on a [Markdown Editor](http://caret.io?ref=jsblocks). I will appreciate it if you check it out and [tell me](mailto:antonio.stoilkov@gmail.com) what you think.
-
 ### Features
 
  * [Server-side rendering](http://jsblocks.com/learn/introduction-why-jsblocks#server-side-rendering?ref=github_readme)
