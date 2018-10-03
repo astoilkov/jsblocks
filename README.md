@@ -56,4 +56,4 @@ and the [jsblocks starter template project](https://github.com/astoilkov/jsblock
 
 <br>
 
-![](./DO_Powered_by_Badge_blue.png)
+<img src="./DO_Powered_by_Badge_blue.png" width="300px">
