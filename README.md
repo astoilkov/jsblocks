@@ -53,3 +53,7 @@ and the [jsblocks starter template project](https://github.com/astoilkov/jsblock
 
 ### Contribute
  * Documentation can be found under [jsblocks-docs](https://github.com/astoilkov/jsblocks-docs)
+
+<br>
+
+![](./DO_Powered_by_Badge_blue.png)
