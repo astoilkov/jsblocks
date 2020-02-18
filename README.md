@@ -1,5 +1,9 @@
 # [![jsblocks](http://jsblocks.com/img/logoBeta.png)](http://jsblocks.com?ref=github_readme) &nbsp;&nbsp; [![Build Status](https://travis-ci.org/astoilkov/jsblocks.svg?branch=master)](https://travis-ci.org/astoilkov/jsblocks)
 
+> ❗ I started working on this project in 2012. React didn't exist, Angular didn't have a stable 1.0 release, Internet Explorer 7, 8, 9 was used by 35% of users worldwide, I was 20 years old. I am proud of what I did then but it was overly ambitious for a single person. The repo is now a showcase of my early skills. More about my current work [here](https://github.com/astoilkov/me).
+
+> 🤔 I am using React (if you are wondering). In my opinion it's the best UI framework by a huge margin. I believe I can call a vote as I have a lot experience on the topic.
+
 ### Better MV-ish Framework
 
 ##### From simple user interfaces to complex single-page applications using faster, server-side rendered and easy to learn framework.
