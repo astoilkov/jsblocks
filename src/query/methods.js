@@ -101,7 +101,7 @@ define([
   };
 
   /**
-   * Gets the associated dataItem for a particlar element. Searches all parents until it finds the context
+   * Gets the associated dataItem for a particular element. Searches all parents until it finds the context
    *
    * @memberof blocks
    * @param {(HTMLElement|blocks.VirtualElement)} element - The element from which to search for a dataItem
@@ -182,7 +182,7 @@ define([
    * @param  {string} expression The expression to execute.
    * @param  {Object} context    The context to exute the expression on.
    *                             The context for an element can be get via block.context().
-   * @param  {Object} [options]  An optional options objecz.
+   * @param  {Object} [options]  An optional options object.
    * @param  {bool}   [options.raw] If true the function returns an array with the raw value. Default: false
    *
    * @returns {string|Object[]}]  Returns the result of the expressions as a string.
