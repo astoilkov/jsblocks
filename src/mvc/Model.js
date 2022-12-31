@@ -11,7 +11,7 @@ define([
    */
   function Model(application, prototype, dataItem, collection) {
     var _this = this;
-    // deep clone dataItem, otherwise we don't clone obervables nested in Models
+    // deep clone dataItem, otherwise we don't clone observables nested in Models
     dataItem = blocks.clone(dataItem, true);
     this._application = application;
     this._prototype = prototype;

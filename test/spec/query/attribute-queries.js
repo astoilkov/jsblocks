@@ -306,7 +306,7 @@
         expect($('#testElement')).toHaveHtml('HTML');
       });
 
-      // DEPRICATED!
+      // Deprecated!
       // it('shouldnt replace any existing html', function () {
       //   $('#testElement').html('already existing html');
       //
@@ -367,7 +367,7 @@
         expect($('#testElement')).toHaveHtml('HTML');
       });
 
-      // DEPRICATED:
+      // Deprecated:
       // it('shouldnt replace any existing html', function () {
       //   $('#testElement').html('already existing html');
       //
@@ -511,7 +511,7 @@
         });
       });
 
-      // !!DEPRICATED!!
+      // !!Deprecated!!
       // it('should remove css styles from an object to an element', function () {
       //   var zIndex = blocks.observable(3);
       //   $('#testElement').css('visibility', 'hidden');
@@ -787,7 +787,7 @@
         expect($('#testElement')).toHaveAttr('data-custom', 'second');
       });
 
-      // The condition argument have been depricated
+      // The condition argument have been deprecated
       //
       // it('should remove attributes from an object to an element', function () {
       //   var shouldSetAttributes = blocks.observable(false);
@@ -1432,7 +1432,7 @@
         expect($('#testElement')).toHaveCss({ width: '130px' });
       });
 
-      // !!DEPRICATED!!
+      // !!Deprecated!!
       // it('should remove the width from an element', function () {
       //   var originalWidth = $('#testElement').width();
       //

@@ -18,7 +18,7 @@ define([
 
   /**
   * @namespace blocks.observable
-  * @param {*} initialValue - The inital value of the observable. This value will also specify the functions the observable inherits (e.g. array specific functions). Do not change types of observables later.
+  * @param {*} initialValue - The initial value of the observable. This value will also specify the functions the observable inherits (e.g. array specific functions). Do not change types of observables later.
   * @param {*} [context] - The context the observable will be bound to.
   * @returns {blocks.observable}
   */
@@ -946,7 +946,7 @@ define([
           var updateCount = value.length - addCount;
 
           blocks.observable.fn.base.update.apply(this);
-          // Update 'each'-queries for dependencie obseravbles if the value is an array
+          // Update 'each'-queries for dependency observables if the value is an array
           if (blocks.isArray(value)) {
             chunkManager.each(function(domElement, virtualElement) {
               var domQuery = blocks.domQuery(domElement);

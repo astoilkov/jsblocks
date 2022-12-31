@@ -11,7 +11,7 @@
     /**
      * Associates the element with the particular view and creates a $view context property.
      * The View will be automatically hidden and shown if the view have routing. The visibility
-     * of the View could be also controled using the isActive observable property
+     * of the View could be also controlled using the isActive observable property
      *
      * @memberof blocks.queries
      * @param {View} view - The view to associate with the current element
@@ -49,7 +49,7 @@
           if (view._html) {
             blocks.queries.template.preprocess.call(this, domQuery, view._html, view);
           }
-          // Quotes are used because of IE8 and below. It failes with 'Expected idenfitier'
+          // Quotes are used because of IE8 and below. It fails with 'Expected idenfitier'
           //queries['with'].preprocess.call(this, domQuery, view, '$view');
           //queries.define.preprocess.call(this, domQuery, view._name, view);
         }
@@ -60,7 +60,7 @@
       update: function (domQuery, view) {
         if (view.isActive()) {
           if (view._html) {
-            // Quotes are used because of IE8 and below. It failes with 'Expected idenfitier'
+            // Quotes are used because of IE8 and below. It fails with 'Expected idenfitier'
             queries['with'].preprocess.call(this, domQuery, view, '$view');
 
             this.innerHTML = view._html;

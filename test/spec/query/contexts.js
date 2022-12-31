@@ -440,7 +440,7 @@
       });
     });
 
-    // The each(array) is hard coded and every call to query must contain an array property. For convinience there is a getArray function
+    // The each(array) is hard coded and every call to query must contain an array property. For convenience there is a getArray function
     // query({
     //   array: getArray()
     //})

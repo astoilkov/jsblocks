@@ -257,7 +257,7 @@ define([
      */
     View: function (name, prototype, nestedViewPrototype) {
       // TODO: Validate prototype by checking if a property does not override a proto method
-      // if the prototype[propertyName] Type eqals the proto[propertyName] Type do not throw error
+      // if the prototype[propertyName] Type equals the proto[propertyName] Type do not throw error
       if (arguments.length == 1) {
         return this._views[name];
       }
