@@ -8,7 +8,7 @@
 
 ##### From simple user interfaces to complex single-page applications using faster, server-side rendered and easy to learn framework.
 
-[[ official website ]](http://jsblocks.com?ref=github_readme)
+[[ official website ]](http://jsblocks.com)
 
 ### Features
 
