@@ -1,4 +1,4 @@
-❗❗❗ I started working on this project in 2012. React didn't exist, Angular didn't have a stable 1.0 release, Internet Explorer 7, 8, 9 was used by 35% of users worldwide, I was 20 years old. I am proud of what I did then but it was overly ambitious for a single person. The repo is now a showcase of my early skills. More about my current work [here](https://github.com/astoilkov/me).
+❗❗❗ I started working on this project in 2012. React didn't exist, Angular didn't have a stable 1.0 release, Internet Explorer 7, 8, 9 was used by 35% of users worldwide, I was 20 years old. I am proud of what I did then but it was overly ambitious for a single person. The repo is now a showcase of my early skills. More about my current work [here](https://astoilkov.com).
 
 ---
 
