@@ -2,7 +2,7 @@
 
 ---
 
-[![jsblocks](http://jsblocks.com/img/logoBeta.png)](http://jsblocks.com?ref=github_readme)
+[![jsblocks](http://jsblocks.com/img/logoBeta.png)](http://jsblocks.com)
 
 ### Better MV-ish Framework
 
@@ -12,14 +12,14 @@
 
 ### Features
 
- * [Server-side rendering](https://web.archive.org/web/20231207171618/http://jsblocks.com/learn/introduction-why-jsblocks#server-side-rendering?ref=github_readme)
- * [Debugging experience](https://web.archive.org/web/20231207171618/http://jsblocks.com/learn/introduction-why-jsblocks#debugging-experience?ref=github_readme)
- * [Faster](https://web.archive.org/web/20241002181521/http://jsblocks.com/#performance?ref=github_readme)
- * [MV-ish](https://web.archive.org/web/20231207171618/http://jsblocks.com/learn/introduction-why-jsblocks#mv-ish?ref=github_readme)
- * [Modular](http://jsblocks.com/learn/introduction-why-jsblocks#modular?ref=github_readme)
- * [Built-in utility library](https://web.archive.org/web/20231207171618/http://jsblocks.com/learn/introduction-why-jsblocks#built-in-utility-library?ref=github_readme)
- * [Forward thinking](https://web.archive.org/web/20231207171618/http://jsblocks.com/learn/introduction-why-jsblocks#forward-thinking?ref=github_readme)
- * [... and many more](https://web.archive.org/web/20231207171618/http://jsblocks.com/learn/introduction-why-jsblocks#feature-rich?ref=github_readme)
+ * [Server-side rendering](https://web.archive.org/web/20231207171618/http://jsblocks.com/learn/introduction-why-jsblocks#server-side-rendering)
+ * [Debugging experience](https://web.archive.org/web/20231207171618/http://jsblocks.com/learn/introduction-why-jsblocks#debugging-experience)
+ * [Faster](https://web.archive.org/web/20241002181521/http://jsblocks.com/#performance)
+ * [MV-ish](https://web.archive.org/web/20231207171618/http://jsblocks.com/learn/introduction-why-jsblocks#mv-ish)
+ * [Modular](http://jsblocks.com/learn/introduction-why-jsblocks#modular)
+ * [Built-in utility library](https://web.archive.org/web/20231207171618/http://jsblocks.com/learn/introduction-why-jsblocks#built-in-utility-library)
+ * [Forward thinking](https://web.archive.org/web/20231207171618/http://jsblocks.com/learn/introduction-why-jsblocks#forward-thinking)
+ * [... and many more](https://web.archive.org/web/20231207171618/http://jsblocks.com/learn/introduction-why-jsblocks#feature-rich)
 
 ### Example projects
  * [TodoMVC](https://github.com/astoilkov/jsblocks-todomvc)
