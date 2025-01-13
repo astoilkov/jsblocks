@@ -8,18 +8,18 @@
 
 ##### From simple user interfaces to complex single-page applications using faster, server-side rendered and easy to learn framework.
 
-[[ official website ]](http://jsblocks.com)
+[[ official website ]](https://web.archive.org/web/20241002181521/http://jsblocks.com/)
 
 ### Features
 
- * [Server-side rendering](http://jsblocks.com/learn/introduction-why-jsblocks#server-side-rendering?ref=github_readme)
- * [Debugging experience](http://jsblocks.com/learn/introduction-why-jsblocks#debugging-experience?ref=github_readme)
- * [Faster](http://jsblocks.com/#performance?ref=github_readme)
- * [MV-ish](http://jsblocks.com/learn/introduction-why-jsblocks#mv-ish?ref=github_readme)
+ * [Server-side rendering](https://web.archive.org/web/20231207171618/http://jsblocks.com/learn/introduction-why-jsblocks#server-side-rendering?ref=github_readme)
+ * [Debugging experience](https://web.archive.org/web/20231207171618/http://jsblocks.com/learn/introduction-why-jsblocks#debugging-experience?ref=github_readme)
+ * [Faster](https://web.archive.org/web/20241002181521/http://jsblocks.com/#performance?ref=github_readme)
+ * [MV-ish](https://web.archive.org/web/20231207171618/http://jsblocks.com/learn/introduction-why-jsblocks#mv-ish?ref=github_readme)
  * [Modular](http://jsblocks.com/learn/introduction-why-jsblocks#modular?ref=github_readme)
- * [Built-in utility library](http://jsblocks.com/learn/introduction-why-jsblocks#built-in-utility-library?ref=github_readme)
- * [Forward thinking](http://jsblocks.com/learn/introduction-why-jsblocks#forward-thinking?ref=github_readme)
- * [... and many more](http://jsblocks.com/learn/introduction-why-jsblocks#feature-rich?ref=github_readme)
+ * [Built-in utility library](https://web.archive.org/web/20231207171618/http://jsblocks.com/learn/introduction-why-jsblocks#built-in-utility-library?ref=github_readme)
+ * [Forward thinking](https://web.archive.org/web/20231207171618/http://jsblocks.com/learn/introduction-why-jsblocks#forward-thinking?ref=github_readme)
+ * [... and many more](https://web.archive.org/web/20231207171618/http://jsblocks.com/learn/introduction-why-jsblocks#feature-rich?ref=github_readme)
 
 ### Example projects
  * [TodoMVC](https://github.com/astoilkov/jsblocks-todomvc)
